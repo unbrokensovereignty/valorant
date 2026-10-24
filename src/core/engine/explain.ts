@@ -105,6 +105,11 @@ export function explainTeam(m: Model, ids: readonly string[]): Explanation {
     const lead = row.cover < 0.25 ? 'No' : info.few ? 'Few' : 'Little';
     cons.push(`${lead} ${info.lacks}${bump(row.dim) >= 0.15 ? `, which ${where} needs` : ''}: ${MAKE_UP[row.dim]}.`);
   }
+  // a comp with no real gap still has a thinnest spot worth playing around
+  if (!cons.length) {
+    const thin = strengths.filter((r) => r.need >= 1).sort((a, b) => a.cover - b.cover)[0];
+    if (thin && thin.cover < 0.8) cons.push(`Its thinnest spot is ${DIM_INFO[thin.dim].lacks}: ${MAKE_UP[thin.dim]}.`);
+  }
   // pairs
   const pairs: { strength: number; why: string }[] = [];
   for (let i = 0; i < team.length; i++) {

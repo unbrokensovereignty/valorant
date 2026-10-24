@@ -300,6 +300,15 @@ describe('explanations', () => {
     ok(e.pros.some((p) => p.includes('Breach’s stuns')), 'the Breach and Raze combo is a pro');
     ok([...e.pros, ...e.cons].every((x) => /[.]$/.test(x) && !x.includes('!') && !x.includes('  ')), 'plain sentences');
   });
+  spec('a comp with no real gap still names its thinnest spot, and how to play around it', () => {
+    const s = at('lotus', 'attack', 'immortal');
+    const best = solve({ ...newQuery('immortal'), map: 'lotus', side: 'attack' }, s, 1).comps[0]!.team;
+    const e = explainTeam(modelFor(s), best);
+    ok(e.cons.length > 0);
+    const thin = e.cons.find((c) => c.startsWith('Its thinnest spot is '));
+    if (thin) ok(!e.cons.some((c) => /^(No|Few|Little) /.test(c)), 'only when there is no real gap');
+    ok(e.cons.every((x) => /[.]$/.test(x)));
+  });
   spec('a new agent gets a note that the numbers are estimates', () => {
     const e = explainTeam(modelFor(at('pearl')), ['hush', 'omen', 'sova', 'killjoy', 'fade']);
     ok(e.notes.some((n) => n.includes('Hush is new')));

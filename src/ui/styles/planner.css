@@ -24,7 +24,7 @@
 
 .fit { display: inline-flex; align-items: center; gap: 8px; flex: none; }
 .fit .bar { width: 72px; }
-.fit-num { min-width: 2ch; font-weight: 700; text-align: right; }
+.fit-num { min-width: 3ch; font-weight: 700; text-align: right; }
 .fit.compact { gap: 6px; }
 .fit.compact .bar { width: 40px; }
 .tier {
