@@ -1,7 +1,7 @@
 // Project rules that the type checker can't see. Run with `npm run lint`.
 //  1. Layers: src/core is pure logic (no DOM, no storage, no UI); src/data may use core; src/ui may use both.
 //  2. The app only knows its own versions: the one in package.json and those with a heading in CHANGELOG.md.
-//     No other version numbers, and no "beta" or the like.
+//     No other version numbers, no "beta" or the like, and no other app's name.
 //  3. No stray console.log, debugger or focused tests.
 import { readdir, readFile } from 'node:fs/promises';
 import { join, relative, resolve, dirname } from 'node:path';
@@ -23,7 +23,7 @@ const version = JSON.parse(await readFile(join(root, 'package.json'), 'utf8')).v
 const changelog = await readFile(join(root, 'CHANGELOG.md'), 'utf8').catch(() => '');
 const known = new Set([version, ...[...changelog.matchAll(/^## (\d+\.\d+\.\d+)\b/gm)].map((m) => m[1])]);
 const VERSIONISH = /\bv?\d+\.\d+\.\d+\b/g;
-const WORDS = /\b(beta|legacy|previous version|older version|earlier version|old version|pre-release)\b/i;
+const WORDS = /\b(beta|legacy|previous version|older version|earlier version|old version|pre-release|flashcards?)\b/i;
 
 const files = [];
 for (const d of ['src', 'tests', 'tools', 'docs', '.github']) {

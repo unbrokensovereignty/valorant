@@ -11,8 +11,6 @@ import { keysMoveFocus } from './state.ts';
 
 export const FOCUSABLE = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 const shown = (x: HTMLElement) => x.offsetParent !== null;
-/** Screens that put focus where they want it themselves. */
-const OWN_FOCUS = '.game, .session';
 /** The short messages at the bottom. */
 const MESSAGES = '.toasts';
 const follows = (a: Node, b: Node) => !!(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
@@ -125,9 +123,7 @@ export function keepFocus(): () => void {
           // only on a page or in a dialog: a page or a dialog going as a whole sees to its own focus
           if (!spot || !box?.closest('.page, [role=dialog]')) continue;
           const s = nearest(spot.target, still(spot.previousSibling, 'previousSibling'), still(spot.nextSibling, 'nextSibling'));
-          // nor into or out of a game, a session or the quiz, which see to their own focus: a button
-          // picked for you there (Leave, Play again) would take the next Enter or Space
-          if (s && !w.closest(OWN_FOCUS) && !s.closest(OWN_FOCUS)) standIns.set(w, s);
+          if (s) standIns.set(w, s);
         }
       }
     }

@@ -44,7 +44,7 @@
 .icon-btn:hover { background: var(--surface-2); color: var(--text); }
 .icon-btn:active { transform: scale(0.92); background: var(--surface-3); }
 .icon-btn.active, .icon-btn[aria-pressed='true'] { color: var(--accent-text); background: var(--accent-soft); }
-/* a starred card's star is filled in, in the warm yellow of Almost */
+/* a starred plan's star is filled in, in the warm yellow of a warning */
 .star-toggle.on, .icon-btn.star-toggle[aria-pressed='true'] { color: var(--warn); background: transparent; }
 .icon-btn.star-toggle[aria-pressed='true']:hover { background: var(--surface-2); }
 .star-toggle.on .icon path { fill: currentColor; }
@@ -84,8 +84,6 @@
 .badge.warn { background: var(--warn-soft); color: var(--warn-text); }
 .badge.bad { background: var(--bad-soft); color: var(--bad-text); }
 .badge .icon { margin-left: -2px; }
-/* one naming a set wraps a long name rather than pushing the page wider */
-.badge.wraps { height: auto; min-height: 22px; padding-block: 2px; white-space: normal; overflow-wrap: anywhere; min-width: 0; }
 
 .chip {
   display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border-radius: var(--r-full);

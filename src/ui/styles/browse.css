@@ -15,10 +15,10 @@
 .map-thumb.small { width: 56px; height: 32px; }
 .map-thumb.open.small { font-size: 1rem; }
 .map-thumb.tiny { width: 44px; height: 24px; border-radius: 5px; }
-.star-on { color: var(--tier-b); }
+.star-on { flex: none; color: var(--warn); }
+.star-on path { fill: currentColor; }
 .page-head .eyebrow a { gap: 2px; color: var(--text3); text-decoration: none; }
 .page-head .eyebrow a:hover { color: var(--text); }
-.icon-btn.star-on { color: var(--tier-b); }
 .page-head .eyebrow a { gap: 2px; color: var(--text3); text-decoration: none; }
 .page-head .eyebrow a:hover { color: var(--text); }
 

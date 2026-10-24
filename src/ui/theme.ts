@@ -1,5 +1,5 @@
 /**
- * Puts the chosen theme, text size, card font and motion setting on the page.
+ * Puts the chosen theme, text size and motion setting on the page.
  */
 import { signal } from '@preact/signals';
 import { findTheme, generateTheme, tokensCss, type Base, type GeneratedTheme, type ThemePicks } from '../core/theme.ts';

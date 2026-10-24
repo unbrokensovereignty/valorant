@@ -61,7 +61,7 @@ function PlanDetail({ p }: { p: SavedPlan }) {
           <p class="muted small">{askedTitle(s)} · {askedLine(p.query)} · saved {fmtDay(keyOf(new Date(p.created)), keyOf(new Date()))}</p>
         </div>
         <div class="row">
-          <IconButton icon="star" label="Star" pressed={p.starred} class={p.starred ? 'star-on' : ''} onClick={() => safely(() => r.updatePlan(p.id, { starred: !p.starred }))} />
+          <IconButton icon="star" label="Star" pressed={p.starred} class="star-toggle" onClick={() => safely(() => r.updatePlan(p.id, { starred: !p.starred }))} />
           <IconButton icon="edit" label="Rename" onClick={() => void rename()} />
           <IconButton icon="trash" label="Delete" onClick={remove} />
         </div>

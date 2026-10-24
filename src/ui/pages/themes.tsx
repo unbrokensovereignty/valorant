@@ -175,11 +175,11 @@ export function ThemesPage(_p: PageProps) {
     <>
       <PageHead eyebrow={<a href="#/settings/appearance">Settings</a>} title="Themes" actions={<>
         <Button icon="import" onClick={() => void importCode()}>Add from code</Button>
-        <Button kind="primary" icon="plus" tour="themes-new" onClick={() => void editTheme({ ...current, id: '', name: 'My theme' })}>New theme</Button>
+        <Button kind="primary" icon="plus" onClick={() => void editTheme({ ...current, id: '', name: 'My theme' })}>New theme</Button>
       </>}>
         One light theme and one dark theme are chosen; “Light or dark” in Settings decides which shows.
       </PageHead>
-      <div class="row wrap" style={{ marginBottom: '8px' }} data-tour="themes-mode">
+      <div class="row wrap" style={{ marginBottom: '8px' }}>
         <Segmented value={s.themeMode} label="Light or dark" onChange={(v) => safely(() => r.setSetting('themeMode', v))} options={SETTINGS.themeMode.options} />
       </div>
       {own.length > 0 && (
@@ -188,8 +188,8 @@ export function ThemesPage(_p: PageProps) {
           <div class="theme-grid">{own.map((t) => <ThemeTile key={t.id} t={t} chosen={chosen(t)} own />)}</div>
         </section>
       )}
-      {groups.map(([name, list], i) => (
-        <section class="section" key={name} data-tour={i === 0 ? 'themes-grid' : undefined}>
+      {groups.map(([name, list]) => (
+        <section class="section" key={name}>
           <h2>{name}</h2>
           <div class="theme-grid">{list.map((t) => <ThemeTile key={t.id} t={t} chosen={chosen(t)} own={false} />)}</div>
         </section>

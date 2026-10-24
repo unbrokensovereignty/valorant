@@ -40,10 +40,10 @@ function DialogFrame({ d, top }: { d: DialogSpec; top: boolean }) {
     const el = box.current;
     const target = el?.querySelector<HTMLElement>('[autofocus], [data-autofocus]') ?? el?.querySelector<HTMLElement>('.dialog-body input, .dialog-body select, .dialog-body textarea') ?? el;
     target?.focus();
-    // back to what had focus, or, if that's gone (the card just deleted), to what's nearest where it was
+    // back to what had focus, or, if that's gone (the plan just deleted), to what's nearest where it was
     return () => { if (before) placeOf(before)?.focus(); };
   }, []);
-  // a button that goes away while focused (a perk bought to its top level) would drop focus out of
+  // a button that goes away while focused (Clear, once there's nothing left to clear) would drop focus out of
   // the dialog: it moves to the next control after where it was, or to the dialog itself
   useEffect(() => {
     const el = box.current;
@@ -264,7 +264,7 @@ export function MenuHost() {
       const r = m.from?.isConnected ? m.from.getBoundingClientRect() : null;
       if (!r || r.bottom < 0 || r.top > innerHeight) closeMenu(); else place();
     };
-    // the screen it came from went away (a session ended, the page changed): so does the menu
+    // the screen it came from went away (the page changed, a dialog closed): so does the menu
     const gone = setInterval(() => { if (m.from && !m.from.isConnected) closeMenu(); }, 200);
     document.addEventListener('mousedown', away, true);
     addEventListener('resize', off);

@@ -29,8 +29,6 @@ export interface ButtonProps {
   children?: ComponentChildren;
   autoFocus?: boolean;
   id?: string;
-  /** A guided tour hook (`data-tour`). */
-  tour?: string;
   /** A fuller name for screen readers; it should start with the words on the button. */
   label?: string;
 }
@@ -40,7 +38,6 @@ export function Button(p: ButtonProps) {
   return (
     <button
       id={p.id}
-      data-tour={p.tour}
       aria-label={p.label}
       type={p.type ?? 'button'}
       class={cls}
@@ -65,11 +62,10 @@ export const CancelButton = ({ onClick, children }: { onClick: () => void; child
   <Button kind="quiet" sound="close" onClick={onClick}>{children ?? 'Cancel'}</Button>
 );
 
-export function IconButton(p: { icon: IconName; label: string; onClick?: (e: MouseEvent) => void; active?: boolean; size?: 'sm' | 'md'; disabled?: boolean; tipSide?: 'right' | 'below'; class?: string; sound?: SoundName | false; pressed?: boolean; tour?: string }) {
+export function IconButton(p: { icon: IconName; label: string; onClick?: (e: MouseEvent) => void; active?: boolean; size?: 'sm' | 'md'; disabled?: boolean; tipSide?: 'right' | 'below'; class?: string; sound?: SoundName | false; pressed?: boolean }) {
   return (
     <button
       type="button"
-      data-tour={p.tour}
       class={`icon-btn${p.size === 'sm' ? ' sm' : ''}${p.active ? ' active' : ''}${p.class ? ' ' + p.class : ''}`}
       aria-label={p.label}
       aria-pressed={p.pressed}

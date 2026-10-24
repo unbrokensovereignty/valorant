@@ -70,13 +70,13 @@ function PlanSwitch() {
   };
   const title = q ? askedTitle(q) : 'No question yet';
   return (
-    <button type="button" class="set-switch" onClick={open} aria-haspopup="menu" data-tip={sidebarNarrow.value ? title : undefined} data-tip-side="right">
-      <span class="set-dot map-dot">{q && q.map !== 'any' && q.map !== 'best' ? <MapThumb id={q.map} /> : <Icon name="planner" size={16} />}</span>
-      <span class="set-text">
+    <button type="button" class="plan-switch" onClick={open} aria-haspopup="menu" data-tip={sidebarNarrow.value ? title : undefined} data-tip-side="right">
+      <span class="plan-dot map-dot">{q && q.map !== 'any' && q.map !== 'best' ? <MapThumb id={q.map} /> : <Icon name="planner" size={16} />}</span>
+      <span class="plan-text">
         <b>{title}</b>
         <small>{q ? askedLine(q) : 'Ask the Planner for a comp'}</small>
       </span>
-      <Icon name="chevron-down" size={16} class="set-chev" />
+      <Icon name="chevron-down" size={16} class="plan-chev" />
     </button>
   );
 }
