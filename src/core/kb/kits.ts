@@ -15,7 +15,7 @@ export function abilityNames(id: string, keys: string): string[] {
   for (const k of keys) {
     if (k === 'G') continue;
     const a = abilityOn(id, k);
-    if (a) out.push(a.name.replace(/\s*\/.*$/, ''));
+    if (a) out.push(a.name.replace(/\s+\/\s.*$/, ''));
   }
   return out;
 }

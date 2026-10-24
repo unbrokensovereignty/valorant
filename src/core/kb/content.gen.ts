@@ -29,13 +29,13 @@ export const KITS: Record<string, Kit> = {
    {
     "key": "E",
     "slot": "ability2",
-    "name": "Nebula / Dissipate",
+    "name": "Nebula",
     "text": "Place Stars in Astral Form (Ultimate Key). ACTIVATE a Star to transform it into a Nebula (smoke). USE a Star to Dissipate it, returning the Star to be placed in a new location after a delay. Dissipate briefly forms a fake Nebula at the Star's location before returning."
    },
    {
     "key": "X",
     "slot": "ultimate",
-    "name": "Astral Form / Cosmic Divide",
+    "name": "Cosmic Divide",
     "text": "ACTIVATE to enter Astral Form where you can place Stars with FIRE. Stars can be reactivated later, transforming them into a Nova Pulse, Nebula, or Gravity Well. When Cosmic Divide is charged, use ALT FIRE in Astral Form to begin aiming it, then FIRE to select two locations. An infinite Cosmic Divide connects the two points you select. Cosmic Divide blocks bullets and sound."
    },
    {
@@ -226,9 +226,9 @@ export const KITS: Record<string, Kit> = {
   "abilities": [
    {
     "key": "C",
-    "slot": "grenade",
-    "name": "Barrier Mesh",
-    "text": "EQUIP a Barrier Mesh disc. FIRE to throw forward. Upon landing, the disc generates barriers from the origin point that block character movement."
+    "slot": "ability2",
+    "name": "GravNet",
+    "text": "EQUIP a GravNet grenade. FIRE to throw. ALT FIRE to lob. The GravNet detonates upon landing, forcing any characters caught within to crouch and move slowly."
    },
    {
     "key": "Q",
@@ -238,9 +238,9 @@ export const KITS: Record<string, Kit> = {
    },
    {
     "key": "E",
-    "slot": "ability2",
-    "name": "GravNet",
-    "text": "EQUIP a GravNet grenade. FIRE to throw. ALT FIRE to lob. The GravNet detonates upon landing, forcing any characters caught within to crouch and move slowly."
+    "slot": "grenade",
+    "name": "Barrier Mesh",
+    "text": "EQUIP a Barrier Mesh disc. FIRE to throw forward. Upon landing, the disc generates barriers from the origin point that block character movement."
    },
    {
     "key": "X",
@@ -477,13 +477,13 @@ export const KITS: Record<string, Kit> = {
    {
     "key": "Q",
     "slot": "ability1",
-    "name": "ALARMBOT",
+    "name": "Alarmbot",
     "text": "EQUIP a covert Alarmbot. FIRE to deploy a bot that hunts down enemies that get in range. After reaching its target, the bot explodes and applies Vulnerable to enemies in the area. HOLD EQUIP to recall a deployed bot."
    },
    {
     "key": "E",
     "slot": "ability2",
-    "name": "TURRET",
+    "name": "Turret",
     "text": "EQUIP a Turret. FIRE to deploy a turret that fires at enemies in a 100 degree cone. While targeting, EQUIP again to swap turret direction, HOLD ALT FIRE to rotate. HOLD EQUIP to recall the deployed turret."
    },
    {
@@ -612,15 +612,15 @@ export const KITS: Record<string, Kit> = {
    },
    {
     "key": "Q",
-    "slot": "ability1",
-    "name": "Hot Hands",
-    "text": "EQUIP a fireball. FIRE to throw a fireball that explodes after a set amount of time or upon hitting the ground, creating a lingering fire zone that damages enemies. The fire zone heals Phoenix instead of dealing damage. ALT FIRE to lob."
-   },
-   {
-    "key": "E",
     "slot": "ability2",
     "name": "Curveball",
     "text": "EQUIP a flare orb that takes a curving path and detonates shortly after throwing. FIRE to curve the flare orb to the left, detonating and Blinding any player who sees the orb. ALT FIRE to curve the flare orb to the right. Curveball resets a charge every two kills."
+   },
+   {
+    "key": "E",
+    "slot": "ability1",
+    "name": "Hot Hands",
+    "text": "EQUIP a fireball. FIRE to throw a fireball that explodes after a set amount of time or upon hitting the ground, creating a lingering fire zone that damages enemies. The fire zone heals Phoenix instead of dealing damage. ALT FIRE to lob."
    },
    {
     "key": "X",
@@ -999,25 +999,25 @@ export const KITS: Record<string, Kit> = {
    {
     "key": "C",
     "slot": "grenade",
-    "name": "FAKEOUT",
+    "name": "Fakeout",
     "text": "EQUIP an echo that transforms into a mirror image of Yoru when activated. FIRE to instantly activate the mirror image and send it forward. ALT FIRE to place an inactive echo. USE to transform an inactive echo into a mirror image and send it forward. Mirror images explode in a Blinding flash when destroyed by enemies."
    },
    {
     "key": "Q",
     "slot": "ability1",
-    "name": "BLINDSIDE",
+    "name": "Blindside",
     "text": "EQUIP to rip an unstable dimensional fragment from reality. FIRE to throw the fragment, activating a flash that winds up once it collides with a hard surface."
    },
    {
     "key": "E",
     "slot": "ability2",
-    "name": "GATECRASH",
+    "name": "Gatecrash",
     "text": "EQUIP a rift tether FIRE to send the tether forward. ALT FIRE to place a stationary tether. ACTIVATE to teleport to the tether's location. USE to trigger a fake teleport. GATECRASH resets a charge every two kills."
    },
    {
     "key": "X",
     "slot": "ultimate",
-    "name": "DIMENSIONAL DRIFT",
+    "name": "Dimensional Drift",
     "text": "EQUIP a mask that can see between dimensions. FIRE to drift into Yoru's dimension, unable to be affected or seen by enemies from the outside. REACTIVATE to exit Yoru's dimension early."
    }
   ]

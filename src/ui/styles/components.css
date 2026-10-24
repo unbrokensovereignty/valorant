@@ -19,12 +19,12 @@
 .btn:hover:not(:disabled, [aria-disabled='true']) { background: var(--btn-hover); }
 .btn:active { transform: scale(0.97) translateY(1px); box-shadow: none; }
 /* the other controls built from plain buttons give a little when pressed, too */
-:is(.duel-stance, .offer-deal, .key-capture, .folder-toggle, .word, .set-tile-main, .palette-item):active:not(:disabled) { scale: 0.97; }
+:is(.key-capture, .folder-toggle, .word, .set-tile-main, .palette-item):active:not(:disabled) { scale: 0.97; }
 .btn:disabled, .btn[aria-disabled='true'] { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
 .btn .icon { flex: none; margin-left: -3px; }
 .btn .icon:last-child:not(:first-child) { margin-left: 0; margin-right: -3px; }
 .btn.primary { --btn-bg: var(--accent); --btn-fg: var(--on-accent); --btn-line: transparent; --btn-hover: color-mix(in oklab, var(--accent) 88%, var(--text)); }
-.btn.danger { --btn-bg: var(--again); --btn-fg: var(--on-again); --btn-line: transparent; --btn-hover: color-mix(in oklab, var(--again) 88%, var(--text)); }
+.btn.danger { --btn-bg: var(--bad); --btn-fg: var(--on-bad); --btn-line: transparent; --btn-hover: color-mix(in oklab, var(--bad) 88%, var(--text)); }
 .btn.quiet { --btn-bg: transparent; --btn-line: transparent; box-shadow: none; }
 .btn.quiet:hover:not(:disabled, [aria-disabled='true']) { --btn-bg: var(--surface-2); }
 .btn.soft { --btn-bg: var(--accent-soft); --btn-fg: var(--accent-text); --btn-line: transparent; box-shadow: none; --btn-hover: color-mix(in oklab, var(--accent-soft) 90%, var(--accent)); }
@@ -45,7 +45,7 @@
 .icon-btn:active { transform: scale(0.92); background: var(--surface-3); }
 .icon-btn.active, .icon-btn[aria-pressed='true'] { color: var(--accent-text); background: var(--accent-soft); }
 /* a starred card's star is filled in, in the warm yellow of Almost */
-.star-toggle.on, .icon-btn.star-toggle[aria-pressed='true'] { color: var(--almost); background: transparent; }
+.star-toggle.on, .icon-btn.star-toggle[aria-pressed='true'] { color: var(--warn); background: transparent; }
 .icon-btn.star-toggle[aria-pressed='true']:hover { background: var(--surface-2); }
 .star-toggle.on .icon path { fill: currentColor; }
 .icon-btn.sm { width: 30px; height: 30px; border-radius: var(--r-sm); }
@@ -80,9 +80,9 @@
   background: var(--surface-2); color: var(--text2); font-size: 0.78rem; font-weight: 650; white-space: nowrap;
 }
 .badge.accent { background: var(--accent-soft); color: var(--accent-text); }
-.badge.good { background: var(--knew-soft); color: var(--knew-text); }
-.badge.warn { background: var(--almost-soft); color: var(--almost-text); }
-.badge.bad { background: var(--again-soft); color: var(--again-text); }
+.badge.good { background: var(--good-soft); color: var(--good-text); }
+.badge.warn { background: var(--warn-soft); color: var(--warn-text); }
+.badge.bad { background: var(--bad-soft); color: var(--bad-text); }
 .badge .icon { margin-left: -2px; }
 /* one naming a set wraps a long name rather than pushing the page wider */
 .badge.wraps { height: auto; min-height: 22px; padding-block: 2px; white-space: normal; overflow-wrap: anywhere; min-width: 0; }
@@ -103,7 +103,7 @@ button.chip:active { transform: scale(0.96); }
 .field { display: grid; gap: 6px; align-content: start; }
 .field > label, .field-label { font-weight: 650; font-size: 0.92rem; }
 .field .help { color: var(--text2); font-size: 0.85rem; }
-.field .error { color: var(--again-text); font-size: 0.85rem; font-weight: 600; }
+.field .error { color: var(--bad-text); font-size: 0.85rem; font-weight: 600; }
 
 .input, .select, textarea.input {
   width: 100%; height: 38px; padding: 0 12px;
@@ -115,7 +115,7 @@ textarea.input { height: auto; min-height: 84px; padding: 10px 12px; resize: ver
 .input::placeholder, textarea.input::placeholder { color: var(--text3); }
 .input:hover, .select:hover { border-color: var(--text3); }
 .input:focus, .select:focus, textarea.input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); outline: none; }
-.input.invalid { border-color: var(--again); }
+.input.invalid { border-color: var(--bad); }
 .input.lg { height: 48px; font-size: 1.1rem; }
 .select { appearance: none; padding-right: 34px; cursor: pointer;
   background-image: linear-gradient(45deg, transparent 50%, var(--text2) 50%), linear-gradient(135deg, var(--text2) 50%, transparent 50%);
@@ -208,14 +208,14 @@ textarea.input { height: auto; min-height: 84px; padding: 10px 12px; resize: ver
 
 .bar { position: relative; height: 8px; border-radius: 99px; background: var(--surface-3); overflow: hidden; }
 .bar > span { position: absolute; inset: 0 auto 0 0; border-radius: inherit; background: var(--accent); width: 0; transition: width var(--dur-page) var(--ease); }
-.bar.good > span { background: var(--knew); }
+.bar.good > span { background: var(--good); }
 .bar.thin { height: 5px; }
 .bar.thick { height: 12px; }
 .ring { transform: rotate(-90deg); }
 .ring circle { fill: none; stroke-linecap: round; }
 .ring .track { stroke: var(--surface-3); }
 .ring .fill { stroke: var(--accent); transition: stroke-dashoffset var(--dur-page) var(--ease); }
-.ring.good .fill { stroke: var(--knew); }
+.ring.good .fill { stroke: var(--good); }
 
 /* ---------------------------------------------------------------- tabs */
 
@@ -245,9 +245,9 @@ textarea.input { height: auto; min-height: 84px; padding: 10px 12px; resize: ver
 .menu button:focus-visible { background: var(--surface-2); outline: 2px solid var(--focus); outline-offset: -2px; }
 .menu button:active:not(:disabled) { background: var(--surface-3); }
 .menu button:disabled { opacity: 0.45; cursor: default; }
-.menu button.danger { color: var(--again-text); }
+.menu button.danger { color: var(--bad-text); }
 .menu button .icon { flex: none; color: var(--text2); }
-.menu button.danger .icon { color: var(--again-text); }
+.menu button.danger .icon { color: var(--bad-text); }
 .menu button .kbd { margin-left: auto; }
 .menu hr { border: 0; height: 1px; background: var(--line); margin: 4px 6px; }
 
@@ -282,22 +282,22 @@ textarea.input { height: auto; min-height: 84px; padding: 10px 12px; resize: ver
   font-weight: 600; pointer-events: auto; animation: rise-in var(--dur-base) var(--ease-spring) both;
 }
 .toast .icon { flex: none; }
-.toast.good .icon { color: color-mix(in oklab, var(--knew) 70%, var(--surface)); }
-.toast.bad .icon { color: color-mix(in oklab, var(--again) 70%, var(--surface)); }
+.toast.good .icon { color: color-mix(in oklab, var(--good) 70%, var(--surface)); }
+.toast.bad .icon { color: color-mix(in oklab, var(--bad) 70%, var(--surface)); }
 .toast .btn { --btn-bg: transparent; --btn-fg: var(--surface); --btn-line: color-mix(in oklab, var(--surface) 30%, transparent); --btn-hover: color-mix(in oklab, var(--surface) 14%, transparent); box-shadow: none; height: 32px; }
 .toast .icon-btn { color: color-mix(in oklab, var(--surface) 70%, transparent); width: 30px; height: 30px; }
 .toast .icon-btn:hover { background: color-mix(in oklab, var(--surface) 14%, transparent); color: var(--surface); }
 
 .banner {
   display: flex; align-items: center; gap: 12px; padding: 10px 14px; margin-bottom: var(--sp-4);
-  border-radius: var(--r-lg); background: var(--almost-soft); color: var(--text); border: 1px solid color-mix(in oklab, var(--almost) 35%, transparent);
+  border-radius: var(--r-lg); background: var(--warn-soft); color: var(--text); border: 1px solid color-mix(in oklab, var(--warn) 35%, transparent);
   animation: rise-in var(--dur-base) var(--ease) both;
 }
 .banner.info { background: var(--accent-soft); border-color: var(--accent-line); }
-.banner.bad { background: var(--again-soft); border-color: color-mix(in oklab, var(--again) 35%, transparent); }
-.banner > .icon { flex: none; color: var(--almost-text); }
+.banner.bad { background: var(--bad-soft); border-color: color-mix(in oklab, var(--bad) 35%, transparent); }
+.banner > .icon { flex: none; color: var(--warn-text); }
 .banner.info > .icon { color: var(--accent-text); }
-.banner.bad > .icon { color: var(--again-text); }
+.banner.bad > .icon { color: var(--bad-text); }
 .banner p { flex: 1; font-size: 0.93rem; }
 
 /* ---------------------------------------------------------------- empty states */
@@ -314,7 +314,6 @@ textarea.input { height: auto; min-height: 84px; padding: 10px 12px; resize: ver
 .stat .value { font-size: 1.7rem; font-weight: 700; line-height: 1.1; letter-spacing: -0.02em; }
 .stat .label { color: var(--text2); font-size: 0.85rem; font-weight: 600; }
 
-
 /* ---------------------------------------------------------------- switching themes (see paint() in ui/theme.ts) */
 
 /* where view transitions exist, the whole page cross-fades as one snapshot */
@@ -322,69 +321,8 @@ textarea.input { height: auto; min-height: 84px; padding: 10px 12px; resize: ver
 /* elsewhere, each element's colors fade */
 html.theme-switching body, html.theme-switching body * { transition: background-color 300ms var(--ease), color 300ms var(--ease), border-color 300ms var(--ease), fill 300ms, stroke 300ms !important; }
 
-/* ---------------------------------------------------------------- guided tours */
+/* ---------------------------------------------------------------- the "What's new" note */
 
-[data-tour] { scroll-margin: 24px; }
-.tour { position: fixed; inset: 0; z-index: 76; pointer-events: none; }
-.tour-blocks > div { position: fixed; pointer-events: auto; }
-.tour.paused .tour-blocks > div { pointer-events: none; }
-.tour-spot {
-  position: fixed; border-radius: var(--r-lg); pointer-events: none; opacity: 0;
-  box-shadow: 0 0 0 2px var(--accent), 0 0 0 200vmax rgba(8, 12, 22, 0.52);
-  transition: opacity var(--dur-base) var(--ease), left var(--dur-base) var(--ease), top var(--dur-base) var(--ease), width var(--dur-base) var(--ease), height var(--dur-base) var(--ease);
-}
-.tour-spot.none { left: 50% !important; top: 50% !important; width: 0 !important; height: 0 !important; box-shadow: 0 0 0 200vmax rgba(8, 12, 22, 0.52); }
-.tour-spot.jump { transition: opacity var(--dur-base) var(--ease); }
-.tour.on .tour-spot { opacity: 1; }
-.tour-card {
-  position: fixed; left: 50%; top: 50%; width: min(360px, calc(100vw - 24px)); max-height: calc(100vh - 24px); overflow: auto;
-  display: grid; gap: 10px; padding: 16px 18px 14px; border-radius: var(--r-lg); outline: none;
-  background: var(--card); color: var(--text); border: 1px solid var(--line-strong); box-shadow: var(--shadow-3);
-  opacity: 0; transform: translateY(6px); pointer-events: none;
-  transition: opacity var(--dur-base) var(--ease), transform var(--dur-base) var(--ease);
-}
-.tour.on .tour-card { opacity: 1; transform: none; pointer-events: auto; }
-.tour-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: -4px -6px -4px 0; }
-.tour-count { font-size: 0.78rem; font-weight: 700; color: var(--text2); letter-spacing: 0.02em; }
-.tour-card h2 { margin: 0; font-size: 1.15rem; }
-.tour-card p { margin: 0; line-height: 1.5; }
-.tour-look, .tour-try { display: flex; gap: 6px; align-items: baseline; font-size: 0.9rem; padding: 8px 10px; border-radius: var(--r); }
-.tour-look { background: var(--surface-2); color: var(--text2); }
-.tour-try { background: var(--accent-soft); color: var(--accent-text); }
-.tour-look svg, .tour-try svg { flex: none; align-self: center; }
-.tour-bar { height: 4px; border-radius: 99px; background: var(--surface-3); overflow: hidden; }
-.tour-bar i { display: block; height: 100%; background: var(--accent); border-radius: inherit; transition: width var(--dur-base) var(--ease); }
-.tour-actions { display: flex; justify-content: space-between; gap: 8px; }
-html[data-motion='reduced'] .tour-card { transform: none; }
-
-.tours-intro { margin: 0; }
-.tour-list { list-style: none; margin: 8px 0 0; padding: 0; display: grid; }
-.tour-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); }
-.tour-row:first-child { border-top: 0; }
-.tour-row b, .tour-row small { display: block; }
-.tour-row small { margin-top: 2px; }
-.tour-done { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--line-strong); color: var(--knew-text); }
-.tour-done.on { border-color: transparent; background: var(--knew-soft); }
-
-.tour-offer { display: flex; align-items: center; gap: 14px; padding: 14px 18px; margin-bottom: 12px; border-color: var(--accent); animation: rise-in var(--dur-page) var(--ease) both; }
-.tour-offer p { margin: 2px 0 0; }
-.tour-offer .row { flex: none; gap: 8px; }
-.tour-offer-icon { flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--accent-soft); color: var(--accent-text); }
-
-/* confetti for a new best */
-.confetti { position: fixed; inset: 0; z-index: 95; pointer-events: none; overflow: hidden; }
-.confetti i { position: absolute; top: -16px; border-radius: 1px; opacity: 0; animation: confetti-fall linear both; }
-.confetti i.round { border-radius: 50%; }
-@keyframes confetti-fall {
-  0% { opacity: 1; transform: translate3d(0, 0, 0) rotate(0); }
-  85% { opacity: 1; }
-  100% { opacity: 0; transform: translate3d(var(--drift), 105vh, 0) rotate(var(--spin)); }
-}
-
-/* the hidden frame a word list prints from */
-.print-frame { position: fixed; right: 0; bottom: 0; width: 0; height: 0; border: 0; visibility: hidden; }
-
-/* the "What's new" note */
 .whats-new h3 { margin: 4px 0 8px; }
 .whats-new-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 22px; }
 .whats-new-list li { display: flex; gap: 12px; align-items: flex-start; }

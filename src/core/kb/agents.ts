@@ -181,7 +181,7 @@ const DEFS: readonly AgentDef[] = [
   },
   {
     id: 'deadlock', name: 'Deadlock', role: 'sentinel', released: '2023-06-27', solo: 0.45, skill: 0.5, pop: 0.6, pro: 3,
-    caps: 'stall .8 CE; anchor .7 CQ; flank .65 Q; disrupt .4 EQ; retake .35 X',
+    caps: 'stall .8 CE; anchor .7 EQ; flank .65 Q; disrupt .4 CQ; retake .35 X',
     line: 'Barrier walls and sound sensors that stop a rush cold.',
   },
   {

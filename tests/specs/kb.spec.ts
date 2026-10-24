@@ -58,6 +58,15 @@ describe('kits', () => {
   spec('ability names leave out gun play and alternate names', () => {
     eq(abilityNames('omen', 'EG'), ['Dark Cover']);
     eq(abilityNames('jett', 'G'), []);
+    eq(abilityNames('kayo', 'Q'), ['FLASH/drive']);
+    eq(abilityNames('astra', 'X'), ['Cosmic Divide']);
+  });
+  spec('abilities sit on the keys players press, with names in normal case', () => {
+    eq(abilityOn('phoenix', 'Q')?.name, 'Curveball');
+    eq(abilityOn('phoenix', 'E')?.name, 'Hot Hands');
+    eq(abilityOn('deadlock', 'C')?.name, 'GravNet');
+    eq(abilityOn('deadlock', 'E')?.name, 'Barrier Mesh');
+    for (const a of AGENTS) for (const x of kitOf(a.id)!.abilities) ok(/[a-z]/.test(x.name), `${a.name}: “${x.name}”`);
   });
 });
 
@@ -74,6 +83,7 @@ describe('maps', () => {
       for (const n of [m.needs.both, m.needs.attack, m.needs.defense]) parseNeeds(n, m.name);
       for (const s of m.sites) for (const n of [s.needs.both, s.needs.attack, s.needs.defense]) parseNeeds(n, `${m.name} ${s.id}`);
       for (const name of Object.keys(m.aka ?? {})) ok(m.callouts.some((c) => c.name === name), `${m.name}: “${name}” is a callout`);
+      for (const name of Object.keys(m.places ?? {})) ok(m.callouts.some((c) => c.name === name), `${m.name}: “${name}” is a callout to move`);
       eq(mapById(m.id), m);
     }
   });

@@ -145,7 +145,11 @@ export interface Tokens { [name: string]: string }
 
 export interface GeneratedTheme { tokens: Tokens; scheme: Base; nudged: string[] }
 
-const RATING_HUES = { again: '#D64545', almost: '#D89614', knew: '#2E9D5B' } as const;
+/** Colors that mean something: good and bad news, a warning, and the five tiers (S down to D). */
+const MEANING_HUES = {
+  good: '#2E9D5B', warn: '#D89614', bad: '#D64545',
+  'tier-s': '#D9534F', 'tier-a': '#E07B2E', 'tier-b': '#C9A20E', 'tier-c': '#4FA14A', 'tier-d': '#4A87C9',
+} as const;
 
 /** Every color of the interface from a theme's picks (and an optional accent override). */
 export function generateTheme(p: ThemePicks, accentOverride = ''): GeneratedTheme {
@@ -186,12 +190,10 @@ export function generateTheme(p: ThemePicks, accentOverride = ''): GeneratedThem
     'accent-soft': accentSoft,
     'accent-line': mix(surface, accent, 0.45),
     'card-text': fix('card-text', text, [card], 7),
-    'card-rule': mix(card, dark ? '#7C9BD6' : '#8FB0E8', dark ? 0.2 : 0.35),
-    'card-margin': mix(card, '#E0656A', dark ? 0.35 : 0.45),
     focus: accentText,
     shadow: dark ? 'rgba(0, 0, 0, 0.45)' : 'rgba(22, 30, 46, 0.12)',
   };
-  for (const [name, hue] of Object.entries(RATING_HUES)) {
+  for (const [name, hue] of Object.entries(MEANING_HUES)) {
     const base = dark ? mix(hue, '#FFFFFF', 0.18) : hue;
     t[name] = fix(name, base, [surface, card], 3);
     t[`${name}-soft`] = mix(surface, t[name] as string, dark ? 0.22 : 0.14);

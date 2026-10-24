@@ -5,7 +5,6 @@
   --font-serif: 'Literata Variable', 'Literata', Georgia, 'Times New Roman', serif;
   --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --font-mono: 'Atkinson Hyperlegible Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
-  --font-card: var(--font-serif);
 
   --r-xs: 4px;
   --r-sm: 7px;
@@ -44,8 +43,6 @@ html { font-size: 16px; -webkit-text-size-adjust: 100%; }
 html[data-text='s'] { font-size: 15px; }
 html[data-text='l'] { font-size: 17.5px; }
 html[data-text='xl'] { font-size: 19px; }
-html[data-card-font='sans'] { --font-card: var(--font-sans); }
-html[data-card-font='legible'] { --font-card: var(--font-ui); }
 
 *, *::before, *::after { box-sizing: border-box; }
 
@@ -100,8 +97,8 @@ img, svg { display: block; }
 .row { display: flex; align-items: center; gap: var(--sp-2); }
 .row-between { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); }
 .row.wrap { flex-wrap: wrap; }
-/* places a set name sits in a flex or grid row, which would otherwise keep a long word whole */
-.page-head .titles > *, .game-title, .test-outlook .row-between > b, .mastery-list .grow > *, .dialog-head h2, .toast > span { min-width: 0; overflow-wrap: anywhere; }
+/* places a name sits in a flex or grid row, which would otherwise keep a long word whole */
+.page-head .titles > *, .dialog-head h2, .toast > span { min-width: 0; overflow-wrap: anywhere; }
 .stack { display: flex; flex-direction: column; gap: var(--sp-3); }
 .spacer { flex: 1; }
 .visually-hidden { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
@@ -123,22 +120,6 @@ html[data-motion='off'] *, html[data-motion='off'] *::before, html[data-motion='
   transition: none !important;
 }
 
-/* effects that play once and end out of sight (pay and damage numbers, a beaten foe, a pulled weed):
-   with motion reduced they fade away in place, and with it off they show for a moment, then go,
-   rather than staying over the next question */
-html[data-motion='reduced'] :is(.pay-pop, .float-coin, .scene .dmg, .duel-scene .foe-wrap.down, .duel-scene .charge-burst, .voyage-scene .raider, .garden-scene .picked, .garden-scene .weed.pulled, .climb-scene .walk-in, .climb-scene .walk-out, .rain-flash.right, .rate-burst, .streak-moment) {
-  animation: fx-fade 1000ms linear both !important;
-}
-html[data-motion='off'] :is(.pay-pop, .float-coin, .scene .dmg, .duel-scene .foe-wrap.down, .duel-scene .charge-burst, .voyage-scene .raider, .garden-scene .picked, .garden-scene .weed.pulled, .climb-scene .walk-in, .climb-scene .walk-out, .rain-flash.right, .rate-burst, .streak-moment) {
-  animation: fx-hide 1000ms steps(1, end) both !important;
-}
-/* a pause draining away is a countdown, not decoration: it keeps counting with motion reduced */
-html[data-motion='reduced'] .rain-flash.right.almost, html[data-motion='off'] .rain-flash.right.almost { animation-duration: 1800ms !important; }
-html[data-motion='reduced'] .cooldown-ring circle { animation: cooldown var(--cd, 1s) linear forwards !important; }
-html[data-motion='reduced'] .match-grid.locked::before { animation: lock-drain var(--lock, 0.7s) linear forwards !important; }
-
-@keyframes fx-fade { 0%, 70% { opacity: 1; } 100% { opacity: 0; } }
-@keyframes fx-hide { to { opacity: 0; } }
 @keyframes fade-only { from { opacity: 0; } to { opacity: 1; } }
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes rise-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
@@ -146,7 +127,5 @@ html[data-motion='reduced'] .match-grid.locked::before { animation: lock-drain v
 @keyframes pop-in { 0% { opacity: 0; scale: 0.92; } 100% { opacity: 1; scale: none; } }
 @keyframes page-in { from { opacity: 0; transform: translateX(14px); } to { opacity: 1; transform: none; } }
 @keyframes page-in-back { from { opacity: 0; transform: translateX(-14px); } to { opacity: 1; transform: none; } }
-/* moves with `translate`, so a shaking element keeps its own transform (a falling word's place, a turned card) */
-@keyframes shake { 0%, 100% { translate: none; } 20% { translate: -5px 0; } 40% { translate: 5px 0; } 60% { translate: -3px 0; } 80% { translate: 2px 0; } }
 @keyframes pulse { 0% { scale: 1; } 40% { scale: 1.08; } 100% { scale: 1; } }
 @keyframes spin { to { transform: rotate(360deg); } }

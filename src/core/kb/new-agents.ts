@@ -3,7 +3,7 @@
  *
  * Hush was revealed as a Duelist arriving on 27 October 2026. Only the kit the game's makers showed
  * is used: Telekinesis (passive: picks up weapons and the Spike, and uses switches, from farther
- * away), Displacement (a thrown blast that pulls players to its centre and concusses anyone who hits
+ * away), Displacement (a thrown blast that pulls players to its center and concusses anyone who hits
  * a surface or another player), Flashbulb (a flash), Flow (an anchor she pulls herself toward) and
  * Suspension (ultimate: lifts the players caught in it into the air).
  *
@@ -37,7 +37,7 @@ export const NEW_KITS: Record<string, Kit> = {
     about: 'A new Duelist who moves enemies, and herself, with telekinesis. Her numbers are early estimates until she has been played for a while.',
     colors: ['#3a2f5c', '#0f1923', '#5c4a8f'],
     abilities: [
-      { key: 'C', slot: 'grenade', name: 'Displacement', text: 'Throw a blast that pulls players to its centre. Anyone pulled into a surface or another player is Concussed.' },
+      { key: 'C', slot: 'grenade', name: 'Displacement', text: 'Throw a blast that pulls players to its center. Anyone pulled into a surface or another player is Concussed.' },
       { key: 'Q', slot: 'ability1', name: 'Flashbulb', text: 'A flash that Blinds players looking at it.' },
       { key: 'E', slot: 'ability2', name: 'Flow', text: 'Place an anchor and pull yourself toward it to move quickly.' },
       { key: 'X', slot: 'ultimate', name: 'Suspension', text: 'Lift the players caught in its area into the air.' },

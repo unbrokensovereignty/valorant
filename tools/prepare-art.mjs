@@ -46,15 +46,23 @@ console.log(`Prepared ${n} images in assets/.`);
 const slug = (name) => name.toLowerCase().replace(/[^a-z]/g, '');
 const tidy = (t) => (t ?? '').replace(/\s+/g, ' ').trim();
 const KEYS = { Grenade: 'C', Ability1: 'Q', Ability2: 'E', Ultimate: 'X', Passive: 'Passive' };
+// the API's slots don't match the keys players press for a few agents
+const KEY_FIXES = { phoenix: { Ability1: 'E', Ability2: 'Q' }, deadlock: { Grenade: 'E', Ability2: 'C' } };
+const ORDER = ['C', 'Q', 'E', 'X', 'Passive'];
+// abilities with two names in the API, by the name players use
+const NAME_FIXES = { astra: { ability2: 'Nebula', ultimate: 'Cosmic Divide' } };
+/** "DIMENSIONAL DRIFT" → "Dimensional Drift"; names with any small letters ("FRAG/ment") stay as they are. */
+const nameCase = (t) => (/[a-z]/.test(t) ? t : t.toLowerCase().replace(/\b\p{L}/gu, (c) => c.toUpperCase()));
 const agents = JSON.parse(await readFile(join(src, 'agents.json'), 'utf8')).data.filter((a) => a.isPlayableCharacter);
 const kits = {};
 for (const a of agents.sort((x, y) => slug(x.displayName).localeCompare(slug(y.displayName)))) {
-  const order = ['Grenade', 'Ability1', 'Ability2', 'Ultimate', 'Passive'];
-  kits[slug(a.displayName)] = {
+  const id = slug(a.displayName);
+  const keyOf = (slot) => KEY_FIXES[id]?.[slot] ?? KEYS[slot];
+  kits[id] = {
     about: tidy(a.description),
     colors: (a.backgroundGradientColors ?? []).slice(0, 3).map((c) => `#${c.slice(0, 6)}`),
-    abilities: a.abilities.filter((x) => KEYS[x.slot]).sort((x, y) => order.indexOf(x.slot) - order.indexOf(y.slot))
-      .map((x) => ({ key: KEYS[x.slot], slot: x.slot.toLowerCase(), name: tidy(x.displayName), text: tidy(x.description) })),
+    abilities: a.abilities.filter((x) => KEYS[x.slot]).sort((x, y) => ORDER.indexOf(keyOf(x.slot)) - ORDER.indexOf(keyOf(y.slot)))
+      .map((x) => ({ key: keyOf(x.slot), slot: x.slot.toLowerCase(), name: NAME_FIXES[id]?.[x.slot.toLowerCase()] ?? nameCase(tidy(x.displayName)), text: tidy(x.description) })),
   };
 }
 const maps = JSON.parse(await readFile(join(src, 'maps.json'), 'utf8')).data.filter((m) => /Sites$/.test(m.tacticalDescription ?? '') && m.callouts);

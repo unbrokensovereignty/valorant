@@ -9,7 +9,6 @@ import './ui/styles/base.css';
 import './ui/styles/components.css';
 import './ui/styles/shell.css';
 import './ui/styles/pages.css';
-import './ui/styles/progress.css';
 import './ui/styles/planner.css';
 
 import { installTooltips } from './ui/tooltip.ts';
