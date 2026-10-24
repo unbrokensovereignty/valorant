@@ -36,7 +36,9 @@ export interface MapDef {
   places?: Record<string, readonly [x: number, y: number]>;
 }
 
-/** The competitive pool since patch 13.08 (13 October 2026); it changes next on 6 January 2027. */
+/** The game's patch that the numbers (pick rates, the map pool) were taken at. */
+export const PATCH = '13.08';
+/** The competitive pool since that patch (13 October 2026); it changes next on 6 January 2027. */
 export const POOL_SINCE = '2026-10-13';
 
 const DEFS: readonly MapDef[] = [
@@ -216,6 +218,9 @@ const BY_ID = new Map(MAPS.map((m) => [m.id, m]));
 export const mapById = (id: string): MapInfo | undefined => BY_ID.get(id);
 export const isMap = (v: unknown): v is MapId => typeof v === 'string' && BY_ID.has(v);
 export const POOL: readonly MapInfo[] = MAPS.filter((m) => m.pool);
+/** A callout as players say it: the spawns are "Attack spawn" and "Defense spawn". */
+export const spotName = (name: string): string => (name === 'Attacker Side Spawn' ? 'Attack spawn' : name === 'Defender Side Spawn' ? 'Defense spawn' : name);
+
 /** A callout's name with what players also call it: "A Tower (Heaven)". */
 export function calloutLabel(map: MapInfo, name: string): string {
   const aka = map.aka?.[name];

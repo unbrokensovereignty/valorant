@@ -23,7 +23,7 @@ import { AGENTS_BY_NAME } from '../core/kb/agents.ts';
 import { MAPS } from '../core/kb/maps.ts';
 import { ROLES } from '../core/kb/roles.ts';
 import { askedLine, askedTitle } from './planner/words.ts';
-import { openPlanner, planWith } from './planner/store.ts';
+import { openPlanner, planWith, question } from './planner/store.ts';
 import { backUpNow } from './backup.tsx';
 import { MapThumb } from './art.tsx';
 
@@ -59,7 +59,8 @@ function NavLink({ item, count }: { item: NavItem; count?: number }) {
 function PlanSwitch() {
   const r = watch('meta');
   const app = r.app();
-  const q = app.draft;
+  // the Planner's question as it stands, or as it was last left
+  const q = question.value ?? app.draft;
   const open = (e: MouseEvent) => {
     const items: MenuItem[] = app.recent.slice(0, 6).map((x) => ({ label: `${askedTitle(x)} · ${askedLine(x)}`, icon: 'refresh', run: () => openPlanner(x) }));
     if (items.length) items.push('divider');
@@ -238,6 +239,9 @@ function onKey(e: KeyboardEvent) {
 
 // ---------------------------------------------------------------- the app
 
+/** Pages with side-by-side panels get more room on a wide screen. */
+const WIDE: readonly Page[] = ['planner', 'rankings', 'maps', 'agents', 'saved'];
+
 export function App() {
   const main = useRef<HTMLElement>(null);
   const { page, arg } = route.value;
@@ -256,7 +260,7 @@ export function App() {
     <div class={`shell${sidebarNarrow.value ? ' narrow' : ''}`}>
       <Sidebar />
       <main class="main" ref={main} id="main">
-        <div class={`page${routeDir.value < 0 ? ' back' : ''}`} key={page}>
+        <div class={`page${routeDir.value < 0 ? ' back' : ''}${WIDE.includes(page) ? ' wide' : ''}`} key={page}>
           <Banners />
           <View arg={arg} />
         </div>

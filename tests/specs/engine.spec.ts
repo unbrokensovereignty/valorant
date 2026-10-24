@@ -7,7 +7,7 @@ import { D, N, ROLE_OF, modelFor, type Situation } from '../../src/core/engine/m
 import { anyRoles, scoreTeam, searchTeams, TopK, walkTeams, type Rules } from '../../src/core/engine/search.ts';
 import { askFor, fillLikelihood, pickWeight, searchParties, type PartyRules } from '../../src/core/engine/party.ts';
 import { newQuery, sanitizeQuery, situationsOf, asksBest, nothingFixed, type Query } from '../../src/core/engine/query.ts';
-import { agentFitOf, fitOf, poolsFit, referenceFor, rulesOf, solve } from '../../src/core/engine/plan.ts';
+import { agentFitOf, fitOf, poolsFit, referenceFor, rulesOf, solve, teamFit } from '../../src/core/engine/plan.ts';
 import { explainTeam } from '../../src/core/engine/explain.ts';
 import { TIERS, tierOf } from '../../src/core/engine/weights.ts';
 
@@ -130,6 +130,15 @@ describe('fits and tiers', () => {
     eq(answer.ref, ref);
     ok(answer.comps[0]!.fit < 100, 'a fixed pick fits less than the best team');
   });
+  spec('a saved team gets the same fit the answers gave it', () => {
+    const s = at('lotus', 'attack', 'platinum', ['A']);
+    const answer = solve(q({ map: 'lotus', side: 'attack', rank: 'platinum', sites: ['A'] }), s, 3);
+    for (const c of answer.comps) {
+      const t = teamFit(s, [...c.team].reverse(), true);
+      near(t.fit, c.fit, 1e-9, c.team.join());
+      eq(t.tier, c.tier);
+    }
+  });
 });
 
 describe('questions', () => {
@@ -244,7 +253,8 @@ describe('duos and trios', () => {
     for (const c of a.comps) {
       eq(c.party.length, 3);
       ok(c.party.includes('viper') && c.team.includes('viper'));
-      ok(c.bestFit! >= c.fit, 'the best fill is at least the expected one');
+      ok(c.bestFit! >= c.expected!, 'the best fill is at least the expected one');
+      ok(c.fit <= 100 && c.expected! <= c.fit + 1e-9, 'ranked against the best party, which a five-stack beats');
       eq(c.team.length, 5);
     }
     ok(a.askFor && a.askFor.length === 4, 'all four roles');

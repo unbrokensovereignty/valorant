@@ -34,6 +34,9 @@ export function currentQuestion(): Query {
   return q;
 }
 
+/** A situation's best answer, comparable across situations (a party's expected fit, not its rank among parties). */
+export const bestOf = (a: SituationAnswer): number => a.comps[0]?.expected ?? a.comps[0]?.fit ?? -1;
+
 let token = 0, timer = 0, recentTimer = 0;
 /** How long a question must stay the same after it's answered before it counts as asked (for Recent). */
 const SETTLED_MS = 4000;
@@ -68,7 +71,7 @@ export async function answer(): Promise<void> {
     }
     if (mine !== token) return;
     // the best situations first, when there are several
-    answers.sort((a, b) => (b.comps[0]?.fit ?? -1) - (a.comps[0]?.fit ?? -1));
+    answers.sort((a, b) => bestOf(b) - bestOf(a));
     const ms = performance.now() - started;
     run.value = { query: q, status: 'done', done: answers.length, total: answers.length, answers, ms };
     // a sound only when there was a wait to end

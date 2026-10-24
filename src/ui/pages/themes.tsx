@@ -26,8 +26,8 @@ export function ThemePreview({ picks, big }: { picks: ThemePicks; big?: boolean 
     <div class={`theme-preview${big ? ' big' : ''}`} style={themeVars(picks)} aria-hidden="true">
       <div class="tp-side"><i class="on" /><i /><i /><i /></div>
       <div class="tp-main">
-        <div class="tp-card"><b>la mariposa</b><span>the butterfly</span></div>
-        <div class="tp-row"><span class="tp-btn again" /><span class="tp-btn almost" /><span class="tp-btn knew" /></div>
+        <div class="tp-card"><b>Ascent</b><span>A split through Mid</span></div>
+        <div class="tp-row"><span class="tp-btn s" /><span class="tp-btn a" /><span class="tp-btn b" /><span class="tp-btn c" /></div>
       </div>
     </div>
   );
@@ -35,7 +35,8 @@ export function ThemePreview({ picks, big }: { picks: ThemePicks; big?: boolean 
 
 /** Plain names for the colors a theme can have adjusted. */
 function friendlyToken(n: string): string {
-  if (/^(on-)?(again|almost|knew)/.test(n)) return 'answer button colors';
+  if (/^(on-)?tier/.test(n)) return 'tier colors';
+  if (/^(on-)?(good|warn|bad)/.test(n)) return 'colors for good and bad news';
   if (/accent/.test(n)) return 'accent';
   if (n.startsWith('card')) return 'card text';
   if (/^text/.test(n)) return 'text';

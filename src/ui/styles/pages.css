@@ -80,7 +80,7 @@
 .tp-row { display: flex; gap: 5px; }
 .tp-btn { width: 22px; height: 9px; border-radius: 3px; }
 .big .tp-btn { width: 48px; height: 18px; border-radius: 6px; }
-.tp-btn.again { background: var(--bad); } .tp-btn.almost { background: var(--warn); } .tp-btn.knew { background: var(--good); }
+.tp-btn.s { background: var(--tier-s); } .tp-btn.a { background: var(--tier-a); } .tp-btn.b { background: var(--tier-b); } .tp-btn.c { background: var(--tier-c); }
 
 .theme-editor { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 24px; color: var(--text); }
 .color-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
@@ -91,6 +91,8 @@
 /* ---------------------------------------------------------------- help */
 
 .guide h2 { margin-bottom: 10px; }
+.guide-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
+@media (max-width: 1000px) { .guide-cols { grid-template-columns: minmax(0, 1fr); } }
 .guide ol { margin: 0; padding-left: 1.3em; display: grid; gap: 8px; }
 .guide p { margin: 0; }
 .key-table { width: 100%; border-collapse: collapse; margin-top: 8px; }

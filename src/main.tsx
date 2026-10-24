@@ -10,6 +10,7 @@ import './ui/styles/components.css';
 import './ui/styles/shell.css';
 import './ui/styles/pages.css';
 import './ui/styles/planner.css';
+import './ui/styles/browse.css';
 
 import { installTooltips } from './ui/tooltip.ts';
 import { render } from 'preact';

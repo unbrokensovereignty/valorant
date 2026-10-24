@@ -17,7 +17,7 @@ export const sitesWord = (sites: readonly string[]): string => (sites.length ? `
 const names = (ids: readonly string[]) => listJoin(ids.map((id) => agentById(id)?.name ?? id));
 
 /** "Haven, attack, C site". */
-export function askedTitle(q: Pick<Query, 'map' | 'side' | 'sites'>): string {
+export function askedTitle(q: { map: string; side: string; sites: readonly string[] }): string {
   const parts = [mapWord(q.map)];
   if (q.side !== 'both') parts.push(sideWord(q.side).toLowerCase());
   if (q.sites.length && q.map !== 'any' && q.map !== 'best') parts.push(sitesWord(q.sites));
