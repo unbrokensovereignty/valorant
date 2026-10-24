@@ -61,8 +61,21 @@ interface Fills {
   base: Float64Array;
   pair: Float64Array;
   counts: Uint8Array;
+  /** Each fill's role counts packed into one number (see `packRoles`). */
+  roles: Int32Array;
   weight: Float64Array;
 }
+
+/**
+ * Role counts packed as one base-6 digit per role, so a team's packed counts are the sum of its
+ * parts' and a table can hold what each mix of roles costs.
+ */
+const packRoles = (counts: ArrayLike<number>): number => {
+  let c = 0;
+  for (let r = ROLES_N - 1; r >= 0; r--) c = c * 6 + counts[r]!;
+  return c;
+};
+const PACKED = 6 ** ROLES_N;
 
 /** Every way `size` random teammates could fill from `pool`. */
 function allFills(m: Model, pool: readonly number[], size: number, rankT: number): Fills {
@@ -75,7 +88,7 @@ function allFills(m: Model, pool: readonly number[], size: number, rankT: number
   const n = combos.length;
   const f: Fills = {
     size, n, maskLo: new Int32Array(n), maskHi: new Int32Array(n), agents: new Int32Array(n * Math.max(1, size)), miss: new Float64Array(n * D).fill(1),
-    base: new Float64Array(n), pair: new Float64Array(n), counts: new Uint8Array(n * ROLES_N), weight: new Float64Array(n),
+    base: new Float64Array(n), pair: new Float64Array(n), counts: new Uint8Array(n * ROLES_N), roles: new Int32Array(n), weight: new Float64Array(n),
   };
   combos.forEach((c, i) => {
     let w = 1;
@@ -90,6 +103,7 @@ function allFills(m: Model, pool: readonly number[], size: number, rankT: number
       w *= pickWeight(a, rankT);
     });
     f.weight[i] = w;
+    f.roles[i] = packRoles(f.counts.subarray(i * ROLES_N, (i + 1) * ROLES_N));
   });
   return f;
 }
@@ -122,12 +136,24 @@ export function searchParties(m: Model, rules: PartyRules, size: number, rankT =
     for (let j = 0; j < D; j++) lockMiss[j]! *= MISS[a * D + j]!;
   });
   const partyRules: Rules = { include: rules.include, roles: rules.roles, allowed: (i) => !lockedSet.has(i) && rules.allowed(i), fits: rules.fits };
+  // what each mix of roles costs, and how likely random teammates are to leave the team with it
+  const roleTable = new Float64Array(PACKED), likeTable = new Float64Array(PACKED);
+  const digits = new Int32Array(ROLES_N);
+  for (let c = 0; c < PACKED; c++) {
+    for (let r = 0, x = c; r < ROLES_N; r++, x = Math.floor(x / 6)) digits[r] = x % 6;
+    roleTable[c] = roleCostOf(m, digits);
+    likeTable[c] = fillLikelihood(digits);
+  }
+  const lockRoles = packRoles(lockCounts);
   const w = m.weight;
-  const teamMiss = new Float64Array(D);
-  const counts = new Int32Array(ROLES_N);
+  /** The weight of each strength the party and locked teammates leave uncovered. */
+  const open = new Float64Array(D);
+  /** Each agent's pairs with the party and the locked teammates. */
+  const pairTo = new Float64Array(N);
   const top = new TopK(keep);
   const picks = new Map<string, PartyPick>();
   const bestWith: (PartyPick | null)[] = Array(N).fill(null);
+  const { n: fN, size: fSize, maskLo: fLo, maskHi: fHi, miss: fMiss, agents: fAgents, base: fBase, pair: fPair, roles: fRoles, weight: fWeight } = fills;
   const count = walkTeams(m, partyRules, size, (team, miss, baseSum, pairSum, partyCounts) => {
     const party = Array.from(team.subarray(0, size));
     let maskLo = lockLo, maskHi = lockHi, cross = lockPair;
@@ -136,33 +162,33 @@ export function searchParties(m: Model, rules: PartyRules, size: number, rankT =
       maskHi |= hi(a);
       for (const l of locked) cross += m.pair[a * N + l]!;
     }
-    for (let j = 0; j < D; j++) teamMiss[j] = miss[j]! * lockMiss[j]!;
+    for (let j = 0; j < D; j++) open[j] = w[j]! * miss[j]! * lockMiss[j]!;
     const fixed = [...party, ...locked];
+    for (let f = 0; f < N; f++) {
+      let p = 0;
+      for (const a of fixed) p += m.pair[f * N + a]!;
+      pairTo[f] = p;
+    }
+    const roles0 = packRoles(partyCounts) + lockRoles;
+    const s0 = 1 + baseSum + lockBase + pairSum + cross;
     let sw = 0, sws = 0, sws2 = 0, likelyW = -1, likelyS = 0, likelyI = -1, bestS = -Infinity, bestI = -1;
-    for (let i = 0; i < fills.n; i++) {
-      if ((fills.maskLo[i]! & maskLo) | (fills.maskHi[i]! & maskHi)) continue;
+    for (let i = 0; i < fN; i++) {
+      if ((fLo[i]! & maskLo) | (fHi[i]! & maskHi)) continue;
       let missed = 0;
-      for (let j = 0; j < D; j++) missed += w[j]! * teamMiss[j]! * fills.miss[i * D + j]!;
-      let pairs = fills.pair[i]!;
-      for (let k = 0; k < fills.size; k++) {
-        const f = fills.agents[i * fills.size + k]!;
-        for (const a of fixed) pairs += m.pair[f * N + a]!;
-      }
-      for (let r = 0; r < ROLES_N; r++) counts[r] = partyCounts[r]! + lockCounts[r]! + fills.counts[i * ROLES_N + r]!;
-      const s = 1 - missed + baseSum + lockBase + fills.base[i]! + pairSum + cross + pairs + roleCostOf(m, counts);
-      const wt = fills.weight[i]! * fillLikelihood(counts);
+      for (let j = 0, o = i * D; j < D; j++) missed += open[j]! * fMiss[o + j]!;
+      let pairs = fPair[i]!;
+      for (let k = 0, o = i * fSize; k < fSize; k++) pairs += pairTo[fAgents[o + k]!]!;
+      const roles = roles0 + fRoles[i]!;
+      const s = s0 - missed + fBase[i]! + pairs + roleTable[roles]!;
+      const wt = fWeight[i]! * likeTable[roles]!;
       sw += wt; sws += wt * s; sws2 += wt * s * s;
       if (wt > likelyW) { likelyW = wt; likelyS = s; likelyI = i; }
       if (s > bestS) { bestS = s; bestI = i; }
     }
-    if (sw <= 0 && fills.size > 0) return;
+    if (sw <= 0) return;
     const fillOf = (i: number) => (i < 0 ? [] : Array.from(fills.agents.subarray(i * fills.size, (i + 1) * fills.size)));
-    const exp = fills.size ? sws / sw : (() => {
-      for (let r = 0; r < ROLES_N; r++) counts[r] = partyCounts[r]! + lockCounts[r]!;
-      let missed = 0;
-      for (let j = 0; j < D; j++) missed += w[j]! * teamMiss[j]!;
-      return 1 - missed + baseSum + lockBase + pairSum + cross + roleCostOf(m, counts);
-    })();
+    // with nobody left to fill there's one (empty) fill, and the team is the party and the locked teammates
+    const exp = fills.size ? sws / sw : likelyS;
     const spread = fills.size ? Math.sqrt(Math.max(0, sws2 / sw - exp * exp)) : 0;
     const sorted = (xs: number[]) => xs.sort((a, b) => a - b);
     const pick: PartyPick = {

@@ -90,7 +90,7 @@ function Plans({ open }: { open: string }) {
   const chosen = plans.find((p) => p.id === open);
   if (!plans.length) {
     return (
-      <Empty title="No saved plans yet" actions={<Button kind="primary" icon="planner" onClick={() => go('planner')}>Open the Planner</Button>}>
+      <Empty level={2} title="No saved plans yet" actions={<Button kind="primary" icon="planner" onClick={() => go('planner')}>Open the Planner</Button>}>
         Open a comp on the Planner and press Save plan to keep it here, with its plays, tips and a note of your own.
       </Empty>
     );

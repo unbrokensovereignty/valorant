@@ -92,6 +92,7 @@ export function explainTeam(m: Model, ids: readonly string[]): Explanation {
     if (counts[r] === 0 && (r !== 'sentinel' || s.side !== 'attack') && (r !== 'duelist' || s.side !== 'defense')) cons.push(ROLE_GAP[r].none);
     else if (counts[r] >= 3) cons.push(ROLE_GAP[r].many);
   }
+  if (map?.twoControllers && counts.controller === 1 && t >= 0.5) cons.push(`Only one controller, where pro teams on ${map.name} usually run two: there are fewer smokes to go around.`);
   // strengths the situation needs and the team has
   for (const row of strengths.filter((r) => r.need >= 1 && r.cover >= 0.8).sort((a, b) => b.need * b.cover - a.need * a.cover).slice(0, 3)) {
     const who = row.by.filter((b) => b.value >= 0.45).slice(0, 2).map((b) => agentWithAbility(agentById(b.id)!, row.dim));

@@ -29,6 +29,8 @@ export interface MapDef {
   /** What wins on this map, in a sentence. */
   keys: string;
   needs: { both?: string; attack?: string; defense?: string };
+  /** Pro teams run two controllers here, so a team with one gives up a little (SECOND_CONTROLLER in engine/weights.ts). */
+  twoControllers?: boolean;
   sites: readonly SiteDef[];
   /** Other names players use for a callout: the game's name → what people also call it. */
   aka?: Record<string, string>;
@@ -43,7 +45,7 @@ export const POOL_SINCE = '2026-10-13';
 
 const DEFS: readonly MapDef[] = [
   {
-    id: 'abyss', name: 'Abyss', pool: true,
+    id: 'abyss', name: 'Abyss', pool: true, twoControllers: true,
     about: 'An open map with no walls at its edges: fall off and you die. Long sightlines, a contested mid and two wide sites.',
     keys: 'Information and long walls. Pros run Sova with two controllers, often Harbor and Astra.',
     needs: { both: 'wall +.6; smoke +.15; recon +.35; mobility +.1', attack: 'entry +.1', defense: 'anchor +.1; retake +.1' },
@@ -64,7 +66,7 @@ const DEFS: readonly MapDef[] = [
     ],
   },
   {
-    id: 'bind', name: 'Bind', pool: true,
+    id: 'bind', name: 'Bind', pool: true, twoControllers: true,
     about: 'No mid, but two one-way teleporters move players between sites fast. Narrow entrances make utility on each choke decisive.',
     keys: 'Clearing tight chokes and stopping defuses: Viper, Brimstone and Raze shine.',
     needs: { both: 'clear +.3; flash +.15; smoke +.15; wall +.4; flank +.25; postplant +.15', defense: 'stall +.2; flank +.1' },
@@ -75,7 +77,7 @@ const DEFS: readonly MapDef[] = [
     ],
   },
   {
-    id: 'breeze', name: 'Breeze', pool: false,
+    id: 'breeze', name: 'Breeze', pool: false, twoControllers: true,
     about: 'A huge, open map with very long sightlines and wide sites. Crossing open ground is the whole fight.',
     keys: 'Long walls and an Operator: Viper is close to a must, with Sova for information.',
     needs: { both: 'wall +1; smoke +.15; duel +.3; recon +.25; mobility +.2; flank +.1', defense: 'anchor +.15' },
@@ -87,7 +89,7 @@ const DEFS: readonly MapDef[] = [
     ],
   },
   {
-    id: 'corrode', name: 'Corrode', pool: true,
+    id: 'corrode', name: 'Corrode', pool: true, twoControllers: true,
     about: 'A newer two-site map with a three-lane mid. Sites are reached through lobbies with many corners near the plant spots.',
     keys: 'Two controllers with Viper, plus Fade for information; Waylay or Neon to take space.',
     needs: { both: 'wall +.6; smoke +.15; recon +.2', attack: 'entry +.1', defense: 'stall +.15' },
@@ -101,7 +103,7 @@ const DEFS: readonly MapDef[] = [
     id: 'fracture', name: 'Fracture', pool: false,
     about: 'Attackers spawn on both ends and can hit a site from two sides at once; defenders start in the middle.',
     keys: 'Stuns and flank watch: Breach, Brimstone and a sentinel who covers the back.',
-    needs: { both: 'flank +.35; disrupt +.25; clear +.15; smoke +.1; mobility +.15', defense: 'stall +.2; retake +.15' },
+    needs: { both: 'flank +.35; disrupt +.25; clear +.15; smoke +.1; mobility +.15', defense: 'stall +.2; retake +.15; recon +.15; flank +.2' },
     sites: [
       { id: 'A', about: 'Hit from A Main and A Door on one end, or from the other side down A Rope; A Dish and A Drop look over it.', needs: { both: 'disrupt +.15' } },
       { id: 'B', about: 'Hit from B Main and B Tree, or through B Arcade from the far side; B Tower and B Canteen hold over it.', needs: { both: 'clear +.15' } },
@@ -130,7 +132,7 @@ const DEFS: readonly MapDef[] = [
     ],
   },
   {
-    id: 'lotus', name: 'Lotus', pool: true,
+    id: 'lotus', name: 'Lotus', pool: true, twoControllers: true,
     about: 'Three sites linked by rotating doors, with a breakable wall on A. Tight entrances and many corners on every site.',
     keys: 'Clearing corners and smoking chokes: pros always play Omen, usually with Viper, Fade and Raze.',
     needs: { both: 'clear +.3; recon +.2; smoke +.2; wall +.3; flash +.1; mobility +.15', attack: 'postplant +.1', defense: 'anchor +.1' },
@@ -141,7 +143,7 @@ const DEFS: readonly MapDef[] = [
     ],
   },
   {
-    id: 'pearl', name: 'Pearl', pool: false,
+    id: 'pearl', name: 'Pearl', pool: false, twoControllers: true,
     about: 'A long, layered mid and two sites with long main entrances; no tricks, just space to take and hold.',
     keys: 'Smokes placed anywhere and information: Astra is the pro pick.',
     needs: { both: 'smoke +.2; recon +.25; wall +.2; mobility +.1', defense: 'anchor +.15' },
@@ -152,7 +154,7 @@ const DEFS: readonly MapDef[] = [
     ],
   },
   {
-    id: 'split', name: 'Split', pool: false,
+    id: 'split', name: 'Split', pool: false, twoControllers: true,
     about: 'Tight, vertical sites with ropes up to high ground, and a mid that leads to both. Chokes everywhere.',
     keys: 'Smokes and clearing: Viper and Omen together, with Raze and a stun-heavy initiator.',
     needs: { both: 'clear +.3; smoke +.25; disrupt +.15; flank +.2; wall +.4; recon +.1', defense: 'stall +.15' },

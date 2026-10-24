@@ -1,12 +1,12 @@
 import { describe, spec, eq, ok, near } from './harness.ts';
 import { AGENTS, agentById } from '../../src/core/kb/agents.ts';
-import { POOL, MAPS } from '../../src/core/kb/maps.ts';
+import { POOL, MAPS, mapById } from '../../src/core/kb/maps.ts';
 import { RANK_IDS } from '../../src/core/kb/ranks.ts';
 import { ROLE_IDS } from '../../src/core/kb/roles.ts';
-import { D, N, ROLE_OF, modelFor, type Situation } from '../../src/core/engine/model.ts';
+import { D, N, ROLE_OF, modelFor, roleIndex, type Situation } from '../../src/core/engine/model.ts';
 import { anyRoles, scoreTeam, searchTeams, TopK, walkTeams, type Rules } from '../../src/core/engine/search.ts';
 import { askFor, fillLikelihood, pickWeight, searchParties, type PartyRules } from '../../src/core/engine/party.ts';
-import { newQuery, sanitizeQuery, situationsOf, asksBest, nothingFixed, type Query } from '../../src/core/engine/query.ts';
+import { newQuery, placesTaken, sanitizeQuery, situationsOf, asksBest, nothingFixed, type Query } from '../../src/core/engine/query.ts';
 import { agentFitOf, fitOf, poolsFit, referenceFor, rulesOf, solve, teamFit } from '../../src/core/engine/plan.ts';
 import { explainTeam } from '../../src/core/engine/explain.ts';
 import { TIERS, tierOf } from '../../src/core/engine/weights.ts';
@@ -43,6 +43,20 @@ describe('the model', () => {
   });
   spec('a model is kept and handed back for the same situation, whatever order its sites came in', () => {
     eq(modelFor(at('haven', 'attack', 'gold', ['A', 'C'])), modelFor(at('haven', 'attack', 'gold', ['C', 'A'])));
+  });
+  spec('a team with one controller gives up a little on maps where pros run two, more so at high ranks', () => {
+    const one = (map: string, rank: Situation['rank']) => modelFor(at(map, 'attack', rank)).roleCost[roleIndex('controller') * 5 + 1]!;
+    const two = (map: string, rank: Situation['rank']) => modelFor(at(map, 'attack', rank)).roleCost[roleIndex('controller') * 5 + 2]!;
+    ok(mapById('bind')!.twoControllers && !mapById('haven')!.twoControllers);
+    near(one('haven', 'radiant'), two('haven', 'radiant'), 1e-12);
+    ok(one('bind', 'radiant') < two('bind', 'radiant'));
+    ok(one('bind', 'radiant') < one('bind', 'iron') && one('bind', 'iron') < two('bind', 'iron'));
+    const pool = POOL.filter((m) => m.twoControllers).length / POOL.length;
+    near(one('any', 'radiant') - two('any', 'radiant'), pool * (one('bind', 'radiant') - two('bind', 'radiant')), 1e-12);
+    const cons = (team: string[], map: string) => explainTeam(modelFor(at(map, 'attack', 'radiant')), team).cons.join(' ');
+    ok(/Only one controller/.test(cons(['omen', 'sova', 'fade', 'raze', 'killjoy'], 'bind')));
+    ok(!/Only one controller/.test(cons(['omen', 'sova', 'fade', 'raze', 'killjoy'], 'haven')));
+    ok(!/Only one controller/.test(cons(['omen', 'viper', 'fade', 'raze', 'killjoy'], 'bind')));
   });
   spec('pair synergy is the same both ways', () => {
     const m = modelFor(at('bind'));
@@ -159,6 +173,9 @@ describe('questions', () => {
     eq(sanitizeQuery({ party: 2, roles: { duelist: 3 } }).roles, {}, 'three in a duo');
     eq(sanitizeQuery({ include: ['jett', 'raze'], roles: { duelist: 1, controller: 2 } }).roles, { controller: 2 }, 'fewer duelists than included');
     eq(sanitizeQuery({ roles: { duelist: 1.5, sentinel: -1, controller: 1 } }).roles, { controller: 1 });
+    eq(sanitizeQuery({ include: ['jett', 'omen', 'sova'], roles: { sentinel: 3 } }).roles, {}, 'no room beside three must-play agents');
+    eq(sanitizeQuery({ include: ['jett', 'omen'], roles: { sentinel: 3 } }).roles, { sentinel: 3 }, 'room for exactly three');
+    eq(placesTaken(['jett', 'omen', 'viper'], { controller: 1, sentinel: 2 }), 5, 'two controllers must play though one was asked for');
   });
   spec('pools come one per player, or not at all', () => {
     eq(sanitizeQuery({ party: 2, pools: [['jett'], ['omen'], ['sova']] }).pools, []);

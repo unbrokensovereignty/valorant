@@ -7,7 +7,7 @@ import { MAPS, mapById } from '../../core/kb/maps.ts';
 import { RANKS } from '../../core/kb/ranks.ts';
 import { ROLES, type Role } from '../../core/kb/roles.ts';
 import { NEW_AGENTS } from '../../core/kb/new-agents.ts';
-import { newQuery, type PartySize, type Query } from '../../core/engine/query.ts';
+import { newQuery, placesTaken, type PartySize, type Query } from '../../core/engine/query.ts';
 import { poolsOf } from '../../core/saved.ts';
 import { listJoin } from '../../core/text.ts';
 import { MapThumb, RoleIcon } from '../art.tsx';
@@ -15,7 +15,7 @@ import { Button, Segmented, Select, Toggle } from '../components/controls.tsx';
 import { openMenu, type MenuItem } from '../components/overlays.tsx';
 import { AgentChips, pickMap } from '../components/pickers.tsx';
 import { Icon } from '../icons.tsx';
-import { go, useSettings, watch } from '../state.ts';
+import { go, toast, useSettings, watch } from '../state.ts';
 import type { RankId } from '../../core/kb/ranks.ts';
 import { ask } from './store.ts';
 import { mapWord } from './words.ts';
@@ -71,6 +71,12 @@ export function Question({ q }: { q: Query }) {
           onChange={(x) => {
             const roles = { ...q.roles };
             if (x === 'any') delete roles[role]; else roles[role] = Number(x);
+            // counts that no longer fit beside the must-play agents give way to the one just set
+            for (const other of ROLES) if (placesTaken(q.include, roles) > q.party && other.id !== role) delete roles[other.id];
+            if (placesTaken(q.include, roles) > q.party) {
+              toast(`${x} ${ROLES.find((r) => r.id === role)!.plural.toLowerCase()} won’t fit beside the agents who must play.`);
+              return;
+            }
             ask({ roles }, true);
           }} />
       </div>

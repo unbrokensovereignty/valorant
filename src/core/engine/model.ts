@@ -9,7 +9,7 @@ import { PRO, proPick } from '../kb/pro.ts';
 import { ALL_RANKS_T, rankOf, type RankId } from '../kb/ranks.ts';
 import { DIMS, ROLE_IDS, type Dim, type Role } from '../kb/roles.ts';
 import { PAIRS } from '../kb/synergy.ts';
-import { BASE, BY_RANK, FIT, PAIR_STEP, ROLE_COST } from './weights.ts';
+import { BASE, BY_RANK, FIT, PAIR_STEP, ROLE_COST, SECOND_CONTROLLER } from './weights.ts';
 
 export type MapPick = string; // a map id, or 'any'
 export type SidePick = Side | 'both';
@@ -133,6 +133,8 @@ export function modelFor(s: Situation): Model {
   ROLE_IDS.forEach((r, ri) => {
     for (let c = 0; c < 5; c++) roleCost[ri * 5 + c] = sides.reduce((acc, side) => acc + ROLE_COST[r][side][c]!, 0) / sides.length;
   });
+  const two = maps.filter((m) => m.twoControllers).length / maps.length;
+  roleCost[roleIndex('controller') * 5 + 1]! -= two * SECOND_CONTROLLER * (FIT.proLow + (1 - FIT.proLow) * rankT);
   const model: Model = { situation: { ...s, sites: [...s.sites] }, weight, base, pair, roleCost, fitParts: { pro, rank } };
   if (cache.size > 200) cache.clear();
   cache.set(key, model);

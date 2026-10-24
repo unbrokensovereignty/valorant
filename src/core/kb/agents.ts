@@ -46,7 +46,7 @@ export interface Agent extends Omit<AgentDef, 'caps'> {
 const DEFS: readonly AgentDef[] = [
   // ------------------------------------------------ duelists
   {
-    id: 'jett', name: 'Jett', role: 'duelist', released: '2020-06-02', solo: 0.85, skill: 0.75, pop: 13.6, pro: 12,
+    id: 'jett', name: 'Jett', role: 'duelist', released: '2020-06-02', solo: 0.85, skill: 0.65, pop: 13.6, pro: 12,
     caps: 'entry .85 E; mobility .9 EQ; duel .85 GX; smoke .25 C',
     line: 'Dashes onto site first and wins duels, often with the Operator.',
   },
@@ -62,12 +62,12 @@ const DEFS: readonly AgentDef[] = [
   },
   {
     id: 'reyna', name: 'Reyna', role: 'duelist', released: '2020-06-02', solo: 0.95, skill: 0.45, pop: 7.2, pro: 1,
-    caps: 'duel .95 GQX; entry .5 E; flash .25 C; sustain .2 Q; mobility .2 E',
+    caps: 'duel .95 GQX; entry .5 E; flash .35 C; sustain .35 Q; mobility .35 E',
     line: 'Snowballs off kills with heals and escapes, but gives the team little utility.',
   },
   {
     id: 'yoru', name: 'Yoru', role: 'duelist', released: '2021-01-12', solo: 0.55, skill: 0.85, pop: 3.5, pro: 31,
-    caps: 'flash .6 Q; entry .6 E; mobility .75 E; recon .3 X; flank .15 C; duel .55 G',
+    caps: 'flash .6 Q; entry .7 E; mobility .75 E; recon .4 CX; flank .3 CE; duel .6 G',
     line: 'Teleports and flashes from unexpected angles; strong for fakes and lurks.',
   },
   {
@@ -124,8 +124,8 @@ const DEFS: readonly AgentDef[] = [
   },
   // ------------------------------------------------ controllers
   {
-    id: 'brimstone', name: 'Brimstone', role: 'controller', released: '2020-06-02', solo: 0.45, skill: 0.3, pop: 0.6, pro: 8,
-    caps: 'smoke .85 E; postplant .85 QX; clear .45 Q; stall .5 Q; retake .45 X; entry .15 C',
+    id: 'brimstone', name: 'Brimstone', role: 'controller', released: '2020-06-02', solo: 0.55, skill: 0.3, pop: 0.6, pro: 8,
+    caps: 'smoke .85 E; postplant .85 QX; clear .45 Q; stall .5 Q; retake .45 X; entry .15 C; duel .3 C',
     line: 'Three quick smokes for an execute, and the best post-plant mollies.',
   },
   {
@@ -135,7 +135,7 @@ const DEFS: readonly AgentDef[] = [
   },
   {
     id: 'omen', name: 'Omen', role: 'controller', released: '2020-06-02', solo: 0.7, skill: 0.45, pop: 2.4, pro: 77,
-    caps: 'smoke .9 E; flash .55 Q; mobility .55 CX; flank .15 X; stall .25 E; retake .35 Q; entry .2 C; duel .35 G',
+    caps: 'smoke .9 E; flash .5 Q; mobility .55 CX; flank .15 X; stall .25 E; retake .35 Q; entry .2 C; duel .35 G',
     line: 'Fast-recharging smokes and a nearsight that suit any map.',
   },
   {
@@ -145,7 +145,7 @@ const DEFS: readonly AgentDef[] = [
   },
   {
     id: 'harbor', name: 'Harbor', role: 'controller', released: '2022-10-18', solo: 0.4, skill: 0.55, pop: 0.3, pro: 15,
-    caps: 'wall .85 Q; smoke .55 E; disrupt .45 CX; stall .45 QC; entry .3 Q; retake .45 X',
+    caps: 'wall .85 Q; smoke .65 E; disrupt .45 CX; stall .45 QC; entry .3 Q; retake .45 X',
     line: 'Water walls that slow anyone crossing, and a shielded smoke.',
   },
   {
@@ -171,7 +171,7 @@ const DEFS: readonly AgentDef[] = [
   },
   {
     id: 'killjoy', name: 'Killjoy', role: 'sentinel', released: '2020-08-04', solo: 0.5, skill: 0.45, pop: 1.8, pro: 15,
-    caps: 'anchor .9 CQE; flank .8 Q; stall .7 CX; postplant .7 C; recon .35 E; retake .5 X; clear .3 C',
+    caps: 'anchor .9 CQE; flank .6 Q; stall .7 CX; postplant .7 C; recon .35 E; retake .5 X; clear .3 C',
     line: 'Turret and bots lock down a site, and her ultimate wins retakes.',
   },
   {

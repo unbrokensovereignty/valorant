@@ -75,16 +75,28 @@ export function sanitizeQuery(x: unknown): Query {
   return fixRoles(q);
 }
 
-/** Role counts that can't add up (more than the party, or below what's already included) are dropped. */
+/**
+ * The places that role counts and must-play agents take up together: each role with a count takes
+ * that many, or more if more of its agents must play, and each other must-play agent takes one.
+ */
+export function placesTaken(include: readonly string[], roles: Query['roles']): number {
+  let n = 0;
+  for (const r of ROLE_IDS) {
+    const have = include.filter((a) => agentById(a)?.role === r).length;
+    n += Math.max(roles[r] ?? 0, have);
+  }
+  return n;
+}
+
+/** Role counts that can't add up (below what's already included, or more than the party has room for) are dropped. */
 function fixRoles(q: Query): Query {
-  const total = Object.values(q.roles).reduce((a, b) => a + (b ?? 0), 0);
-  if (total > q.party) q.roles = {};
   for (const r of ROLE_IDS) {
     const want = q.roles[r];
     if (want === undefined) continue;
     const have = q.include.filter((a) => agentById(a)?.role === r).length;
     if (have > want) delete q.roles[r];
   }
+  if (placesTaken(q.include, q.roles) > q.party) q.roles = {};
   return q;
 }
 

@@ -207,7 +207,7 @@ export function AgentsPage({ arg }: PageProps) {
     return (
       <>
         <PageHead title="Agents" />
-        <Empty title="There’s no such agent" actions={<Button onClick={() => go('agents')}>See all agents</Button>}>The link may be from a newer version of Playbook.</Empty>
+        <Empty level={2} title="There’s no such agent" actions={<Button onClick={() => go('agents')}>See all agents</Button>}>The link may be from a newer version of Playbook.</Empty>
       </>
     );
   }

@@ -33,7 +33,13 @@ export const BY_RANK: Record<Dim, readonly [number, number]> = {
  * Radiant (it fades to `proLow` of that at Iron). `solo` and `skill`: at Iron, the reward for
  * agents who work alone and the cost of hard agents (both fade to nothing at Radiant).
  */
-export const FIT = { pro: 0.05, proLow: 0.25, solo: 0.035, skill: 0.03 };
+export const FIT = { pro: 0.07, proLow: 0.1, solo: 0.06, skill: 0.035 };
+
+/**
+ * On maps where pro teams run two controllers (`twoControllers` in kb/maps.ts), what a team with
+ * only one gives up at Radiant. Like the pull toward pro picks, it fades to `FIT.proLow` of that at Iron.
+ */
+export const SECOND_CONTROLLER = 0.03;
 
 /** Points per step of a pair's strength (−3 to 3, see kb/synergy.ts). */
 export const PAIR_STEP = 0.006;
@@ -47,7 +53,7 @@ export const ROLE_COST: Record<Role, Record<Side, readonly [number, number, numb
   controller: { attack: [-0.3, 0, 0, -0.15, -0.4], defense: [-0.25, 0, 0, -0.15, -0.4] },
   duelist: { attack: [-0.05, 0, 0, -0.08, -0.3], defense: [-0.015, 0, -0.01, -0.1, -0.3] },
   initiator: { attack: [-0.05, 0, 0, -0.06, -0.25], defense: [-0.04, 0, 0, -0.06, -0.25] },
-  sentinel: { attack: [-0.015, 0, -0.01, -0.12, -0.3], defense: [-0.07, 0, 0, -0.1, -0.3] },
+  sentinel: { attack: [-0.015, 0, -0.01, -0.12, -0.3], defense: [-0.07, 0, -0.01, -0.1, -0.3] },
 };
 
 /**

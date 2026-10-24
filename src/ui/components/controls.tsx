@@ -287,11 +287,13 @@ export function Tabs<T extends string>({ value, tabs, onChange, label }: { value
   );
 }
 
-export function Empty({ art, title, children, actions }: { art?: ComponentChildren; title: string; children?: ComponentChildren; actions?: ComponentChildren }) {
+/** An empty state. `level` is its heading's level: 2 straight under a page's title, 3 (the default) inside a section. */
+export function Empty({ art, title, children, actions, level = 3 }: { art?: ComponentChildren; title: string; children?: ComponentChildren; actions?: ComponentChildren; level?: 2 | 3 }) {
+  const H = level === 2 ? 'h2' : 'h3';
   return (
     <div class="empty">
       {art}
-      <h3>{title}</h3>
+      <H>{title}</H>
       {children && <p>{children}</p>}
       {actions && <div class="row">{actions}</div>}
     </div>

@@ -130,6 +130,7 @@ function MapPage({ m }: { m: MapInfo }) {
                 const extra = extraNeeds(m, sd);
                 return [<dt key={sd + 't'}>{sd === 'attack' ? 'Attack' : 'Defense'} needs</dt>, <dd key={sd + 'd'}>{extra.length ? listJoin(extra.map((d) => DIM_INFO[d].name.toLowerCase())) : 'The usual mix'}</dd>];
               })}
+              <dt>Controllers</dt><dd>{m.twoControllers ? 'Pros usually run two' : 'One is usually enough'}</dd>
             </dl>
           </section>
           <section class="panel stack">
@@ -168,7 +169,7 @@ export function MapsPage({ arg }: PageProps) {
     return (
       <>
         <PageHead title="Maps" />
-        <Empty title="There’s no such map" actions={<Button onClick={() => go('maps')}>See all maps</Button>}>The link may be from a newer version of Playbook.</Empty>
+        <Empty level={2} title="There’s no such map" actions={<Button onClick={() => go('maps')}>See all maps</Button>}>The link may be from a newer version of Playbook.</Empty>
       </>
     );
   }
