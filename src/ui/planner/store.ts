@@ -4,9 +4,9 @@
  * duo" (a few seconds of work) never freezes the page. A newer question cancels an older one.
  */
 import { signal } from '@preact/signals';
-import { newQuery, sanitizeQuery, situationsOf, type Query } from '../../core/engine/query.ts';
+import { sanitizeQuery, situationsOf, startingQuery, type Query } from '../../core/engine/query.ts';
+import { youOf } from '../../core/settings.ts';
 import { solve, type SituationAnswer } from '../../core/engine/plan.ts';
-import type { RankId } from '../../core/kb/ranks.ts';
 import { data, go, reportError, route } from '../state.ts';
 import { play } from '../sound.ts';
 
@@ -24,12 +24,16 @@ export interface Run {
 export const question = signal<Query | null>(null);
 export const run = signal<Run | null>(null);
 
-/** The question as last left, or a fresh one with your usual rank. */
+/** A new question as you usually ask it: your rank and party, and one of your agents for you (Settings → You). */
+export function freshQuestion(): Query {
+  const s = data().settings();
+  return startingQuery(youOf(s), s.includeNew);
+}
+
+/** The question as last left, or a fresh one. */
 export function currentQuestion(): Query {
   if (question.peek()) return question.peek()!;
-  const r = data();
-  const s = r.settings();
-  const q = r.app().draft ?? newQuery(s.defaultRank as RankId, s.includeNew);
+  const q = data().app().draft ?? freshQuestion();
   question.value = q;
   return q;
 }
@@ -94,8 +98,12 @@ export function openPlanner(q: Query) {
   if (route.peek().page !== 'planner') go('planner');
 }
 
-/** Opens the Planner on a fresh question with `patch` filled in ("Plan for Haven"). */
+/**
+ * Opens the Planner on a fresh question with `patch` filled in ("Plan for Haven"). A question to plan
+ * with an agent ("Plan with Chamber") is about that agent, so it doesn't add one of yours too.
+ */
 export function planWith(patch: Partial<Query>) {
-  const s = data().settings();
-  openPlanner({ ...newQuery(s.defaultRank as RankId, s.includeNew), ...patch });
+  const q = { ...freshQuestion(), ...patch };
+  if (patch.include?.length && !patch.pools) q.pools = [];
+  openPlanner(q);
 }

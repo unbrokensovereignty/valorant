@@ -53,6 +53,9 @@
 }
 .tier-agent:hover { background: var(--surface-2); }
 .tier-agent-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.82rem; font-weight: 650; }
+.tier-agent.mine, .tier-agent.mine:hover { background: var(--accent-soft); }
+.tier-agent { position: relative; }
+.tier-mine { position: absolute; top: 4px; right: 8px; }
 .tier-empty { padding: 14px 6px; }
 
 .heat-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface); }

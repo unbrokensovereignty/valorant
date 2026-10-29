@@ -1,6 +1,7 @@
 /**
- * Home: a map to plan for, the questions you asked lately, your saved plans and parties, a word
+ * Home: a map to plan for, the questions you asked lately, your saved plans, the agents you play and your parties, a word
  * about agents that are new or on their way, and (until it's taken or put off) the offer of a tour.
+ * Until you've set it up, the offer to (setup.tsx).
  */
 import { PageHead } from '../shell.tsx';
 import { Button } from '../components/controls.tsx';
@@ -9,10 +10,16 @@ import { AgentIcon, MapThumb } from '../art.tsx';
 import { data, go, minute, safely, toast, watch } from '../state.ts';
 import { play } from '../sound.ts';
 import { openPlanner, planWith } from '../planner/store.ts';
-import { askedLine, askedTitle, partyWord } from '../planner/words.ts';
-import { TeamIcons } from '../planner/comp.tsx';
+import { askedLine, askedTitle, partyWord, rankWord } from '../planner/words.ts';
+import { Fit, TeamIcons } from '../planner/comp.tsx';
+import { pickAgents } from '../components/pickers.tsx';
+import { answerFor } from '../solved.ts';
 import { TourOffer } from '../tours/engine.tsx';
-import { AGENTS, isNew } from '../../core/kb/agents.ts';
+import { SetupOffer } from '../setup.tsx';
+import { AGENTS, agentById, isNew } from '../../core/kb/agents.ts';
+import type { RankId } from '../../core/kb/ranks.ts';
+import { SETTINGS } from '../../core/settings.ts';
+import { tierOf } from '../../core/engine/weights.ts';
 import { PATCH, POOL, POOL_SINCE } from '../../core/kb/maps.ts';
 import { poolsOf, type Party } from '../../core/saved.ts';
 import type { PartySize } from '../../core/engine/query.ts';
@@ -149,6 +156,46 @@ function PartyCard({ p }: { p: Party }) {
   );
 }
 
+/** The agents you play (Settings → You), each with their fit at your rank and the maps they fit best. */
+function YourAgents() {
+  const r = watch('meta');
+  const s = r.settings();
+  const rank = s.defaultRank as RankId;
+  const mine = s.myAgents.map((id) => agentById(id)).filter((a) => !!a);
+  const { myAgents } = SETTINGS;
+  const choose = async () => {
+    const next = await pickAgents(s.myAgents, { title: myAgents.label, max: myAgents.max, line: myAgents.help });
+    if (next) safely(() => r.setSetting('myAgents', next));
+  };
+  const fitOn = (id: string, map: string) => answerFor({ map, side: 'both', rank, sites: [] }, s.includeNew)?.agents.find((x) => x.id === id)?.fit;
+  return (
+    <section class="panel stack home-list" data-tour="home-yours">
+      <div class="row-between">
+        <h2>Your agents at {rankWord(rank)}</h2>
+        <Button size="sm" kind="quiet" icon={mine.length ? 'edit' : 'plus'} onClick={() => void choose()}>{mine.length ? 'Change' : 'Choose'}</Button>
+      </div>
+      {mine.length ? (
+        <ul class="plain-list">
+          {mine.map((a) => {
+            const fit = fitOn(a.id, 'any');
+            const maps = POOL.map((m) => ({ m, fit: fitOn(a.id, m.id) }));
+            const best = maps.every((x) => x.fit !== undefined) ? [...maps].sort((x, y) => y.fit! - x.fit!).slice(0, 2).map((x) => x.m.name) : [];
+            return (
+              <li key={a.id}>
+                <button type="button" class="list-row" onClick={() => { play('page'); go('agents', a.id); }}>
+                  <AgentIcon id={a.id} size={32} />
+                  <span class="list-row-text"><b>{a.name}</b><small class="muted">{best.length ? `Best on ${listJoin(best)}` : 'Working out their best maps…'}</small></span>
+                  {fit !== undefined ? <Fit fit={fit} tier={tierOf(fit)} label={`${a.name} at ${rankWord(rank)}`} compact /> : <span class="faint small">…</span>}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      ) : <p class="muted">Choose the agents you play, and every plan gives you one of them. Rankings marks them too.</p>}
+    </section>
+  );
+}
+
 function Parties() {
   const r = watch('parties');
   const parties = r.parties();
@@ -174,6 +221,7 @@ export function HomePage(_p: PageProps) {
         Where are you playing next? Pick a map, or ask the Planner anything.
       </PageHead>
       <div class="home">
+        <SetupOffer />
         <TourOffer />
         <NewAgents />
         <Maps />
@@ -181,7 +229,10 @@ export function HomePage(_p: PageProps) {
           <Recent />
           <SavedPlans />
         </div>
-        <Parties />
+        <div class="grid-2">
+          <YourAgents />
+          <Parties />
+        </div>
       </div>
     </>
   );

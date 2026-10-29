@@ -7,7 +7,7 @@ import { ROLE_IDS } from '../../src/core/kb/roles.ts';
 import { D, N, ROLE_OF, kitShare, modelFor, proMixOf, proShare, roleIndex, type Situation } from '../../src/core/engine/model.ts';
 import { anyRoles, scoreTeam, searchTeams, TopK, walkTeams, type Rules } from '../../src/core/engine/search.ts';
 import { askFor, fillLikelihood, pickWeight, searchParties, type PartyRules } from '../../src/core/engine/party.ts';
-import { newQuery, placesTaken, sanitizeQuery, situationsOf, asksBest, nothingFixed, type Query } from '../../src/core/engine/query.ts';
+import { newQuery, placesTaken, sanitizeQuery, situationsOf, asksBest, nothingFixed, myPools, startingQuery, withMine, type Query } from '../../src/core/engine/query.ts';
 import { agentFitOf, fitOf, poolsFit, referenceFor, rulesOf, solve, teamFit } from '../../src/core/engine/plan.ts';
 import { explainTeam } from '../../src/core/engine/explain.ts';
 import { ROLE_COST, TIERS, tierOf } from '../../src/core/engine/weights.ts';
@@ -266,6 +266,38 @@ describe('answers', () => {
     const pooled = rulesOf(q({ party: 2, pools: [['omen'], ['sova']] }));
     ok(pooled.allowed(ix('omen')) && !pooled.allowed(ix('jett')), 'only agents someone plays');
     ok(rulesOf(q({ party: 2, pools: [['omen'], []] })).allowed(ix('jett')), 'a player who plays anyone can take anyone');
+  });
+});
+
+describe('solo', () => {
+  spec('on your own, the Planner ranks the agent for you to play, with the best picks for your four random teammates', () => {
+    const a = solve(q({ map: 'haven', side: 'attack', party: 1 }), at('haven', 'attack'), 5);
+    eq(a.comps.length, 5);
+    for (const c of a.comps) {
+      eq(c.party.length, 1);
+      eq(c.team.length, 5);
+      ok(c.team.includes(c.party[0]!));
+      ok(c.pickFit! >= c.expected!, 'the best picks are at least what to expect');
+    }
+    const picked: string[] = a.comps[0]!.team.filter((id) => id !== a.comps[0]!.party[0]).map((id) => agentById(id)!.role);
+    ok(a.askFor!.every((x) => picked.includes(x.role)), 'the role to ask for is one the picks play');
+  });
+  spec('with the agents you play, you get one of them', () => {
+    const mine = ['jett', 'omen'];
+    const a = solve(q({ map: 'lotus', side: 'defense', party: 1, pools: myPools(1, mine) }), at('lotus', 'defense'), 5);
+    eq(a.comps.map((c) => c.party[0]).sort(), [...mine].sort());
+    const five = solve(q({ map: 'lotus', side: 'defense', pools: myPools(5, mine) }), at('lotus', 'defense'), 5);
+    ok(five.comps.every((c) => c.team.some((id) => mine.includes(id))), 'a five-stack plays one of them');
+  });
+  spec('a question for you: your rank and party, and your agents for you, only when you’ve said which', () => {
+    eq(myPools(1, []), []);
+    eq(myPools(3, ['jett']), [['jett'], [], []]);
+    const q1 = startingQuery({ rank: 'diamond', party: 2, agents: ['sova', 'fade'] }, true);
+    eq([q1.rank, q1.party, q1.pools], ['diamond', 2, [['sova', 'fade'], []]]);
+    ok(withMine(q1, ['sova', 'fade']) && !withMine({ ...q1, pools: [] }, ['sova', 'fade']) && !withMine(q1, []));
+    eq(sanitizeQuery(q1), q1, 'it reads back as it was');
+    const solo = sanitizeQuery({ party: 1, include: ['jett', 'omen'], locked: ['sova', 'jett', 'fade', 'sage', 'raze', 'neon'] });
+    eq([solo.include, solo.locked], [['jett'], ['sova', 'fade', 'sage', 'raze']], 'one of you, and four teammates who can lock in');
   });
 });
 

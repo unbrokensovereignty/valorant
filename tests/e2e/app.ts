@@ -22,9 +22,24 @@ export const test = base.extend<{ errors: string[] }>({
 });
 export { expect };
 
-export async function open(page: Page, hash = 'home') {
+/** Pages past the setup the app asks for when it's opened for the first time (each test starts with nothing saved). */
+const welcomed = new WeakSet<Page>();
+
+/**
+ * Opens the app on a page. The first time, it asks how you play: skipped here, so tests start
+ * from the usual settings, unless `setup` says the test answers it.
+ */
+export async function open(page: Page, hash = 'home', o: { setup?: boolean } = {}) {
   await page.goto(`${APP_URL}#/${hash}`);
   await ready(page);
+  if (welcomed.has(page) || hash === 'selftest') return;
+  welcomed.add(page);
+  if (o.setup) return;
+  const setup = page.getByRole('dialog', { name: 'Welcome to Playbook' });
+  // from the keyboard, so the mouse isn't left over the page, where it would bring up a tooltip
+  await setup.getByRole('button', { name: 'Skip' }).press('Enter');
+  await expect(setup).toHaveCount(0);
+  await still(page);
 }
 
 /** Reloads the page, as pressing F5 does, and waits until it's ready again. */

@@ -9,7 +9,7 @@ import { rankOf } from '../kb/ranks.ts';
 import { ROLES, ROLE_IDS, type Dim } from '../kb/roles.ts';
 import { AGENT_MAP_TIPS, AGENT_TIPS, ATTACK_TIPS, DEFENSE_TIPS, DOUBLE_TIPS, MAP_TIPS, PARTY_TIPS, RANK_TIPS, agentMapTip, rankBand } from '../kb/tips.ts';
 import type { Situation } from './model.ts';
-import type { PartySize } from './query.ts';
+import { partyOf, type PartySize } from './query.ts';
 
 export interface Tip { about: string; text: string }
 
@@ -67,8 +67,8 @@ export function tipsFor(team: readonly string[], s: Situation, party: PartySize 
   }
   const r = rankOf(s.rank);
   for (const text of RANK_TIPS[rankBand(r.t)].slice(0, 2)) out.push({ about: r.name, text });
-  if (party === 2 || party === 3) {
-    const about = party === 2 ? 'Duo' : 'Trio';
+  if (party !== 5) {
+    const about = partyOf(party).name;
     out.push({ about, text: PARTY_TIPS[party].play });
     if (party + locked < 5) out.push({ about, text: PARTY_TIPS[party].ask });
   }

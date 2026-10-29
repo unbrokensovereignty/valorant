@@ -157,6 +157,8 @@ describe('tips', () => {
       eq(new Set(agentTips(a.id)).size, agentTips(a.id).length, `${a.name}: no tip twice`);
     }
     ok(t.some((x) => x.about === 'Gold'));
+    const solo = tipsFor(team, { map: 'any', side: 'both', sites: [], rank: 'gold' }, 1, ['sova']);
+    ok(solo.some((x) => x.about === 'Solo') && solo.some((x) => x.about === 'Sova') && !solo.some((x) => x.about === 'Jett'), 'a solo player’s own agent, and the solo tips');
     const duo = tipsFor(team, { map: 'any', side: 'both', sites: [], rank: 'gold' }, 2, ['sova', 'jett']);
     ok(!duo.some((x) => x.about === 'Omen'), 'only your party’s agents');
     ok(duo.some((x) => x.about === 'Duo'));

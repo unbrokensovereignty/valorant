@@ -2,7 +2,7 @@ import { describe, spec, eq, ok } from './harness.ts';
 import { LIMITS, poolsOf, sanitizeParty, sanitizePlan } from '../../src/core/saved.ts';
 import { BACKUP_FORMAT, BACKUP_KIND, backupText, countsOf, emptyBackup, mergeBackup, readBackup, type BackupData } from '../../src/core/backup.ts';
 import { newQuery } from '../../src/core/engine/query.ts';
-import { defaultSettings, resolveSettings, sanitizeSetting, sanitizeSettings, SETTINGS, SETTING_KEYS } from '../../src/core/settings.ts';
+import { defaultSettings, resolveSettings, sanitizeSetting, sanitizeSettings, SETTINGS, SETTING_KEYS, youOf } from '../../src/core/settings.ts';
 import { clean, fold, listJoin } from '../../src/core/text.ts';
 import { BUILT_IN_THEMES, parseThemeCode, THEME_CODE_PREFIX, themeCode } from '../../src/core/theme.ts';
 
@@ -84,6 +84,14 @@ describe('settings', () => {
     eq(sanitizeSetting('defaultRank', 'gold 3'), undefined);
     eq(sanitizeSetting('defaultRank', 'radiant'), 'radiant');
     eq(sanitizeSettings({ resultCount: 12, sound: 'on', nothing: 1 }), { resultCount: 12 });
+  });
+  spec('how you play: a party size the Planner has, and up to five agents you play, each once', () => {
+    eq(sanitizeSetting('usualParty', '1'), '1');
+    eq(sanitizeSetting('usualParty', '4'), undefined);
+    eq(sanitizeSetting('myAgents', ['jett', 'jett', 'nobody', 'omen', 7]), ['jett', 'omen']);
+    eq(sanitizeSetting('myAgents', ['jett', 'omen', 'sova', 'sage', 'raze', 'neon']), ['jett', 'omen', 'sova', 'sage', 'raze']);
+    eq(sanitizeSetting('myAgents', 'jett'), undefined);
+    eq(youOf(resolveSettings({ defaultRank: 'diamond', usualParty: '2', myAgents: ['omen'] })), { rank: 'diamond', party: 2, agents: ['omen'] });
   });
 });
 

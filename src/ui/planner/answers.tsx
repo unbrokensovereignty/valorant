@@ -6,7 +6,7 @@ import { useEffect, useState } from 'preact/hooks';
 import { agentById } from '../../core/kb/agents.ts';
 import { ROLES, type Role } from '../../core/kb/roles.ts';
 import type { AgentAnswer, SituationAnswer } from '../../core/engine/plan.ts';
-import { asksBest, nothingFixed, type Query } from '../../core/engine/query.ts';
+import { asksBest, nothingFixed, partyOf, type Query } from '../../core/engine/query.ts';
 import { tierOf } from '../../core/engine/weights.ts';
 import { listJoin } from '../../core/text.ts';
 import { AgentIcon, MapThumb, RoleIcon } from '../art.tsx';
@@ -47,7 +47,7 @@ export function Answers() {
       <header class="answers-head" data-tour="answers-head">
         <div class="grow">
           <h2>{vary.length ? `Best ${listJoin(vary.map((v) => (v === 'map' ? 'maps' : v === 'side' ? 'sides' : 'ranks')))} for you` : askedTitle(r.query)}</h2>
-          <p class="muted small">{askedLine(r.query)} · {ans.count.toLocaleString('en-US')} {r.query.party === 5 ? 'possible comps' : `possible ${partyWord(r.query.party).toLowerCase()}s`} checked</p>
+          <p class="muted small">{askedLine(r.query)} · {ans.count.toLocaleString('en-US')} {r.query.party === 5 ? 'possible comps' : `possible ${partyOf(r.query.party).plural}`} checked</p>
         </div>
         {r.status === 'working' && <span class="row muted small"><span class="spinner" aria-hidden="true" />Updating</span>}
       </header>

@@ -263,7 +263,11 @@ export const RANK_TIPS: Record<'low' | 'middle' | 'high', readonly string[]> = {
 export const rankBand = (t: number): 'low' | 'middle' | 'high' => (t < 0.3 ? 'low' : t < 0.7 ? 'middle' : 'high');
 
 /** Tips for a duo or a trio, whose other players are random: how to play, and what to ask the others for (while some haven't locked in). */
-export const PARTY_TIPS: Record<2 | 3, { play: string; ask: string }> = {
+export const PARTY_TIPS: Record<1 | 2 | 3, { play: string; ask: string }> = {
+  1: {
+    play: 'Pick late if you can: once your teammates lock in, add their agents under Teammates locked in and play what the team is missing.',
+    ask: 'Say what you’ll play early, and ask for the roles the Planner suggests before your teammates lock in.',
+  },
   2: {
     play: 'Pick two agents that work together, like a flash and an entry; the other three are random.',
     ask: 'Ask your random teammates for the roles the Planner suggests before they lock in.',

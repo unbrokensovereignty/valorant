@@ -11,7 +11,7 @@ import { againstWords, explainTeam, type AgainstRow, type StrengthRow } from '..
 import { modelFor } from '../../core/engine/model.ts';
 import type { CompAnswer, SituationAnswer } from '../../core/engine/plan.ts';
 import { playsFor } from '../../core/engine/plays.ts';
-import type { Query } from '../../core/engine/query.ts';
+import { partyOf, type PartySize, type Query } from '../../core/engine/query.ts';
 import { summaryText } from '../../core/engine/summary.ts';
 import { tipsFor } from '../../core/engine/tips.ts';
 import { listJoin } from '../../core/text.ts';
@@ -68,7 +68,7 @@ export function CompRow({ c, i, ans, q, open, onToggle }: { c: CompAnswer; i: nu
         <span class="comp-rank num">{i + 1}</span>
         <TeamIcons team={c.team} party={party} locked={q.locked} />
         <span class="comp-names">{names}</span>
-        <Fit fit={c.fit} tier={c.tier} label={party.length ? `Fit among ${party.length === 2 ? 'duos' : 'trios'}` : 'Fit'} />
+        <Fit fit={c.fit} tier={c.tier} label={party.length ? `Fit among ${partyOf(party.length as PartySize).plural}` : 'Fit'} />
         <Icon name="chevron-down" size={18} class="comp-chev" />
       </button>
       {open && <div class="comp-body" id={id}><CompDetail c={c} i={i} ans={ans} q={q} /></div>}
@@ -147,16 +147,17 @@ function PartyBox({ c, i, ans, locked }: { c: CompAnswer; i: number; ans: Situat
   // the places your random teammates pick, and the agents in them
   const open = (id: string) => !c.party.includes(id) && !locked.includes(id);
   const picks = c.team.filter(open);
+  const yours = c.party.length === 1 ? <>You play <b>{nameOf(c.party[0]!)}</b>.</> : <>Your party: <b>{listJoin(c.party.map(nameOf))}</b>.</>;
   return (
     <div class="party-box">
       {picks.length > 0 ? (
         <p>
-          Your party: <b>{listJoin(c.party.map(nameOf))}</b>. If your random teammates play {listJoin(picks.map(nameOf))}, the team fits <b class="num">{Math.round(c.pickFit ?? expected)}</b> out of 100
+          {yours} If your random teammates play {listJoin(picks.map(nameOf))}, the team fits <b class="num">{Math.round(c.pickFit ?? expected)}</b> out of 100
           (the best five-stack is 100). If they pick on their own, expect a team that fits about <b class="num">{Math.round(expected)}</b>, give or take {Math.round(c.spread ?? 0)}.
         </p>
       ) : (
         <p>
-          Your party: <b>{listJoin(c.party.map(nameOf))}</b>. With the agents your teammates locked in, the team fits <b class="num">{Math.round(expected)}</b> out of 100 (the best five-stack is 100).
+          {yours} With the agents your teammates locked in, the team fits <b class="num">{Math.round(expected)}</b> out of 100 (the best five-stack is 100).
         </p>
       )}
       {ask.length > 0 && (

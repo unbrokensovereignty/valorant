@@ -138,6 +138,7 @@ function Guide() {
           <li><b>Look things up</b> on Rankings (tier lists of agents and comps), Agents (kits, strengths and partners) and Maps (sites, callouts and plays).</li>
           <li><b>Save</b> a plan you like, and your usual party with the agents each of you plays, so they’re a click away next time.</li>
         </ol>
+        <p>Playbook starts from how you play: your rank, how you queue and the agents you play. It asks when you first open it, and you can change any of it in <a href="#/settings/you">Settings → You</a>. Every plan then gives you one of your agents, Rankings marks them with a star, and Home shows how each fits at your rank.</p>
         <p class="muted">Rather be shown? <a href="#/help/tours">Tours</a> walk you through each page on the real screens.</p>
       </section>
       <div class="guide-cols">
@@ -146,7 +147,8 @@ function Guide() {
           <p><b>Map, side, sites and rank</b> describe the game you’re about to play. Choose “Best” for the side or “Find the best rank” and the Planner compares them all for you; leave the map open to plan across the pool ({plural(POOL.length, 'map')}), or turn on all {MAPS.length}.</p>
           <p><b>Sites</b> narrow a plan to the sites you’ll play: say B and C on Haven to plan a hit or a hold there. Plays then come from those sites first.</p>
           <p><b>Must play</b> keeps agents in every comp. <b>Won’t play</b> leaves them out. <b>Roles</b> set how many of a role the team has, like two controllers or no sentinel.</p>
-          <p>Every change answers again straight away. <b>Start over</b> goes back to your usual rank with nothing else chosen, and recent questions are on Home.</p>
+          <p><b>Their team</b> takes the other team’s agents, if you know them. Comps that answer them rank higher, and each comp says how it stands against them. Both teams can play the same agent, so these don’t limit your picks.</p>
+          <p>Every change answers again straight away. <b>Start over</b> goes back to how you play (your rank, how you queue and your agents) with nothing else chosen, and recent questions are on Home.</p>
         </section>
         <section class="panel stack">
           <h2>Fit and tiers</h2>
@@ -156,10 +158,10 @@ function Guide() {
         </section>
         <RankHelp />
         <section class="panel stack">
-          <h2>Duos and trios</h2>
-          <p>With a duo or trio, the others are random teammates. The Planner counts on what players at your rank usually pick, and on teammates filling a role the team is missing, then ranks your party’s picks by every team you could end up with, each weighed by how likely it is. A row shows your party with the best agents for your random teammates to play around it.</p>
-          <p>A party’s row shows its fit among other parties. Open it to see how the team fits if your teammates play those picks, and what to expect if they pick on their own (both against the best five-stack), the role worth asking them for (and how often they pick it on their own), other good picks for them, and the team they’d most likely pick.</p>
-          <p>Already know what they locked in? Add it under <b>Teammates locked in</b>. To plan around the agents your party plays, save it on the Saved page and choose it under <b>Saved party</b>.</p>
+          <h2>Solo, duos and trios</h2>
+          <p>Solo or in a duo or trio, the others are random teammates. The Planner counts on what players at your rank usually pick, and on teammates filling a role the team is missing, then ranks your picks by every team you could end up with, each weighed by how likely it is. A row shows your agent, or your party, with the best agents for your random teammates to play around it.</p>
+          <p>A row’s fit is among other picks for the same number of players. Open it to see how the team fits if your teammates play those picks, and what to expect if they pick on their own (both against the best five-stack), the role worth asking them for (and how often they pick it on their own), other good picks for them, and the team they’d most likely pick.</p>
+          <p>Already know what they locked in? Add it under <b>Teammates locked in</b>, and the Planner fills in around them. To plan around the agents your party plays, save it on the Saved page and choose it under <b>Saved party</b>.</p>
         </section>
         <section class="panel stack">
           <h2>Plays</h2>

@@ -9,6 +9,7 @@ import { listJoin } from '../text.ts';
 import { aWord } from '../util.ts';
 import { againstWords, type Explanation } from './explain.ts';
 import { jobWords, playFitLabel, type FilledPlay } from './plays.ts';
+import { partyOf, type PartySize } from './query.ts';
 import type { Tip } from './tips.ts';
 
 const name = (id: string) => agentById(id)?.name ?? id;
@@ -34,8 +35,8 @@ export interface SummaryParts {
 
 export function summaryText(p: SummaryParts): string {
   const lines: string[] = [`Playbook: ${p.title}`];
-  const yours = p.party?.length ? ` (your party: ${listJoin(p.party.map(name))})` : '';
-  const among = p.party?.length ? ` among ${p.party.length === 2 ? 'duos' : 'trios'}` : '';
+  const yours = !p.party?.length ? '' : p.party.length === 1 ? ` (you play ${name(p.party[0]!)})` : ` (your party: ${listJoin(p.party.map(name))})`;
+  const among = p.party?.length ? ` among ${partyOf(p.party.length as PartySize).plural}` : '';
   lines.push(`Comp: ${p.team.map(name).join(', ')}${yours}. Fit ${Math.round(p.fit)}${among}, tier ${p.tier}.`);
   const picks = p.party?.length ? p.team.filter((id) => !p.party!.includes(id) && !p.locked?.includes(id)) : [];
   if (picks.length) lines.push(`Picks for your random teammates: ${listJoin(picks.map(name))}.`);

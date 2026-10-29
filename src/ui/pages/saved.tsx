@@ -123,7 +123,8 @@ const sizeOf = (n: number): PartySize => (n === 2 ? 2 : n === 3 ? 3 : 5);
 
 function PartyEditor({ initial, close }: { initial: Party | null; close: (v?: unknown) => void }) {
   const [name, setName] = useState(initial?.name ?? '');
-  const [players, setPlayers] = useState<Player[]>(initial?.players.map((x) => ({ ...x, agents: [...x.agents] })) ?? [{ name: 'Me', agents: [] }, { name: 'Player 2', agents: [] }]);
+  // a new party starts with you, playing the agents you play (Settings → You)
+  const [players, setPlayers] = useState<Player[]>(initial?.players.map((x) => ({ ...x, agents: [...x.agents] })) ?? [{ name: 'Me', agents: [...data().settings().myAgents] }, { name: 'Player 2', agents: [] }]);
   const resize = (n: PartySize) => setPlayers((ps) => Array.from({ length: n }, (_, i) => ps[i] ?? { name: `Player ${i + 1}`, agents: [] }));
   const set = (i: number, patch: Partial<Player>) => setPlayers((ps) => ps.map((x, k) => (k === i ? { ...x, ...patch } : x)));
   const save = () => {

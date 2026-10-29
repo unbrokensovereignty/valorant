@@ -6,6 +6,7 @@ import { useState } from 'preact/hooks';
 import { PageHead } from '../shell.tsx';
 import { Segmented, Select, Tabs, Toggle } from '../components/controls.tsx';
 import { AgentIcon, MapThumb, RoleIcon } from '../art.tsx';
+import { Icon } from '../icons.tsx';
 import { go, useSettings, useView } from '../state.ts';
 import { play } from '../sound.ts';
 import { answerFor, answerNow } from '../solved.ts';
@@ -31,9 +32,9 @@ type RoleFilter = Role | 'all';
 const isSide = (v: string): v is SidePick => v === 'both' || v === 'attack' || v === 'defense';
 const nameOf = (id: string) => agentById(id)?.name ?? id;
 
-/** Agents grouped into tiers, S first. */
+/** Agents grouped into tiers, S first, with the agents you play marked. */
 function TierList({ agents }: { agents: readonly AgentAnswer[] }) {
-  const numbers = useSettings().showNumbers;
+  const { showNumbers: numbers, myAgents: mine } = useSettings();
   return (
     <div class="tier-list">
       {TIERS.map((t, i) => {
@@ -44,8 +45,9 @@ function TierList({ agents }: { agents: readonly AgentAnswer[] }) {
             <ul class="tier-agents" aria-label={`Tier ${t.id}: ${here.length ? listJoin(here.map((a) => nameOf(a.id))) : 'nobody'}`}>
               {here.map((a) => (
                 <li key={a.id}>
-                  <button type="button" class="tier-agent" data-tip={`${nameOf(a.id)}: fit ${Math.round(a.fit)}`} onClick={() => { play('page'); go('agents', a.id); }}>
+                  <button type="button" class={`tier-agent${mine.includes(a.id) ? ' mine' : ''}`} data-tip={`${nameOf(a.id)}: fit ${Math.round(a.fit)}${mine.includes(a.id) ? ' (one of your agents)' : ''}`} onClick={() => { play('page'); go('agents', a.id); }}>
                     <AgentIcon id={a.id} size={48} />
+                    {mine.includes(a.id) && <Icon name="star" size={14} class="star-on tier-mine" />}
                     <span class="tier-agent-name">{nameOf(a.id)}</span>
                     {numbers && <span class="muted small num">{Math.round(a.fit)}</span>}
                   </button>

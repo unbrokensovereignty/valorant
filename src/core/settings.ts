@@ -2,20 +2,24 @@
  * Every setting in one schema: default, allowed values, and the words the Settings page and the
  * command palette show for it.
  */
+import { isAgent } from './kb/agents.ts';
 import { NEW_AGENTS } from './kb/new-agents.ts';
-import { RANKS } from './kb/ranks.ts';
+import { RANKS, type RankId } from './kb/ranks.ts';
+import { PARTY_SIZES, type PartySize } from './engine/query.ts';
 import { clamp, isRecord } from './util.ts';
 
-export type SectionId = 'planner' | 'appearance' | 'sound';
+export type SectionId = 'you' | 'planner' | 'appearance' | 'sound';
 
 interface Base { section: SectionId; label: string; help?: string; advanced?: boolean; keywords?: string }
 export type SettingDef =
   | (Base & { type: 'bool'; def: boolean })
   | (Base & { type: 'number'; def: number; min: number; max: number; step?: number; unit?: string; percent?: boolean })
   | (Base & { type: 'choice'; def: string; options: readonly (readonly [string, string])[] })
-  | (Base & { type: 'text'; def: string; validate?: (v: string) => boolean });
+  | (Base & { type: 'text'; def: string; validate?: (v: string) => boolean })
+  | (Base & { type: 'agents'; def: readonly string[]; max: number });
 
 export const SECTIONS: readonly { id: SectionId; title: string; blurb: string }[] = [
+  { id: 'you', title: 'You', blurb: 'How you play: the Planner and Rankings start from here.' },
   { id: 'planner', title: 'Planner', blurb: 'What the Planner starts with and how much it shows.' },
   { id: 'appearance', title: 'Appearance', blurb: 'Themes, colors, sizes and motion.' },
   { id: 'sound', title: 'Sound', blurb: 'Sound effects and their volume.' },
@@ -24,8 +28,11 @@ export const SECTIONS: readonly { id: SectionId; title: string; blurb: string }[
 const S = <T extends SettingDef>(d: T) => d;
 
 export const SETTINGS = {
+  // you
+  defaultRank: S({ section: 'you', type: 'choice', def: 'gold', options: RANKS.map((r) => [r.id, r.name] as const), label: 'Your rank', help: 'The Planner and Rankings start on this rank.', keywords: 'elo tier usual' }),
+  usualParty: S({ section: 'you', type: 'choice', def: '5', options: PARTY_SIZES.map((p) => [String(p.id), p.name] as const), label: 'How you queue', help: 'The Planner starts with this many of you; the rest are random teammates.', keywords: 'party solo duo trio five-stack queue' }),
+  myAgents: S({ section: 'you', type: 'agents', def: [] as readonly string[], max: 5, label: 'Agents you play', help: 'Up to five. The Planner gives you one of them in every plan, and Rankings marks them.', keywords: 'mains main agents pool comfort' }),
   // planner
-  defaultRank: S({ section: 'planner', type: 'choice', def: 'gold', options: RANKS.map((r) => [r.id, r.name] as const), label: 'Your usual rank', help: 'The Planner starts on this rank.', keywords: 'elo tier' }),
   includeNew: S({ section: 'planner', type: 'bool', def: true, label: 'Include new agents', help: 'New agents have little play behind them yet, so their scores are early estimates.', keywords: 'unreleased estimates' }),
   resultCount: S({ section: 'planner', type: 'number', def: 10, min: 3, max: 30, unit: 'comps', label: 'Comps to show', keywords: 'results length' }),
   showNumbers: S({ section: 'planner', type: 'bool', def: true, label: 'Show fit scores as numbers', help: 'Off: only the bars.' }),
@@ -45,7 +52,7 @@ export const SETTINGS = {
 } as const;
 
 export type SettingKey = keyof typeof SETTINGS;
-type ValueOf<D> = D extends { type: 'bool' } ? boolean : D extends { type: 'number' } ? number : string;
+type ValueOf<D> = D extends { type: 'bool' } ? boolean : D extends { type: 'number' } ? number : D extends { type: 'agents' } ? readonly string[] : string;
 export type Settings = { -readonly [K in SettingKey]: ValueOf<(typeof SETTINGS)[K]> };
 
 export const SETTING_KEYS = Object.keys(SETTINGS) as SettingKey[];
@@ -69,6 +76,7 @@ export function sanitizeSetting(key: string, v: unknown): unknown {
       if (typeof v !== 'string' || v.length > 200) return undefined;
       return def.validate && !def.validate(v) ? undefined : v;
     }
+    case 'agents': return Array.isArray(v) ? [...new Set(v.filter(isAgent))].slice(0, def.max) : undefined;
   }
 }
 
@@ -95,3 +103,7 @@ export function keyLabel(k: string): string {
   if (!k) return 'none';
   return map[k] ?? (k.length === 1 ? k.toUpperCase() : k[0]!.toUpperCase() + k.slice(1));
 }
+
+/** How you play, as the settings say: your rank, how many of you queue together and the agents you play. */
+export interface You { rank: RankId; party: PartySize; agents: readonly string[] }
+export const youOf = (s: Settings): You => ({ rank: s.defaultRank as RankId, party: Number(s.usualParty) as PartySize, agents: s.myAgents });

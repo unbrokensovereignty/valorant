@@ -11,8 +11,13 @@ import { ROLE_IDS, type Role } from '../kb/roles.ts';
 import { isRecord } from '../util.ts';
 import type { Situation, SidePick } from './model.ts';
 
-export type PartySize = 2 | 3 | 5;
-export const PARTY_SIZES: readonly { id: PartySize; name: string }[] = [{ id: 5, name: 'Five-stack' }, { id: 3, name: 'Trio' }, { id: 2, name: 'Duo' }];
+/** How many of you queue together: on your own (the other four are random teammates), a duo, a trio or a five-stack. */
+export type PartySize = 1 | 2 | 3 | 5;
+export const PARTY_SIZES: readonly { id: PartySize; name: string; plural: string }[] = [
+  { id: 1, name: 'Solo', plural: 'solo picks' }, { id: 2, name: 'Duo', plural: 'duos' }, { id: 3, name: 'Trio', plural: 'trios' }, { id: 5, name: 'Five-stack', plural: 'five-stacks' },
+];
+export const isPartySize = (v: unknown): v is PartySize => PARTY_SIZES.some((p) => p.id === v);
+export const partyOf = (n: PartySize) => PARTY_SIZES.find((p) => p.id === n)!;
 
 export interface Query {
   /** A map id, 'any' or 'best'. */
@@ -32,7 +37,7 @@ export interface Query {
   roles: Partial<Record<Role, number>>;
   /**
    * The agents each player in your party plays, one list per player (an empty list: anyone).
-   * Empty when not planning for a saved party.
+   * Empty when not planning for a saved party or for your own agents.
    */
   pools: string[][];
   /** Include agents too new for much play (their numbers are early estimates). */
@@ -47,6 +52,21 @@ export const newQuery = (rank: RankId = 'gold', newAgents = true): Query => ({
   map: 'any', side: 'both', sites: [], rank, party: 5, include: [], exclude: [], locked: [], roles: {}, pools: [], newAgents, allMaps: false, enemy: [],
 });
 
+/** Pools for planning with your own agents: one of them for you, anyone for the rest of your party (none when you haven't said). */
+export const myPools = (party: PartySize, agents: readonly string[]): string[][] =>
+  agents.length ? [[...agents], ...Array.from({ length: party - 1 }, (): string[] => [])] : [];
+/** Whether a question plans with your own agents (rather than a saved party's, or no one's). */
+export const withMine = (q: Pick<Query, 'party' | 'pools'>, agents: readonly string[]): boolean =>
+  agents.length > 0 && JSON.stringify(q.pools) === JSON.stringify(myPools(q.party, agents));
+
+/**
+ * A new question as you'd usually ask it: your rank and party size, and one of the agents you play
+ * for you (when you've said which).
+ */
+export function startingQuery(you: { rank: RankId; party: PartySize; agents: readonly string[] }, newAgents: boolean): Query {
+  return { ...newQuery(you.rank, newAgents), party: you.party, pools: myPools(you.party, you.agents) };
+}
+
 const ids = (v: unknown, ok: (x: unknown) => boolean, max: number): string[] =>
   Array.isArray(v) ? [...new Set(v.filter((x): x is string => typeof x === 'string' && ok(x)))].slice(0, max) : [];
 
@@ -59,7 +79,7 @@ export function sanitizeQuery(x: unknown): Query {
   if (x.rank === 'best' || isRank(x.rank)) q.rank = x.rank;
   // a question from 0.2.0 or before could be for all ranks, which planned as Platinum does
   else if (x.rank === 'any') q.rank = 'platinum';
-  if (x.party === 2 || x.party === 3 || x.party === 5) q.party = x.party;
+  if (isPartySize(x.party)) q.party = x.party;
   q.newAgents = x.newAgents !== false;
   q.allMaps = x.allMaps === true;
   const map = mapById(q.map);
