@@ -10,6 +10,7 @@ import { agentById } from '../../src/core/kb/agents.ts';
 import { mapById } from '../../src/core/kb/maps.ts';
 import { PAIRS } from '../../src/core/kb/synergy.ts';
 import { SECTIONS } from '../../src/core/settings.ts';
+import { WHATS_NEW } from '../../src/core/whatsnew.ts';
 
 const list = readFileSync('src/ui/tours/list.ts', 'utf8');
 
@@ -41,9 +42,9 @@ test('settings sections a tour points at exist', () => {
   }
 });
 
-test('every page a tour goes to exists, with the agent or map it names', () => {
+test('every page a tour or a What’s new note goes to exists, with the agent or map it names', () => {
   const pages = readFileSync('src/ui/pages/index.ts', 'utf8');
-  const named = [...TOURS.map((t) => t.page), ...steps.flatMap((s) => (s.page ? [s.page] : []))];
+  const named = [...TOURS.map((t) => t.page), ...steps.flatMap((s) => (s.page ? [s.page] : [])), ...WHATS_NEW.flatMap((n) => n.items.flatMap((x) => (x.page ? [x.page] : [])))];
   for (const p of new Set(named)) {
     const [page, arg] = p.split('/');
     assert.match(pages, new RegExp(`\\b${page}: `), `no page "${page}"`);

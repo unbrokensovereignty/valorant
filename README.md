@@ -10,6 +10,7 @@ Download `Playbook By Sovereign v0.1.5.html` from this repository and open it in
 - **Rankings.** Tier lists of agents and comps for any map, side and rank, and a table of every agent on every map.
 - **Agents and Maps.** Every agent's kit, strengths, best maps and best partners; every map's sites, callouts, plays and best comps.
 - **Saved.** Keep plans you like, with a note, and your usual party with the agents each of you plays, so planning for it is one click.
+- **Guided tours.** Short tours under Help → Tours show you each page on the real screens, one thing at a time.
 - **Your way.** Light and dark themes (or your own), text size, motion and sound settings, full keyboard use, undo for every change, and backups to a file.
 
 The numbers come from ranked and pro play up to the patch named on the Home page. Hush, the newest agent, came out after the year's top pro events, so her numbers come from her first days in ranked and from her kit, and pro play counts neither for nor against her yet.

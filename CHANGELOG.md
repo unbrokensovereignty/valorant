@@ -11,6 +11,8 @@ Every version of Playbook By Sovereign and what it changed.
 - **Agents by rank.** Each agent's page shows their tier at every rank, from Iron to Radiant (your usual rank marked, and a click plans with them there), and their ranked win rate. Their pro pick rate now comes straight from the pro numbers per map.
 - **Help explains rank.** A new part of the guide, How your rank changes the answers, says how much of a hard kit a team gets at Iron, where win rates count, and how fast pro play counts as you climb, all from the engine's own numbers. Where the numbers come from names the win-rate sources and this year's events.
 - **Clearer cons.** A comp missing a role says so once, with how to play around the gaps it leaves, instead of in three separate lines.
+- **Guided tours.** Help has a new Tours tab: six short tours light up one thing at a time on the real screens, from a three-step First steps to the Planner, Rankings, agent and map pages, and Saved and Settings. Space goes on, ← goes back and Esc stops; finished tours are ticked off, and Home offers the first steps once. They can be started from the search too.
+- **Tidier Planner.** Options no longer shows as an empty heading when a map is chosen.
 
 ## 0.1.5 (2026-10-29)
 
