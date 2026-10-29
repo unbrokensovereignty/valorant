@@ -5,7 +5,7 @@
  */
 import { AGENTS, type Agent } from '../kb/agents.ts';
 import { MAPS, POOL, mapById, parseNeeds, type MapInfo, type Side, type SiteId } from '../kb/maps.ts';
-import { PRO, proPick } from '../kb/pro.ts';
+import { PRO, proKnown, proPick } from '../kb/pro.ts';
 import { ALL_RANKS_T, rankOf, type RankId } from '../kb/ranks.ts';
 import { DIMS, ROLE_IDS, type Dim, type Role } from '../kb/roles.ts';
 import { PAIRS } from '../kb/synergy.ts';
@@ -73,7 +73,8 @@ const proCurve = (pct: number) => Math.sqrt(pct / 100) - 0.3;
 function agentFit(a: Agent, map: string, rankT: number): { pro: number; rank: number } {
   // a new agent's map and rank fit start neutral: there's no play to go on yet
   if (a.estimate) return { pro: 0, rank: 0 };
-  const pro = FIT.pro * (FIT.proLow + (1 - FIT.proLow) * rankT) * proCurve(proPick(map, a.id)) * proShare(map);
+  // and an agent pros haven't had the chance to pick isn't pulled either way by pro play
+  const pro = proKnown(a) ? FIT.pro * (FIT.proLow + (1 - FIT.proLow) * rankT) * proCurve(proPick(map, a.id)) * proShare(map) : 0;
   const rank = (1 - rankT) * (FIT.solo * (a.solo - 0.55) - FIT.skill * (a.skill - 0.5));
   return { pro, rank };
 }

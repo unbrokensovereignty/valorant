@@ -1,5 +1,6 @@
 import { describe, spec, eq, ok, near } from './harness.ts';
 import { AGENTS, agentById } from '../../src/core/kb/agents.ts';
+import { NEW_AGENTS } from '../../src/core/kb/new-agents.ts';
 import { POOL, MAPS, mapById } from '../../src/core/kb/maps.ts';
 import { RANK_IDS } from '../../src/core/kb/ranks.ts';
 import { ROLE_IDS } from '../../src/core/kb/roles.ts';
@@ -211,8 +212,11 @@ describe('answers', () => {
   });
   spec('leaving out new agents leaves them out of every answer', () => {
     const a = solve(q({ map: 'haven', newAgents: false }), at('haven'), 30);
-    ok(!a.comps.some((c) => c.team.includes('hush')));
-    ok(!a.agents.some((x) => x.id === 'hush'));
+    for (const d of NEW_AGENTS) {
+      ok(!a.comps.some((c) => c.team.includes(d.id)), d.name);
+      ok(!a.agents.some((x) => x.id === d.id), d.name);
+    }
+    ok(a.agents.some((x) => x.id === 'hush'), 'Hush is a full agent now, so she stays in');
   });
   spec('saved party pools: each player gets an agent they play', () => {
     const pools = [['jett', 'reyna'], ['omen'], ['sova', 'fade'], [], ['killjoy', 'cypher', 'jett']];
@@ -231,7 +235,8 @@ describe('answers', () => {
   });
   spec('the rules of a question: left out, locked and new agents can’t be picked', () => {
     const r = rulesOf(q({ party: 3, exclude: ['reyna'], locked: ['jett'], newAgents: false }));
-    ok(!r.allowed(ix('reyna')) && !r.allowed(ix('jett')) && !r.allowed(ix('hush')) && r.allowed(ix('omen')));
+    ok(!r.allowed(ix('reyna')) && !r.allowed(ix('jett')) && r.allowed(ix('omen')) && r.allowed(ix('hush')));
+    for (const d of NEW_AGENTS) ok(!r.allowed(ix(d.id)), d.name);
     const pooled = rulesOf(q({ party: 2, pools: [['omen'], ['sova']] }));
     ok(pooled.allowed(ix('omen')) && !pooled.allowed(ix('jett')), 'only agents someone plays');
     ok(rulesOf(q({ party: 2, pools: [['omen'], []] })).allowed(ix('jett')), 'a player who plays anyone can take anyone');
@@ -314,7 +319,18 @@ describe('explanations', () => {
     ok(e.cons.every((x) => /[.]$/.test(x)));
   });
   spec('a new agent gets a note that the numbers are estimates', () => {
+    for (const d of NEW_AGENTS) {
+      const e = explainTeam(modelFor(at('pearl')), [d.id, 'omen', 'sova', 'killjoy', 'fade']);
+      ok(e.notes.some((n) => n.includes(`${d.name} is new`)), d.name);
+    }
     const e = explainTeam(modelFor(at('pearl')), ['hush', 'omen', 'sova', 'killjoy', 'fade']);
-    ok(e.notes.some((n) => n.includes('Hush is new')));
+    ok(!e.notes.some((n) => n.includes('estimate')), 'Hush’s numbers aren’t estimates any more');
+  });
+  spec('pro play doesn’t pull an agent who came out after the pro events either way', () => {
+    for (const rank of ['iron', 'radiant'] as const) {
+      const m = modelFor(at('haven', 'attack', rank));
+      eq(m.fitParts.pro[ix('hush')], 0, rank);
+      ok(m.fitParts.rank[ix('hush')]! <= 0, `${rank}: a hard agent costs a little at low ranks, and nothing at Radiant`);
+    }
   });
 });

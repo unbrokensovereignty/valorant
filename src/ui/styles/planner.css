@@ -71,10 +71,20 @@ html[data-motion='off'] .spinner { animation: none; border-color: var(--accent);
 .map-choice-text { flex: 1; min-width: 0; display: grid; }
 .map-choice-text small { color: var(--text2); }
 .q-party-on { display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 10px; border-radius: var(--r); background: var(--accent-soft); color: var(--accent-text); font-size: 0.9rem; }
-.q-roles { display: grid; gap: 8px; }
-.q-role { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+/* one grid for every role, so the names and the counts line up; the counts are compact so they fit
+   beside the longest name in the planner's side panel at every text size, and should the panel
+   ever be too narrow, every row puts its counts under its name, not just the longest */
+.q-roles { container-type: inline-size; }
+.q-roles-grid { display: grid; grid-template-columns: minmax(max-content, 1fr) auto; align-items: center; gap: 8px 10px; }
+.q-role { display: contents; }
 .q-role-name { display: inline-flex; align-items: center; gap: 6px; font-size: 0.92rem; color: var(--text2); }
-.question .q-role .segmented { display: inline-flex; }
+.question .q-role .segmented { display: inline-flex; justify-self: end; }
+.question .q-role .small-seg button { min-width: 28px; padding: 0 6px; }
+@container (max-width: 15em) {
+  .q-roles-grid { grid-template-columns: auto; justify-items: start; gap: 4px; }
+  .q-role:not(:first-child) .q-role-name { margin-top: 6px; }
+  .question .q-role .segmented { justify-self: start; }
+}
 .small-seg button { min-width: 34px; height: 28px; padding: 0 8px; font-size: 0.85rem; }
 .q-options .toggle { font-size: 0.92rem; }
 
@@ -165,7 +175,7 @@ html[data-motion='off'] .spinner { animation: none; border-color: var(--accent);
 .strengths h3 { margin-bottom: 6px; }
 .strength-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
 .strength-table th, .strength-table td { padding: 6px 8px 6px 0; border-top: 1px solid var(--line); text-align: left; vertical-align: middle; }
-.strength-table thead th { border-top: 0; color: var(--text3); font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+.strength-table thead th { border-top: 0; color: var(--text3); font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; }
 .strength-table tbody th { font-weight: 650; white-space: nowrap; }
 .strength-table td:nth-child(3) { width: 22%; min-width: 80px; }
 .strength-table .by { color: var(--text2); }
@@ -176,6 +186,7 @@ html[data-motion='off'] .spinner { animation: none; border-color: var(--accent);
 .tips b { font-size: 0.82rem; color: var(--accent-text); }
 
 .agent-list { display: grid; gap: 12px; }
+.agent-list > .segmented { justify-self: start; }
 .agent-rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
 .agent-rows > li { border-radius: var(--r); }
 .agent-rows > li.open { background: var(--surface); box-shadow: var(--shadow-1); }

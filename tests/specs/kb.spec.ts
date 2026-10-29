@@ -1,12 +1,13 @@
 import { describe, spec, eq, ok, throws } from './harness.ts';
-import { AGENTS, agentById, parseCaps } from '../../src/core/kb/agents.ts';
-import { kitOf, abilityOn, abilityNames } from '../../src/core/kb/kits.ts';
+import { AGENTS, agentById, isNew, parseCaps } from '../../src/core/kb/agents.ts';
+import { kitOf, abilityOn, abilityNames, plainText, textParts } from '../../src/core/kb/kits.ts';
 import { MAPS, POOL, mapById, parseNeeds, calloutLabel } from '../../src/core/kb/maps.ts';
-import { PRO, proPick } from '../../src/core/kb/pro.ts';
+import { PRO, proKnown, proPick } from '../../src/core/kb/pro.ts';
 import { PAIRS, pairOf } from '../../src/core/kb/synergy.ts';
 import { RANKS } from '../../src/core/kb/ranks.ts';
 import { DIMS, DIM_INFO, ROLE_IDS } from '../../src/core/kb/roles.ts';
 import { NEW_AGENTS } from '../../src/core/kb/new-agents.ts';
+import { inUse } from '../../src/core/settings.ts';
 
 describe('agents', () => {
   spec('every agent has a role, strengths from 0 to 1, and fair numbers', () => {
@@ -41,8 +42,20 @@ describe('agents', () => {
     eq(parseCaps('smoke .5 Q; wall .25', 'x'), { caps: { smoke: 0.5, wall: 0.25 }, via: { smoke: 'Q' } });
   });
   spec('new agents are in, with their numbers marked as estimates', () => {
-    for (const d of NEW_AGENTS) ok(agentById(d.id)?.name === d.name, `${d.name} is an agent`);
-    ok(agentById('hush')?.estimate, 'Hush’s numbers are estimates');
+    for (const d of NEW_AGENTS) ok(agentById(d.id)?.name === d.name && agentById(d.id)?.estimate, `${d.name} is an agent, marked as an estimate`);
+    for (const a of AGENTS) if (a.estimate) ok(NEW_AGENTS.some((d) => d.id === a.id), `${a.name} is kept with the new agents`);
+    eq(inUse('includeNew'), NEW_AGENTS.length > 0, '“Include new agents” is offered only while there are some');
+  });
+  spec('Hush is a full agent now that she’s out', () => {
+    const hush = agentById('hush')!;
+    ok(!hush.estimate, 'not an estimate');
+    ok(isNew(hush, '2026-10-26') && isNew(hush, '2026-10-29') && isNew(hush, '2026-12-26'), 'new from just before her release to two months after');
+    ok(!isNew(hush, '2026-12-27') && !isNew(agentById('jett')!, '2026-10-29'), 'and not after that, nor an agent out for years');
+    ok(!proKnown(hush), 'released after the pro events, so pro play doesn’t count for her yet');
+    eq(['C', 'Q', 'E', 'X'].map((k) => abilityOn('hush', k)?.name), ['Flow', 'Flashbulb', 'Displacement', 'Suspension']);
+  });
+  spec('agents released before the pro events count their pro picks', () => {
+    for (const a of AGENTS) if (a.id !== 'hush') ok(proKnown(a), a.name);
   });
 });
 
@@ -67,6 +80,17 @@ describe('kits', () => {
     eq(abilityOn('deadlock', 'C')?.name, 'GravNet');
     eq(abilityOn('deadlock', 'E')?.name, 'Barrier Mesh');
     for (const a of AGENTS) for (const x of kitOf(a.id)!.abilities) ok(/[a-z]/.test(x.name), `${a.name}: “${x.name}”`);
+  });
+  spec('the game’s marks in ability text are all known, so none shows as code', () => {
+    eq(textParts('EQUIP <whitebold>Flashbulb</>. Explodes, <debuffred>flashing</> all players.'), [
+      { kind: 'plain', text: 'EQUIP ' }, { kind: 'name', text: 'Flashbulb' }, { kind: 'plain', text: '. Explodes, ' },
+      { kind: 'enemy', text: 'flashing' }, { kind: 'plain', text: ' all players.' },
+    ]);
+    eq(plainText('grants <teal>haste</> to allies'), 'grants haste to allies');
+    for (const a of AGENTS) for (const x of kitOf(a.id)!.abilities) {
+      ok(!/[<>]/.test(plainText(x.text)), `${a.name}: ${x.name} has no stray marks`);
+      ok(textParts(x.text).every((p) => p.kind !== 'plain' || !p.text.includes('</>')), `${a.name}: ${x.name}`);
+    }
   });
 });
 

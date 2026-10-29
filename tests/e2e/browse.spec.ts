@@ -45,9 +45,15 @@ test('Agents: each agent’s page has the kit, strengths, best maps and partners
   await page.getByRole('button', { name: 'Plan with Killjoy' }).click();
   await expect(page.locator('main h1')).toHaveText('Planner');
   await expect(page.locator('.answers-head')).toContainText('with Killjoy');
-  // the new agent's page says the numbers are early estimates
+  // Hush's page has her kit in the game's words, with its marks shown, and says where her numbers come from
   await go(page, 'agents/hush');
-  await expect(page.locator('main')).toContainText('estimate');
+  await expect(page.locator('.kit li')).toHaveCount(5);
+  await expect(page.locator('.kit')).toContainText('Displacement');
+  await expect(page.locator('.kit .kit-fx.enemy').first()).toBeVisible();
+  await expect(page.locator('.kit')).not.toContainText('</>');
+  await expect(page.locator('main')).toContainText('first days');
+  await expect(page.locator('main')).toContainText('None yet');
+  await expect(page.locator('main')).not.toContainText('estimate');
   expect(errors).toEqual([]);
 });
 

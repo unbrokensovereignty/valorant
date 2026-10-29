@@ -16,7 +16,7 @@ export const AGENT_TIPS: Record<string, readonly [string, string]> = {
   neon: ['Fast Lane lets the team cross wide lanes; run in right behind the walls.', 'Neon’s speed wins fast hits: commit before the defenders can rotate.'],
   iso: ['Double Tap’s shield wins the first duel; take fights where only one enemy can see you.', 'Contingency only covers a short crossing; the team still needs smokes.'],
   waylay: ['Lightspeed in, and Refract back to safety if the fight goes wrong.', 'Saturate slows a group on site; pair it with a flash for the entry.'],
-  hush: ['Pull enemies together with Displacement, then flash or shoot them while they recover.', 'Hush is new and her numbers are early estimates, so trust your own games over her place in the ranking.'],
+  hush: ['Steer Displacement next to a wall, a box or a teammate: it only concusses enemies who hit something, so it does little in the open.', 'Let the main entry go first and set them up with Flashbulb and Displacement; Flow is too slow to dash in alone.'],
   sova: ['Use Recon Bolt before the hit, not during it, so the team knows where to go.', 'Save Shock Bolt and Hunter’s Fury for after the plant to stop the defuse.'],
   breach: ['Call your Flashpoint before throwing it so the entry swings as it pops.', 'Fault Line and Aftershock clear close spots so the entry doesn’t have to fight them.'],
   skye: ['Guiding Light tells you if it hit; call it so the entry knows when to swing.', 'Trailblazer clears a corner on its own; send it before anyone peeks.'],
@@ -129,10 +129,10 @@ export const PARTY_TIPS: Record<2 | 3, readonly string[]> = {
   ],
 };
 
-/** Tips for a team with two of a role (what doubling up asks of the team). */
+/** Tips for a team with two of a role (what doubling up asks of the team), shown under "Two duelists" and so on. */
 export const DOUBLE_TIPS: Record<Role, string> = {
-  duelist: 'With two duelists, enter one right after the other so the second can trade the first.',
-  initiator: 'With two initiators, one finds the enemies and the other flashes them; don’t spend both on the same angle.',
-  controller: 'With two controllers, one smokes the hit and the other plays mid or saves smokes for after the plant.',
-  sentinel: 'With two sentinels, one holds a site and the other watches the flank or plays mid.',
+  duelist: 'Go in one right after the other, so the second can trade the first.',
+  initiator: 'One finds the enemies and the other flashes them; don’t spend both on the same angle.',
+  controller: 'One smokes the hit and the other plays mid or saves smokes for after the plant.',
+  sentinel: 'One holds a site and the other watches the flank or plays mid.',
 };

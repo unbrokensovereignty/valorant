@@ -8,7 +8,8 @@ import abilityArt from 'assets:abilities';
 import roleArt from 'assets:roles';
 import bannerArt from 'assets:banners';
 import minimapArt from 'assets:minimaps';
-import { agentById } from '../core/kb/agents.ts';
+import { agentById, isNew } from '../core/kb/agents.ts';
+import { keyOf } from '../core/dates.ts';
 import { abilityOn } from '../core/kb/kits.ts';
 import { mapById } from '../core/kb/maps.ts';
 import { roleOf, type Role } from '../core/kb/roles.ts';
@@ -23,7 +24,7 @@ export function AgentIcon({ id, size = 40, label }: { id: string; size?: number;
   return (
     <span class={`agent-icon role-${a?.role ?? 'none'}`} style={{ width: `${size}px`, height: `${size}px` }} role={label ? 'img' : undefined} aria-label={label ? name : undefined} aria-hidden={label ? undefined : 'true'}>
       {src ? <img src={src} alt="" width={size} height={size} draggable={false} /> : <span class="agent-initial" style={{ fontSize: `${Math.round(size * 0.42)}px` }}>{[...name][0]}</span>}
-      {a?.estimate && <span class="agent-new" aria-hidden="true">New</span>}
+      {a && isNew(a, keyOf(new Date())) && <span class="agent-new" aria-hidden="true">New</span>}
     </span>
   );
 }

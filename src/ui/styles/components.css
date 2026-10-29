@@ -220,7 +220,7 @@ textarea.input { height: auto; min-height: 84px; padding: 10px 12px; resize: ver
 .tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); margin-bottom: var(--sp-5); }
 .tabs button {
   position: relative; height: 40px; padding: 0 14px; border: 0; background: transparent; color: var(--text2);
-  font-weight: 650; cursor: pointer; border-radius: var(--r-sm) var(--r-sm) 0 0; transition: color var(--dur-quick), background-color var(--dur-quick);
+  font-weight: 650; white-space: nowrap; cursor: pointer; border-radius: var(--r-sm) var(--r-sm) 0 0; transition: color var(--dur-quick), background-color var(--dur-quick);
 }
 .tabs button:hover { color: var(--text); background: var(--surface-2); }
 .tabs button[aria-selected='true'] { color: var(--accent-text); }
@@ -256,15 +256,26 @@ textarea.input { height: auto; min-height: 84px; padding: 10px 12px; resize: ver
   background: color-mix(in oklab, var(--bg) 55%, rgba(0, 0, 0, 0.35)); backdrop-filter: blur(3px);
   animation: fade-in var(--dur-base) var(--ease) both;
 }
+/* the title and the buttons stay in view; only the body scrolls when the window is short */
 .dialog {
-  width: min(480px, 100%); max-height: calc(100vh - 64px); overflow: auto;
+  width: min(480px, 100%); max-height: calc(100vh - 64px); display: flex; flex-direction: column; overflow: hidden;
   border: 1px solid var(--line); border-radius: var(--r-xl); background: var(--surface); box-shadow: var(--shadow-3);
   animation: pop-in var(--dur-base) var(--ease-spring) both;
 }
 .dialog.wide { width: min(760px, 100%); }
 .dialog-head { display: flex; align-items: flex-start; gap: 12px; padding: 22px 24px 8px; }
 .dialog-head h2 { font-size: 1.25rem; flex: 1; }
-.dialog-body { padding: 8px 24px 20px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; color: var(--text2); }
+.dialog-head, .dialog-foot { flex: none; }
+/* a soft shadow shows at an edge only while there's more to scroll to past it */
+.dialog-body {
+  flex: 1 1 auto; min-height: 0; overflow: auto; padding: 8px 24px 20px; display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: 14px; color: var(--text2);
+  --edge: color-mix(in oklab, var(--text) 16%, transparent);
+  background:
+    linear-gradient(var(--surface) 40%, transparent) top / 100% 28px no-repeat local,
+    linear-gradient(transparent, var(--surface) 60%) bottom / 100% 28px no-repeat local,
+    radial-gradient(farthest-side at 50% 0, var(--edge), transparent) top / 100% 10px no-repeat scroll,
+    radial-gradient(farthest-side at 50% 100%, var(--edge), transparent) bottom / 100% 10px no-repeat scroll;
+}
 /* (a long choice, such as one naming two long language names, wraps inside the dialog) */
 .dialog-body .segmented button { height: auto; min-height: 30px; padding-block: 5px; white-space: normal; overflow-wrap: anywhere; }
 .dialog-body strong { color: var(--text); }

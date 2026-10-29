@@ -12,11 +12,21 @@
  * - `pro`: how often pro teams picked the agent at the year's top events, in percent of maps played.
  *
  * Sources: the abilities are the game's own text (content.gen.ts). Pick rates: ranked shares
- * across all ranks (metabot.gg, patch 13.08) and pro picks at Champions 2026 (vlr.gg). Strength
- * values are judgment, checked against how the agents are used in pro play.
+ * across all ranks (metabot.gg, patches 13.08 and 13.09) and pro picks at Champions 2026 (vlr.gg).
+ * Strength values are judgment, checked against how the agents are used in pro play.
+ *
+ * Hush came out on 27 October 2026 (patch 13.09), after the year's last pro event, so she has no
+ * pro picks yet (see PRO_CUTOFF in pro.ts). Her pick rate is from her first days across all ranks
+ * (op.gg, patch 13.09: 6.8% of picks, and 46.9% of games won while players learn her). Her strengths
+ * come from her kit and hands-on reviews: a second duelist who sets the entry up rather than
+ * diving first; Displacement only concusses enemies pulled into a wall or another player, so it is
+ * best in tight spaces; Flashbulb is a single steerable flash; Flow is a slow, delayed move; and
+ * Suspension lifts everyone it catches for 4 seconds, unable to shoot or use abilities, but is a
+ * hard shot to land. Her steered utility makes her harder to play well than most duelists.
  */
 import { isDim, type Dim, type Role } from './roles.ts';
 import { NEW_AGENTS } from './new-agents.ts';
+import { diffDays } from '../dates.ts';
 
 export interface AgentDef {
   id: string;
@@ -85,6 +95,11 @@ const DEFS: readonly AgentDef[] = [
     caps: 'entry .8 Q; mobility .85 QE; disrupt .45 CX; clear .2 C; stall .3 C; duel .65 G',
     line: 'Dashes in, slows the defenders with light and zips back to safety.',
   },
+  {
+    id: 'hush', name: 'Hush', role: 'duelist', released: '2026-10-27', solo: 0.6, skill: 0.75, pop: 6.8, pro: 0,
+    caps: 'disrupt .65 EX; entry .55 EQ; flash .5 Q; clear .4 E; mobility .5 C; retake .55 X; postplant .3 X; stall .3 E; duel .6 G',
+    line: 'Steers a flash and a pulling blast around corners, and lifts a whole site helpless with her ultimate.',
+  },
   ...NEW_AGENTS,
   // ------------------------------------------------ initiators
   {
@@ -150,7 +165,9 @@ const DEFS: readonly AgentDef[] = [
   },
   {
     id: 'clove', name: 'Clove', role: 'controller', released: '2024-03-26', solo: 0.85, skill: 0.35, pop: 13.9, pro: 4,
-    caps: 'smoke .85 E; entry .4 CX; disrupt .3 Q; sustain .25 C; duel .55 GX; mobility .3 C',
+    // patch 13.09: Pick-me-up's speed went from 15% to 10%, and killing Clove after Not Dead Yet
+    // gives the killer an ultimate point and a step toward their signature ability
+    caps: 'smoke .85 E; entry .4 CX; disrupt .3 Q; sustain .25 C; duel .55 GX; mobility .25 C',
     line: 'Smokes even after dying, so they can play aggressively like a duelist.',
   },
   {
@@ -224,3 +241,9 @@ export const isAgent = (v: unknown): v is AgentId => typeof v === 'string' && BY
 export const AGENTS_BY_NAME: readonly Agent[] = [...AGENTS].sort((a, b) => a.name.localeCompare(b.name));
 /** An agent that came out within this many days counts as new. */
 export const NEW_DAYS = 60;
+/** New on `today` (a day key): coming soon, out within NEW_DAYS, or still an estimate. */
+export const isNew = (a: { released: string; estimate?: boolean }, today: string): boolean => !!a.estimate || diffDays(a.released, today) <= NEW_DAYS;
+/** The day the pick rates were taken. */
+export const STATS_ON = '2026-10-29';
+/** The agent's pick rate comes from their first weeks, when players are still learning them. */
+export const earlyStats = (a: { released: string }): boolean => diffDays(a.released, STATS_ON) < NEW_DAYS;

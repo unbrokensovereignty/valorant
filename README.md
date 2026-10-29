@@ -2,7 +2,7 @@
 
 An offline team comp planner for VALORANT, for desktop browsers. Designed and directed by Sovereign.
 
-Download `Playbook By Sovereign v0.1.0.html` from this repository and open it in Chrome, Edge, Firefox or Safari. There's nothing to install, no account and no network: everything is saved in your browser.
+Download `Playbook By Sovereign v0.1.5.html` from this repository and open it in Chrome, Edge, Firefox or Safari. There's nothing to install, no account and no network: everything is saved in your browser.
 
 ## What it does
 
@@ -12,7 +12,7 @@ Download `Playbook By Sovereign v0.1.0.html` from this repository and open it in
 - **Saved.** Keep plans you like, with a note, and your usual party with the agents each of you plays, so planning for it is one click.
 - **Your way.** Light and dark themes (or your own), text size, motion and sound settings, full keyboard use, undo for every change, and backups to a file.
 
-The numbers come from ranked and pro play up to the patch named on the Home page. Hush, the newest agent, is in with early estimates from the kit that was shown, marked as such, until there's play to go on.
+The numbers come from ranked and pro play up to the patch named on the Home page. Hush, the newest agent, came out after the year's top pro events, so her numbers come from her first days in ranked and from her kit, and pro play counts neither for nor against her yet.
 
 ## Working on it
 

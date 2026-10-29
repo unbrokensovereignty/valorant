@@ -155,7 +155,7 @@ export function Question({ q }: { q: Query }) {
       </Part>
 
       <Part title={q.party === 5 ? 'Roles in the team' : 'Roles in your party'} help="Set how many of a role you want, like two controllers.">
-        <div class="q-roles">{ROLES.map((x) => rolePick(x.id))}</div>
+        <div class="q-roles"><div class="q-roles-grid">{ROLES.map((x) => rolePick(x.id))}</div></div>
       </Part>
 
       <Part title="Options">

@@ -39,8 +39,8 @@ export interface MapDef {
 }
 
 /** The game's patch that the numbers (pick rates, the map pool) were taken at. */
-export const PATCH = '13.08';
-/** The competitive pool since that patch (13 October 2026); it changes next on 6 January 2027. */
+export const PATCH = '13.09';
+/** The competitive pool since patch 13.08 (13 October 2026); it changes next on 6 January 2027. */
 export const POOL_SINCE = '2026-10-13';
 
 const DEFS: readonly MapDef[] = [

@@ -18,7 +18,19 @@ function layoutProblems() {
     if (cs.overflowX !== 'visible' && !scrolls && cs.textOverflow !== 'ellipsis' && el.scrollWidth > el.clientWidth + 2) out.push(`cut off: ${el.tagName}.${el.className}`);
     // a box that scrolls sideways may hold wider things
     if (!el.parentElement?.closest('.heat-wrap') && (r.right > innerWidth + 1 || r.left < -1)) out.push(`off screen: ${el.tagName}.${el.className}`);
+    // a tab's or a choice's label stays on one line
+    if (el.matches('.tabs button, .segmented button')) {
+      for (const n of el.childNodes) {
+        if (n.nodeType !== Node.TEXT_NODE || !n.textContent!.trim()) continue;
+        const rg = document.createRange();
+        rg.selectNodeContents(n);
+        if (new Set([...rg.getClientRects()].map((q) => Math.round(q.top))).size > 1) out.push(`label wraps: ${el.textContent!.trim()}`);
+      }
+    }
   }
+  // the Planner's role rows line up: every row's counts start at the same place
+  const counts = [...document.querySelectorAll('.q-roles-grid .segmented')].map((e) => Math.round(e.getBoundingClientRect().left));
+  if (new Set(counts).size > 1) out.push('the role counts don’t line up');
   if (document.documentElement.scrollWidth > innerWidth) out.push('the page scrolls sideways');
   return [...new Set(out)];
 }
