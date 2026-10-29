@@ -75,5 +75,13 @@ export const PRO: Record<string, ProMap> = {
   },
 };
 
+/**
+ * Champions 2026, the last event these numbers come from, began on 24 September 2026. An agent
+ * released after that hasn't had the chance to be picked by pro teams yet.
+ */
+export const PRO_CUTOFF = '2026-09-24';
+/** Pro teams have had the chance to pick the agent (it isn't new since the events above). */
+export const proKnown = (a: { released: string; estimate?: boolean }): boolean => !a.estimate && a.released < PRO_CUTOFF;
+
 /** How often pro teams pick an agent on a map, in percent (0 when rarely). */
 export const proPick = (map: string, agent: string): number => PRO[map]?.picks[agent] ?? 0;

@@ -1,8 +1,8 @@
 import { describe, spec, eq, ok, throws } from './harness.ts';
 import { AGENTS, agentById, parseCaps } from '../../src/core/kb/agents.ts';
-import { kitOf, abilityOn, abilityNames } from '../../src/core/kb/kits.ts';
+import { kitOf, abilityOn, abilityNames, plainText, textParts } from '../../src/core/kb/kits.ts';
 import { MAPS, POOL, mapById, parseNeeds, calloutLabel } from '../../src/core/kb/maps.ts';
-import { PRO, proPick } from '../../src/core/kb/pro.ts';
+import { PRO, proKnown, proPick } from '../../src/core/kb/pro.ts';
 import { PAIRS, pairOf } from '../../src/core/kb/synergy.ts';
 import { RANKS } from '../../src/core/kb/ranks.ts';
 import { DIMS, DIM_INFO, ROLE_IDS } from '../../src/core/kb/roles.ts';
@@ -41,8 +41,17 @@ describe('agents', () => {
     eq(parseCaps('smoke .5 Q; wall .25', 'x'), { caps: { smoke: 0.5, wall: 0.25 }, via: { smoke: 'Q' } });
   });
   spec('new agents are in, with their numbers marked as estimates', () => {
-    for (const d of NEW_AGENTS) ok(agentById(d.id)?.name === d.name, `${d.name} is an agent`);
-    ok(agentById('hush')?.estimate, 'Hush’s numbers are estimates');
+    for (const d of NEW_AGENTS) ok(agentById(d.id)?.name === d.name && agentById(d.id)?.estimate, `${d.name} is an agent, marked as an estimate`);
+    for (const a of AGENTS) if (a.estimate) ok(NEW_AGENTS.some((d) => d.id === a.id), `${a.name} is kept with the new agents`);
+  });
+  spec('Hush is a full agent now that she’s out', () => {
+    const hush = agentById('hush')!;
+    ok(!hush.estimate, 'not an estimate');
+    ok(!proKnown(hush), 'released after the pro events, so pro play doesn’t count for her yet');
+    eq(['C', 'Q', 'E', 'X'].map((k) => abilityOn('hush', k)?.name), ['Flow', 'Flashbulb', 'Displacement', 'Suspension']);
+  });
+  spec('agents released before the pro events count their pro picks', () => {
+    for (const a of AGENTS) if (a.id !== 'hush') ok(proKnown(a), a.name);
   });
 });
 
@@ -67,6 +76,17 @@ describe('kits', () => {
     eq(abilityOn('deadlock', 'C')?.name, 'GravNet');
     eq(abilityOn('deadlock', 'E')?.name, 'Barrier Mesh');
     for (const a of AGENTS) for (const x of kitOf(a.id)!.abilities) ok(/[a-z]/.test(x.name), `${a.name}: “${x.name}”`);
+  });
+  spec('the game’s marks in ability text are all known, so none shows as code', () => {
+    eq(textParts('EQUIP <whitebold>Flashbulb</>. Explodes, <debuffred>flashing</> all players.'), [
+      { kind: 'plain', text: 'EQUIP ' }, { kind: 'name', text: 'Flashbulb' }, { kind: 'plain', text: '. Explodes, ' },
+      { kind: 'enemy', text: 'flashing' }, { kind: 'plain', text: ' all players.' },
+    ]);
+    eq(plainText('grants <teal>haste</> to allies'), 'grants haste to allies');
+    for (const a of AGENTS) for (const x of kitOf(a.id)!.abilities) {
+      ok(!/[<>]/.test(plainText(x.text)), `${a.name}: ${x.name} has no stray marks`);
+      ok(textParts(x.text).every((p) => p.kind !== 'plain' || !p.text.includes('</>')), `${a.name}: ${x.name}`);
+    }
   });
 });
 

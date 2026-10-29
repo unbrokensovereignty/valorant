@@ -71,10 +71,18 @@ html[data-motion='off'] .spinner { animation: none; border-color: var(--accent);
 .map-choice-text { flex: 1; min-width: 0; display: grid; }
 .map-choice-text small { color: var(--text2); }
 .q-party-on { display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 10px; border-radius: var(--r); background: var(--accent-soft); color: var(--accent-text); font-size: 0.9rem; }
-.q-roles { display: grid; gap: 8px; }
-.q-role { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+/* one grid for every role, so the names and the counts line up; where the panel is too narrow
+   for a name beside its counts, every row puts its counts under its name, not just the longest */
+.q-roles { container-type: inline-size; }
+.q-roles-grid { display: grid; grid-template-columns: minmax(max-content, 1fr) auto; align-items: center; gap: 8px 10px; }
+.q-role { display: contents; }
 .q-role-name { display: inline-flex; align-items: center; gap: 6px; font-size: 0.92rem; color: var(--text2); }
-.question .q-role .segmented { display: inline-flex; }
+.question .q-role .segmented { display: inline-flex; justify-self: end; }
+@container (max-width: 19em) {
+  .q-roles-grid { grid-template-columns: auto; justify-items: start; gap: 4px; }
+  .q-role:not(:first-child) .q-role-name { margin-top: 6px; }
+  .question .q-role .segmented { justify-self: start; }
+}
 .small-seg button { min-width: 34px; height: 28px; padding: 0 8px; font-size: 0.85rem; }
 .q-options .toggle { font-size: 0.92rem; }
 

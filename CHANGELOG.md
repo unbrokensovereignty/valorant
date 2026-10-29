@@ -2,6 +2,10 @@
 
 Every version of Playbook By Sovereign and what it changed.
 
+## 0.1.5 (in progress)
+
+- **Hush, for real.** Hush is in as a full agent now that she's out: her abilities in the game's own words, her portrait and ability icons, numbers from her first days in ranked and from hands-on reviews of her kit, her best partners and two new tips. She's no longer marked as an estimate, and the Home page still says she's new for her first weeks.
+
 ## 0.1.0 (2026-10-29)
 
 The first version.

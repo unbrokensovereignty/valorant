@@ -10,6 +10,7 @@ import { openWhatsNew } from '../components/whatsnew.tsx';
 import { AGENTS } from '../../core/kb/agents.ts';
 import { MAPS, PATCH, POOL, POOL_SINCE } from '../../core/kb/maps.ts';
 import { NEW_AGENTS } from '../../core/kb/new-agents.ts';
+import { proKnown } from '../../core/kb/pro.ts';
 import { PLAYS } from '../../core/kb/plays.ts';
 import { FIT_MID, TIERS } from '../../core/engine/weights.ts';
 import { fmtLongDay } from '../../core/dates.ts';
@@ -67,6 +68,7 @@ const tierWords = (): string => listJoin(TIERS.map((t, i) => (t.min > 0 ? `${t.i
 
 function Guide() {
   const fresh = NEW_AGENTS.map((a) => a.name);
+  const latest = AGENTS.filter((a) => !a.estimate && !proKnown(a)).map((a) => a.name);
   return (
     <div class="stack guide">
       <section class="panel">
@@ -107,6 +109,7 @@ function Guide() {
         <section class="panel stack">
           <h2>Where the numbers come from</h2>
           <p>Playbook knows {plural(AGENTS.length, 'agent')} and {plural(MAPS.length, 'map')}, as of patch {PATCH}. Each agent’s strengths are judged from their kit and how they’re played. Pick rates in ranked come from metabot.gg, and pro picks from vlr.gg (Champions 2026, Masters Santiago 2026 and the China league of 2026). The map pool is the one since {fmtLongDay(POOL_SINCE)}.</p>
+          {latest.length > 0 && <p>{listJoin(latest)} came out after those events, so pro play doesn’t count for or against {listJoin(latest)} yet, and the pick rate in ranked is from the first days of play (op.gg).</p>}
           {fresh.length > 0 && <p>{listJoin(fresh)} {fresh.length === 1 ? 'is' : 'are'} too new for real numbers, so the scores are early estimates from the kit that was shown. Leave {listJoin(fresh)} out of a question under Options, or out of every new one in <a href="#/settings/includeNew">Settings → Planner</a>.</p>}
           <p>Playbook works offline, so it doesn’t fetch match stats while you use it; a new version brings new numbers.</p>
         </section>

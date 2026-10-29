@@ -18,31 +18,31 @@ export const KITS: Record<string, Kit> = {
     "key": "C",
     "slot": "grenade",
     "name": "Gravity Well",
-    "text": "Place Stars in Astral Form (Ultimate Key). ACTIVATE a Star to form a Gravity Well. Players in the area are pulled toward the center before it explodes, making all players still trapped inside Vulnerable."
+    "text": "ACTIVATE a <whitebold>Star</> to create a zone that <debuffred>pulls</> all players to the center, exploding and applying <debuffred>vulnerable</> to all players."
    },
    {
     "key": "Q",
     "slot": "ability1",
     "name": "Nova Pulse",
-    "text": "Place Stars in Astral Form (Ultimate Key). ACTIVATE a Star to detonate a Nova Pulse. The Nova Pulse charges briefly then strikes, Concussing all players in its area."
+    "text": "ACTIVATE a <whitebold>Star</> to detonate it, <debuffred>concussing</> all players hit."
    },
    {
     "key": "E",
     "slot": "ability2",
     "name": "Nebula",
-    "text": "Place Stars in Astral Form (Ultimate Key). ACTIVATE a Star to transform it into a Nebula (smoke). USE a Star to Dissipate it, returning the Star to be placed in a new location after a delay. Dissipate briefly forms a fake Nebula at the Star's location before returning."
+    "text": "ACTIVATE a <whitebold>Star</> to transform it into a smoke."
    },
    {
     "key": "X",
     "slot": "ultimate",
     "name": "Cosmic Divide",
-    "text": "ACTIVATE to enter Astral Form where you can place Stars with FIRE. Stars can be reactivated later, transforming them into a Nova Pulse, Nebula, or Gravity Well. When Cosmic Divide is charged, use ALT FIRE in Astral Form to begin aiming it, then FIRE to select two locations. An infinite Cosmic Divide connects the two points you select. Cosmic Divide blocks bullets and sound."
+    "text": "ENTER <whitebold>Astral Form</>. ALT FIRE to EQUIP <whitebold>Cosmic Divide</>. FIRE to set, pivot and FIRE again to create an indestructible wall that blocks audio."
    },
    {
     "key": "Passive",
     "slot": "passive",
     "name": "Astral Form",
-    "text": "ACTIVATE Ultimate to enter Astral Form and PRIMARY FIRE to place Stars. Target Stars with your Nova Pulse, Nebula, or Gravity Well to use those abilities."
+    "text": "ACTIVATE ULTIMATE to ENTER <whitebold>Astral Form</>. FIRE to cast <whitebold>Stars</>. INTERACT to recall a <whitebold>Star</>. Recalling a <whitebold>Star</> forms a brief smoke."
    }
   ]
  },
@@ -58,25 +58,25 @@ export const KITS: Record<string, Kit> = {
     "key": "C",
     "slot": "grenade",
     "name": "Aftershock",
-    "text": "EQUIP a fusion charge. FIRE the charge to set a slow-acting burst through the wall. The burst does heavy damage to anyone caught in its area."
+    "text": "EQUIP <whitebold>Aftershock</>. FIRE to send a zone through a wall, exploding to repeatedly deal <debuffred>damage</> to all players."
    },
    {
     "key": "Q",
     "slot": "ability1",
     "name": "Flashpoint",
-    "text": "EQUIP a Blinding charge. FIRE the charge to set a fast-acting burst through the wall. The charge detonates to Blind all players looking at it."
+    "text": "EQUIP a <whitebold>Flashpoint</>. FIRE to send it through a wall, exploding to <debuffred>flash</> all players looking at it."
    },
    {
     "key": "E",
     "slot": "ability2",
     "name": "Fault Line",
-    "text": "EQUIP a Seismic Blast. HOLD FIRE to increase the distance. RELEASE to set off the quake, Concussing all players in its zone and in a line up to the zone."
+    "text": "EQUIP <whitebold>Fault Line</>. HOLD FIRE to increase distance. RELEASE to detonate a zone that <debuffred>concusses</> all players."
    },
    {
     "key": "X",
     "slot": "ultimate",
     "name": "Rolling Thunder",
-    "text": "EQUIP a Seismic Charge. FIRE to send a cascading quake through all terrain in a large zone. The quake Concusses and knocks up anyone caught in it."
+    "text": "EQUIP <whitebold>Rolling Thunder</>. FIRE to send forward a wave that <debuffred>concusses</> and <debuffred>knocks up</> all players."
    }
   ]
  },
@@ -92,25 +92,25 @@ export const KITS: Record<string, Kit> = {
     "key": "C",
     "slot": "grenade",
     "name": "Stim Beacon",
-    "text": "INSTANTLY toss down a stim beacon. Upon landing, it creates a field that grants players a Combat Stim and a Speed Boost."
+    "text": "INSTANTLY throw a <whitebold>Stim Beacon</>. On landing, create a zone that grants <teal>combat stim</> and <teal>haste</> to allies."
    },
    {
     "key": "Q",
     "slot": "ability1",
     "name": "Incendiary",
-    "text": "EQUIP an incendiary grenade launcher. FIRE to launch a grenade that detonates as it comes to a rest on the floor, creating a lingering fire zone that damages players within the zone."
+    "text": "EQUIP <whitebold>Incendiary</>. FIRE to launch. On landing, create a zone that deals <debuffred>damage</> to all players."
    },
    {
     "key": "E",
     "slot": "ability2",
     "name": "Sky Smoke",
-    "text": "EQUIP a tactical map. FIRE to set locations where Brimstone's smoke clouds will land. ALT FIRE to confirm, launching long-lasting smoke clouds that block vision in the selected area."
+    "text": "EQUIP a tactical map. FIRE to set smoke locations. ALT FIRE to cast smokes."
    },
    {
     "key": "X",
     "slot": "ultimate",
     "name": "Orbital Strike",
-    "text": "EQUIP a tactical map. FIRE to launch a lingering orbital strike laser at the selected location, dealing high damage-over-time to players caught in the selected area."
+    "text": "EQUIP a tactical map. FIRE to cast an <whitebold>Orbital Strike</> at a location, dealing high <debuffred>damage</> over time to all players."
    }
   ]
  },
@@ -126,25 +126,25 @@ export const KITS: Record<string, Kit> = {
     "key": "C",
     "slot": "grenade",
     "name": "Trademark",
-    "text": "EQUIP a trap that scans for enemies. FIRE to place it on the ground. When a visible enemy comes in range, the trap counts down and then destabilizes the terrain around them, creating a lingering field that Slows players caught inside of it. The trap can be picked up to be REDEPLOYED."
+    "text": "EQUIP a destructible <whitebold>Trademark</>. FIRE to place. Triggers on nearby visible enemies in range, creating a zone that <debuffred>slows</> all players. Can be recalled."
    },
    {
     "key": "Q",
     "slot": "ability1",
     "name": "Headhunter",
-    "text": "ACTIVATE to equip a heavy pistol. ALT FIRE with the pistol equipped to aim down sights."
+    "text": "EQUIP <whitebold>Headhunter</>. FIRE to shoot. ALT FIRE to aim down sights."
    },
    {
     "key": "E",
     "slot": "ability2",
     "name": "Rendezvous",
-    "text": "EQUIP a teleport anchor. FIRE to place it on the ground. While on the ground and in range of the anchor, REACTIVATE to quickly teleport to the anchor. The anchor can be picked up to be REDEPLOYED."
+    "text": "EQUIP a destructible <whitebold>Rendezvous</>. FIRE to place. While in range, REACTIVATE to instantly teleport to it. Can be recalled."
    },
    {
     "key": "X",
     "slot": "ultimate",
     "name": "Tour De Force",
-    "text": "ACTIVATE to summon a powerful, custom sniper rifle that will kill an enemy with any direct hit to the upper body. ALT FIRE to aim down sights. Killing an enemy creates a lingering field that Slows players caught inside of it."
+    "text": "ACTIVATE to access a sniper rifle that deals <debuffred>lethal damage</> with direct hits to the upper body. FIRE to shoot. ALT FIRE to aim down sights. On kills, create a zone that <debuffred>slows</> all players."
    }
   ]
  },
@@ -160,25 +160,25 @@ export const KITS: Record<string, Kit> = {
     "key": "C",
     "slot": "grenade",
     "name": "Pick-me-up",
-    "text": "ACTIVATE to absorb the life force of a fallen enemy that Clove damaged or killed, gaining haste and temporary health."
+    "text": "ACTIVATE on a targeted dead enemy that you damaged or killed to gain <teal>haste</> and <teal>overheal</>."
    },
    {
     "key": "Q",
     "slot": "ability1",
     "name": "Meddle",
-    "text": "EQUIP a fragment of immortality essence. FIRE to throw the fragment, which upon landing on the floor, erupts after a short delay and temporarily Decays all targets caught inside."
+    "text": "EQUIP <whitebold>Meddle</>. FIRE to throw. Explodes on landing, <debuffred>decaying</> all players."
    },
    {
     "key": "E",
     "slot": "ability2",
     "name": "Ruse",
-    "text": "EQUIP a view of the battlefield. FIRE to set the locations where Clove’s clouds will settle. ALT FIRE to confirm, launching clouds that block vision in the chosen areas. Clove can use this ability after death."
+    "text": "EQUIP a tactical map. FIRE to set smoke locations. ALT FIRE to cast smokes. While dead, Clove can access <whitebold>Ruse</> to cast brief smokes."
    },
    {
     "key": "X",
     "slot": "ultimate",
     "name": "Not Dead Yet",
-    "text": "After dying, ACTIVATE to resurrect. Once resurrected, Clove must earn a kill or a damaging assist within a set time or they will die. REACTIVATE to cancel early."
+    "text": "On death, ACTIVATE to channel a <teal>self-resurrect</>. During the channel, Clove is <teal>intangible</>. REACTIVATE to end the channel early. Once resurrected, secure a kill or damaging assist to stay alive."
    }
   ]
  },
@@ -194,25 +194,25 @@ export const KITS: Record<string, Kit> = {
     "key": "C",
     "slot": "grenade",
     "name": "Trapwire",
-    "text": "EQUIP a trapwire. FIRE to place a destructible and covert trapwire at the targeted location, creating a line that spans between the placed location and the wall opposite. Enemy players who cross a trapwire will be Slowed and Revealed after a short period if they do not destroy the device in time. This ability can be picked up to be REDEPLOYED."
+    "text": "EQUIP a destructible <whitebold>Trapwire</>. FIRE to place a wire between surfaces. <whitebold>Trapwire</> <teal>stealths</> after placement. Triggers when enemies come in contact, <debuffred>tethering</> enemies, and after a delay, <debuffred>revealing</> them if <whitebold>Trapwire</> is not destroyed. Can be picked up."
    },
    {
     "key": "Q",
     "slot": "ability1",
     "name": "Cyber Cage",
-    "text": "INSTANTLY toss the cyber cage in front of Cypher. ACTIVATE to create a zone that blocks vision and plays an audio cue when enemies pass through it."
+    "text": "INSTANTLY throw a <whitebold>Cyber Cage</>. INTERACT to create a vision-blocking cylinder that plays an audio cue when enemies come in contact. Can be picked up during BUY PHASE."
    },
    {
     "key": "E",
     "slot": "ability2",
     "name": "Spycam",
-    "text": "EQUIP a spycam. FIRE to place the spycam at the targeted location. RE-USE this ability to take control of the camera's view. While in control of the camera, FIRE to shoot a marking dart. This dart will Reveal the location of any player struck by the dart. This ability can be picked up to be REDEPLOYED."
+    "text": "EQUIP a destructible <whitebold>Spycam</>. FIRE to place. <whitebold>Spycam</> <teal>stealths</> after placement. REACTIVATE to control it. FIRE to shoot a dart that <debuffred>snapshots</> enemies hit until they remove it. Can be picked up."
    },
    {
     "key": "X",
     "slot": "ultimate",
     "name": "Neural Theft",
-    "text": "INSTANTLY use on a targeted dead enemy to download information on their team. After a brief delay, the location of all living enemy players will be Revealed twice."
+    "text": "ACTIVATE on a targeted dead enemy. After a delay, <debuffred>snapshot</> living enemies twice."
    }
   ]
  },
@@ -228,25 +228,25 @@ export const KITS: Record<string, Kit> = {
     "key": "C",
     "slot": "ability2",
     "name": "GravNet",
-    "text": "EQUIP a GravNet grenade. FIRE to throw. ALT FIRE to lob. The GravNet detonates upon landing, forcing any characters caught within to crouch and move slowly."
+    "text": "EQUIP <whitebold>GravNet</>. FIRE to throw. ALT FIRE to lob. Explodes on landing, forcing all players to <debuffred>crouch</> and move <debuffred>slowly</> until they remove the net."
    },
    {
     "key": "Q",
     "slot": "ability1",
     "name": "Sonic Sensor",
-    "text": "EQUIP a Sonic Sensor. FIRE to deploy. The sensor monitors an area for enemies making sound. It concusses that area if footsteps, weapons fire, or significant noise are detected. This ability can be picked up to be REDEPLOYED."
+    "text": "EQUIP a destructible <whitebold>Sonic Sensor</>. FIRE to place. Triggers on nearby detected enemy noise, creating a zone that <debuffred>concusses</> all players. <whitebold>Sonic Sensor</> <teal>stealths</> after placement. Can be picked up."
    },
    {
     "key": "E",
     "slot": "grenade",
     "name": "Barrier Mesh",
-    "text": "EQUIP a Barrier Mesh disc. FIRE to throw forward. Upon landing, the disc generates barriers from the origin point that block character movement."
+    "text": "EQUIP <whitebold>Barrier Mesh</>. FIRE to throw. On landing, create destructible markers that fortify after a delay. These markers form barriers that block player movement."
    },
    {
     "key": "X",
     "slot": "ultimate",
     "name": "Annihilation",
-    "text": "EQUIP a Nanowire Accelerator. FIRE to unleash a pulse of nanowires that captures the first enemy contacted. The cocooned enemy is pulled along a nanowire path and will die unless they are freed. The nanowire cocoon is destructible."
+    "text": "EQUIP <whitebold>Annihilation</>. FIRE to launch a zone, forcing the first enemy caught into a destructible cocoon that pulls them along a path for <debuffred>lethal damage</> unless the cocoon is destroyed."
    }
   ]
  },
@@ -262,25 +262,31 @@ export const KITS: Record<string, Kit> = {
     "key": "C",
     "slot": "grenade",
     "name": "Prowler",
-    "text": "EQUIP a prowler. FIRE to send the prowler forward. HOLD FIRE to steer the prowler towards your crosshair. The prowler will chase down the first enemy or terror trail it sees, and Nearsight the enemy on impact."
+    "text": "EQUIP a destructible <whitebold>Prowler</>. FIRE to send it forward. HOLD FIRE to steer towards your crosshair. <debuffred>Chases</> the first enemy or <whitebold>Terror Trail</> it sees, <debuffred>nearsighting</> on impact."
    },
    {
     "key": "Q",
     "slot": "ability1",
     "name": "Seize",
-    "text": "EQUIP a knot of raw fear. FIRE to throw. The knot drops down after a set time. RE-USE to drop the knot early. The knot ruptures on impact, holding nearby enemies in place. Held enemies are Deafened, and Decayed."
+    "text": "EQUIP <whitebold>Seize</>. FIRE to throw. REACTIVATE to drop early. On landing, <debuffred>deafen</>, <debuffred>decay</>, and <debuffred>tether</> enemies."
    },
    {
     "key": "E",
     "slot": "ability2",
     "name": "Haunt",
-    "text": "EQUIP a haunting watcher. FIRE to throw. The watcher drops down after a set time. RE-USE to drop the watcher early. The watcher lashes out on impact, Revealing enemies in its line of sight and creating terror trails to them. Enemies can destroy the watcher."
+    "text": "EQUIP a destructible <whitebold>Haunt</>. FIRE to throw. REACTIVATE to drop early. On landing, <debuffred>mark</> and <debuffred>reveal</> enemies in range and line of sight."
    },
    {
     "key": "X",
     "slot": "ultimate",
     "name": "Nightfall",
-    "text": "EQUIP the power of nightmare itself. FIRE to unleash a wave of unstoppable nightmare energy. Enemies caught in the wave are Marked by terror trails, Deafened, and Decayed."
+    "text": "EQUIP <whitebold>Nightfall</>. FIRE to send forward a wave that <debuffred>deafens</>, <debuffred>decays</>, and <debuffred>marks</> enemies."
+   },
+   {
+    "key": "Passive",
+    "slot": "passive",
+    "name": "Terror Trails",
+    "text": "<debuffred>Marked</> enemies have their location tracked by <whitebold>Terror Trails</>."
    }
   ]
  },
@@ -296,25 +302,31 @@ export const KITS: Record<string, Kit> = {
     "key": "C",
     "slot": "grenade",
     "name": "Mosh Pit",
-    "text": "EQUIP Mosh. FIRE to throw Mosh like a grenade. ALT FIRE to lob. Upon landing Mosh duplicates across a large area that deals a small amount of damage over time then after a short delay explodes. INTERACT to reclaim the globule and gain another Mosh charge after a short cooldown."
+    "text": "EQUIP <whitebold>Mosh</>. FIRE to throw. ALT FIRE to lob. On landing, create a zone that deals low <debuffred>damage</> over time before exploding, dealing high <debuffred>damage</> to all players. Reverts to a <whitebold>Globule</>."
    },
    {
     "key": "Q",
     "slot": "ability1",
     "name": "Wingman",
-    "text": "EQUIP Wingman. FIRE to send Wingman forward seeking enemies. Wingman unleashes a concussive blast toward the first enemy he sees. ALT FIRE when targeting a Spike site or planted Spike to have Wingman defuse or plant the Spike. To plant, Gekko must have the Spike in his inventory. When Wingman expires he reverts into a dormant globule. INTERACT to reclaim the globule and gain another Wingman charge after a short cooldown."
+    "text": "EQUIP a destructible <whitebold>Wingman</>. FIRE to send it forward. <debuffred>Chases</> the first enemy it sees, <debuffred>concussing</> on impact. ALT FIRE to have <whitebold>Wingman</> plant or defuse at a targeted bomb site. Reverts to a <whitebold>Globule</>."
    },
    {
     "key": "E",
     "slot": "ability2",
     "name": "Dizzy",
-    "text": "EQUIP Dizzy. FIRE to send Dizzy soaring forward through the air. Dizzy charges then unleashes plasma blasts at enemies in line of sight. Enemies hit by her plasma are Blinded. When Dizzy expires she reverts into a dormant globule. INTERACT to reclaim the globule and gain another Dizzy charge after a short cooldown."
+    "text": "EQUIP a destructible <whitebold>Dizzy</>. FIRE to throw. Fires plasma at enemies in line of sight, <debuffred>blinding</> them. Reverts to a <whitebold>Globule</>."
    },
    {
     "key": "X",
     "slot": "ultimate",
     "name": "Thrash",
-    "text": "EQUIP Thrash. FIRE to link with Thrash’s mind and steer her through enemy territory. ACTIVATE to lunge forward and explode, Detaining any players in a small radius. When Thrash expires she reverts into a dormant globule. INTERACT to reclaim the globule and gain another Thrash charge after a short cooldown. Thrash can be reclaimed once."
+    "text": "EQUIP a destructible <whitebold>Thrash</>. FIRE to take control. FIRE again to lunge and explode, <debuffred>detaining</> all players. FIRE while lunging to explode early. Reverts to a <whitebold>Globule</> only once."
+   },
+   {
+    "key": "Passive",
+    "slot": "passive",
+    "name": "Globule",
+    "text": "Gekko’s abilities transform into a <whitebold>Globule</> after use. INTERACT to reclaim nearby <whitebold>Globules</> to gain another charge after a short cooldown."
    }
   ]
  },
@@ -330,25 +342,65 @@ export const KITS: Record<string, Kit> = {
     "key": "C",
     "slot": "grenade",
     "name": "Storm Surge",
-    "text": "EQUIP Storm Surge. FIRE to throw, creating an explosive whirlpool that Slows and Nearsights players within it after a short duration."
+    "text": "EQUIP <whitebold>Storm Surge</>. FIRE to throw. Explodes on landing, <debuffred>nearsighting</> and <debuffred>slowing</> all players."
    },
    {
     "key": "Q",
     "slot": "ability1",
     "name": "High Tide",
-    "text": "EQUIP High Tide. FIRE to send water forward along the ground. HOLD FIRE to guide the water towards your crosshair spawning a vision blocking Screen along the path. ALT FIRE to stop the water early. All players crossing High Tide are Slowed."
+    "text": "EQUIP <whitebold>High Tide</>. FIRE to send forward a vision-blocking wall that <debuffred>slows</> all players who come in contact. HOLD FIRE to steer towards your crosshair. ALT FIRE to stop early."
    },
    {
     "key": "E",
     "slot": "ability2",
     "name": "Cove",
-    "text": "EQUIP Cove. ACTIVATE to form a water Smoke in the select location. HOLD FIRE while targeting to move the marker further away and HOLD ALT FIRE to move it closer. RELOAD to toggle targeting view. REACTIVATE to Shield the water Smoke, blocking any bullets that hit it. The Shielded water Smoke can be destroyed."
+    "text": "ENTER The Deep. REACTIVATE to cast a smoke. HOLD FIRE/ALT FIRE to adjust distance. RELOAD to toggle view. After casting, REACTIVATE to transform the smoke into a destructible shield."
    },
    {
     "key": "X",
     "slot": "ultimate",
     "name": "Reckoning",
-    "text": "EQUIP Reckoning. FIRE to unleash the full power of your artifact, releasing a surge of water that barrels forward to Nearsight and Slow enemies that are hit."
+    "text": "EQUIP <whitebold>Reckoning</>. FIRE to push forward a vision-blocking wall that <debuffred>nearsights</> and <debuffred>slows</> all players who come in contact. REACTIVATE to stop the wall early."
+   }
+  ]
+ },
+ "hush": {
+  "about": "Chinese operative Hush uses her telekinesis to close the most classified cases. Fighting with precision and finesse, she redirects her combat utility in midair to disrupt and displace the enemy team before suspending them helplessly for the killing blow.",
+  "colors": [
+   "#3d2c44",
+   "#0f1923",
+   "#f47ac7"
+  ],
+  "abilities": [
+   {
+    "key": "C",
+    "slot": "grenade",
+    "name": "Flow",
+    "text": "INSTANTLY create an anchor. If Hush is in the air, briefly levitate in place. After a delay, propel towards it."
+   },
+   {
+    "key": "Q",
+    "slot": "ability1",
+    "name": "Flashbulb",
+    "text": "EQUIP <whitebold>Flashbulb</>. FIRE to throw. ALT FIRE to prepare it instead. REACTIVATE to direct it towards your crosshair. Explodes on any surface or after a delay, <debuffred>flashing</> all players looking at it."
+   },
+   {
+    "key": "E",
+    "slot": "ability2",
+    "name": "Displacement",
+    "text": "EQUIP <whitebold>Displacement</>. FIRE to throw. ALT FIRE to prepare it instead. REACTIVATE to direct it towards your crosshair. Explodes on any surface or after a delay, <debuffred>pulling</> all players towards the center and <debuffred>concussing</> them if they collide with any surface or another player. Resets every two kills."
+   },
+   {
+    "key": "X",
+    "slot": "ultimate",
+    "name": "Suspension",
+    "text": "INSTANTLY prepare <whitebold>Suspension</>. FIRE to send it forward, steering with your crosshair. REACTIVATE or press FIRE again to detonate, <debuffred>levitating</> all players."
+   },
+   {
+    "key": "Passive",
+    "slot": "passive",
+    "name": "Telekinesis",
+    "text": "Hush can pick up weapons, the Spike, and INTERACT with switches from an increased range."
    }
   ]
  },
@@ -364,25 +416,31 @@ export const KITS: Record<string, Kit> = {
     "key": "C",
     "slot": "grenade",
     "name": "Contingency",
-    "text": "EQUIP to assemble prismatic energy. FIRE to push an indestructible wall of energy forward that blocks bullets. ALT FIRE to push out a slower version of the wall."
+    "text": "EQUIP <whitebold>Contingency</>. FIRE to push forward an indestructible vision-blocking wall. ALT FIRE for a slower wall."
    },
    {
     "key": "Q",
     "slot": "ability1",
     "name": "Undercut",
-    "text": "EQUIP a molecular bolt. FIRE to throw it forward, briefly applying Vulnerable & Suppress to all players it touches. The bolt can pass through solid objects, including walls."
+    "text": "EQUIP an <whitebold>Undercut</>. FIRE to send it forward. Applies <debuffred>suppress</> and <debuffred>vulnerable</> to all players."
    },
    {
     "key": "E",
     "slot": "ability2",
     "name": "Double Tap",
-    "text": "INSTANTLY start channeling your focus. Once focused: gain a shield which absorbs one instance of damage from any source, reload more quickly, and enter a flow state during which downed enemies you kill or damage spawn an energy orb. Shooting this orb refreshes your flow state and your existing shield, or grants another."
+    "text": "INSTANTLY channel <whitebold>Focus</>. Gain a shield that blocks one instance of damage."
    },
    {
     "key": "X",
     "slot": "ultimate",
     "name": "Kill Contract",
-    "text": "EQUIP an interdimensional arena. FIRE to hurl a column of energy through the battlefield, pulling and healing both you and the first enemy hit into the arena to duel to the death."
+    "text": "EQUIP <whitebold>Kill Contract</>. FIRE to send forward a zone that pulls you and the first enemy hit into a duel. Channel <whitebold>Focus</> at the start of a duel."
+   },
+   {
+    "key": "Passive",
+    "slot": "passive",
+    "name": "Focus",
+    "text": "While <whitebold>Focused</>, reload faster and spawn destructible energy orbs from dead enemies Iso has damaged or killed. When an energy orb is shot, grant a shield that blocks one instance of damage and refresh <whitebold>Focus</>."
    }
   ]
  },
@@ -398,31 +456,31 @@ export const KITS: Record<string, Kit> = {
     "key": "C",
     "slot": "grenade",
     "name": "Cloudburst",
-    "text": "INSTANTLY throw a projectile that expands into a brief vision-blocking cloud on impact with a surface. HOLD the ability key to curve the smoke in the direction of your crosshair."
+    "text": "INSTANTLY throw a cloud. Forms into a brief smoke on any surface or after a delay. HOLD ACTIVATE to steer towards your crosshair."
    },
    {
     "key": "Q",
     "slot": "ability1",
     "name": "Updraft",
-    "text": "INSTANTLY propel Jett high into the air."
+    "text": "INSTANTLY propel high into the air."
    },
    {
     "key": "E",
     "slot": "ability2",
     "name": "Tailwind",
-    "text": "ACTIVATE to prepare a gust of wind for a limited time. RE-USE the wind to propel Jett in the direction she is moving. If Jett is standing still, she propels forward. Tailwind charge resets every two kills."
+    "text": "INSTANTLY prepare a dash. REACTIVATE to dash forward or in your movement direction. Resets every two kills."
    },
    {
     "key": "X",
     "slot": "ultimate",
     "name": "Blade Storm",
-    "text": "EQUIP a set of highly accurate throwing knives. FIRE to throw a single knife and recharge knives on a kill. ALT FIRE to throw all remaining daggers but does not recharge on a kill."
+    "text": "INSTANTLY access five accurate throwing knives that deal <debuffred>lethal damage</> with direct hits to the head. FIRE to shoot. On kills, refresh your knives. ALT FIRE to throw all remaining knives without a refresh."
    },
    {
     "key": "Passive",
     "slot": "passive",
     "name": "Drift",
-    "text": "Holding the jump button while falling allows you to glide through the air."
+    "text": "HOLD JUMP while falling to <teal>glide</>."
    }
   ]
  },
@@ -438,25 +496,25 @@ export const KITS: Record<string, Kit> = {
     "key": "C",
     "slot": "grenade",
     "name": "FRAG/ment",
-    "text": "EQUIP an explosive fragment. FIRE to throw. ALT FIRE to lob. The fragment sticks to the floor and explodes multiple times, dealing near lethal damage at the center with each explosion."
+    "text": "EQUIP <whitebold>FRAG/ment</>. FIRE to throw. ALT FIRE to lob. Explodes on landing, repeatedly dealing pulses of <debuffred>damage</> to all players."
    },
    {
     "key": "Q",
     "slot": "ability1",
     "name": "FLASH/drive",
-    "text": "EQUIP a flash grenade. FIRE to overhand throw. ALT FIRE to lob a weaker version that explodes quickly. The flash grenade explodes after a short fuse, Blinding anyone in line of sight."
+    "text": "EQUIP a <whitebold>FLASH/drive</>. FIRE to throw. ALT FIRE to lob. After a delay, explode, <debuffred>flashing</> all players looking at it."
    },
    {
     "key": "E",
     "slot": "ability2",
     "name": "ZERO/point",
-    "text": "EQUIP a suppression blade. FIRE to throw. The blade sticks to the first surface it hits, winds up, and Suppresses anyone in the radius of the explosion. Enemies can destroy this blade."
+    "text": "EQUIP a destructible <whitebold>ZERO/point</>. FIRE to throw. Pulses on any surface, <debuffred>suppressing</> enemies within range."
    },
    {
     "key": "X",
     "slot": "ultimate",
     "name": "NULL/cmd",
-    "text": "INSTANTLY overload with polarized radianite energy that pulses from KAY/O in a massive radius. Enemies hit with pulses are Suppressed for a short duration. While overloaded, KAY/O gains Combat Stim and can be re-stabilized if downed."
+    "text": "INSTANTLY gain <teal>overloaded</> and repeatedly send out a pulse that <debuffred>suppresses</> enemies within range. <teal>Overloaded</> grants <teal>combat stim</>. Upon taking <debuffred>lethal damage</>, KAY/O is downed and can be re-stabilized."
    }
   ]
  },
@@ -472,25 +530,25 @@ export const KITS: Record<string, Kit> = {
     "key": "C",
     "slot": "grenade",
     "name": "Nanoswarm",
-    "text": "EQUIP a Nanoswarm grenade. FIRE to throw the grenade. Upon landing, the Nanoswarm goes covert. ALT FIRE to lob. ACTIVATE the Nanoswarm to deploy a damaging swarm of nanobots."
+    "text": "EQUIP a destructible <whitebold>Nanoswarm</>. FIRE to throw. ALT FIRE to lob. <whitebold>Nanoswarm</> <teal>stealths</> after landing. INTERACT to create a zone that deals <debuffred>damage</> to all players. Can be picked up during BUY PHASE."
    },
    {
     "key": "Q",
     "slot": "ability1",
     "name": "Alarmbot",
-    "text": "EQUIP a covert Alarmbot. FIRE to deploy a bot that hunts down enemies that get in range. After reaching its target, the bot explodes and applies Vulnerable to enemies in the area. HOLD EQUIP to recall a deployed bot."
+    "text": "EQUIP a destructible <whitebold>Alarmbot</>. FIRE to place. <whitebold>Alarmbot</> <teal>stealths</> after placement. Triggers on nearby visible enemies in range. <debuffred>Chases</> the first enemy it sees, exploding and applying <debuffred>vulnerable</>. Can be recalled."
    },
    {
     "key": "E",
     "slot": "ability2",
     "name": "Turret",
-    "text": "EQUIP a Turret. FIRE to deploy a turret that fires at enemies in a 100 degree cone. While targeting, EQUIP again to swap turret direction, HOLD ALT FIRE to rotate. HOLD EQUIP to recall the deployed turret."
+    "text": "EQUIP a destructible <whitebold>Turret</>. While equipped, REACTIVATE to flip the direction or HOLD ALT FIRE to rotate. FIRE to place. Shoots at enemies in line of sight. Can be recalled."
    },
    {
     "key": "X",
     "slot": "ultimate",
     "name": "Lockdown",
-    "text": "EQUIP the Lockdown device. FIRE to deploy the device. After a long windup, the device Detains all enemies caught in the radius. The device can be destroyed by enemies."
+    "text": "EQUIP a destructible <whitebold>Lockdown</>. FIRE to prepare a zone. After a delay, <debuffred>detain</> enemies within range."
    }
   ]
  },
@@ -506,25 +564,25 @@ export const KITS: Record<string, Kit> = {
     "key": "C",
     "slot": "grenade",
     "name": "M-pulse",
-    "text": "EQUIP M-pulse. ALT-FIRE to toggle between Concuss and Healing outputs. FIRE to throw the device. Upon landing, M-pulse sends out sound waves, either Concussing or Healing players."
+    "text": "EQUIP a destructible <whitebold>M-Pulse</>. ALT FIRE to toggle between <debuffred>concuss</> or <teal>heal</>. FIRE to throw. Repeatedly pulses on landing, applying the selected effect on all players within range."
    },
    {
     "key": "Q",
     "slot": "ability1",
     "name": "Harmonize",
-    "text": "EQUIP Harmonize. Target an ally and FIRE to activate a Combat Stim and a speed boost on yourself and the ally that refreshes with each kill. ALT-FIRE to grant Combat Stim and speed boost to yourself."
+    "text": "EQUIP <whitebold>Harmonize</>. FIRE on a targeted ally to grant <teal>combat stim</> and <teal>haste</> to them and yourself. On kills while active, refresh the <teal>buff</> if both <whitebold>Harmonized</> players are still alive. ALT FIRE to self-cast with no refresh."
    },
    {
     "key": "E",
     "slot": "ability2",
     "name": "Waveform",
-    "text": "EQUIP a Map Targeter. FIRE to set locations. ALT-FIRE to spawn Smokes at selected locations."
+    "text": "EQUIP a tactical map. FIRE to set smoke locations. ALT FIRE to cast smokes."
    },
    {
     "key": "X",
     "slot": "ultimate",
     "name": "Bassquake",
-    "text": "EQUIP Bassquake. FIRE to build up and unleash Sonic Radiance forward, knocking back, Deafening, and Slowing players."
+    "text": "EQUIP <whitebold>Bassquake</>. FIRE to send forward a zone that <debuffred>deafens</>, <debuffred>knocks back</>, and <debuffred>slows</> all players."
    }
   ]
  },
@@ -540,25 +598,31 @@ export const KITS: Record<string, Kit> = {
     "key": "C",
     "slot": "grenade",
     "name": "Fast Lane",
-    "text": "FIRE two energy lines forward on the ground that extend a short distance or until they hit a surface. The lines rise into walls of static electricity that block vision."
+    "text": "INSTANTLY launch two vision-blocking walls that extend until they hit a surface."
    },
    {
     "key": "Q",
     "slot": "ability1",
     "name": "Relay Bolt",
-    "text": "INSTANTLY throw an energy bolt that bounces once. Upon hitting each surface, the bolt electrifies the ground below with a Concussive blast."
+    "text": "INSTANTLY throw a bolt that bounces once. Explodes on each surface, <debuffred>concussing</> all players."
    },
    {
     "key": "E",
     "slot": "ability2",
     "name": "High Gear",
-    "text": "INSTANTLY channel Neon’s power for Increased Speed. When charged, ALT FIRE to trigger an electric slide dash. Slide charge resets every two kills."
+    "text": "INSTANTLY consume fuel to gain <teal>haste</>. REACTIVATE to cancel. ALT FIRE to slide forward or in your movement direction. Slide resets every two kills."
    },
    {
     "key": "X",
     "slot": "ultimate",
     "name": "Overdrive",
-    "text": "Unleash Neon’s full power and speed for a short duration, regaining all her fuel and a slide charge. FIRE to channel the power into a deadly lightning beam with high movement accuracy. Kills reset the duration of the effect."
+    "text": "INSTANTLY refresh <whitebold>High Gear</>. Access an accurate lightning beam that can be used while activating <whitebold>High Gear</>. FIRE to shoot. On kills, fully recharge fuel."
+   },
+   {
+    "key": "Passive",
+    "slot": "passive",
+    "name": "Battery",
+    "text": "Passively recharge fuel over time."
    }
   ]
  },
@@ -574,25 +638,25 @@ export const KITS: Record<string, Kit> = {
     "key": "C",
     "slot": "grenade",
     "name": "Shrouded Step",
-    "text": "EQUIP a shrouded step ability and see its range indicator. FIRE to begin a brief channel, then teleport to the marked location."
+    "text": "EQUIP a <whitebold>Shrouded Step</>. FIRE to briefly channel, then teleport to a targeted location."
    },
    {
     "key": "Q",
     "slot": "ability1",
     "name": "Paranoia",
-    "text": "EQUIP a blinding orb. FIRE to throw it forward, briefly Nearsighting and Deafening all players it touches. This projectile can pass straight through walls."
+    "text": "EQUIP <whitebold>Paranoia</>. FIRE to send it forward. Applies <debuffred>nearsight</> and <debuffred>deafens</> all players."
    },
    {
     "key": "E",
     "slot": "ability2",
     "name": "Dark Cover",
-    "text": "EQUIP a shadow orb, entering a phased world to place and target the orbs. PRESS the ability key to throw the shadow orb to the marked location, creating a long-lasting shadow sphere that blocks vision. HOLD FIRE while targeting to move the marker further away. HOLD ALT FIRE while targeting to move the marker closer. PRESS RELOAD to toggle normal targeting view."
+    "text": "ENTER Shadow Vision. REACTIVATE to cast a smoke. HOLD FIRE/ALT FIRE to adjust distance. RELOAD to toggle view."
    },
    {
     "key": "X",
     "slot": "ultimate",
     "name": "From the Shadows",
-    "text": "EQUIP a tactical map. FIRE to begin teleporting to the selected location. While teleporting, Omen will appear as a Shade that can be destroyed by an enemy to cancel his teleport, or PRESS EQUIP for Omen to cancel his teleport."
+    "text": "EQUIP a tactical map. FIRE to begin a teleport to a selected location. While teleporting, Omen appears as a destructible shade at the destination. REACTIVATE to cancel."
    }
   ]
  },
@@ -608,31 +672,31 @@ export const KITS: Record<string, Kit> = {
     "key": "C",
     "slot": "grenade",
     "name": "Blaze",
-    "text": "EQUIP a flame wall. FIRE to create a line of flame that moves forward, passing through the world and creating a wall of fire that blocks vision and damages players passing through it. The fire wall heals Phoenix instead of dealing damage. HOLD FIRE to bend the wall in the direction of your crosshair."
+    "text": "EQUIP <whitebold>Blaze</>. FIRE to send forward a vision-blocking <whitebold>fire</> wall that deals <debuffred>damage</> to all players. HOLD FIRE to steer towards your crosshair."
    },
    {
     "key": "Q",
     "slot": "ability2",
     "name": "Curveball",
-    "text": "EQUIP a flare orb that takes a curving path and detonates shortly after throwing. FIRE to curve the flare orb to the left, detonating and Blinding any player who sees the orb. ALT FIRE to curve the flare orb to the right. Curveball resets a charge every two kills."
+    "text": "EQUIP a <whitebold>Curveball</>. FIRE to curve left, ALT FIRE to curve right. After a delay, explode, <debuffred>flashing</> all players looking at it. Resets every two kills."
    },
    {
     "key": "E",
     "slot": "ability1",
     "name": "Hot Hands",
-    "text": "EQUIP a fireball. FIRE to throw a fireball that explodes after a set amount of time or upon hitting the ground, creating a lingering fire zone that damages enemies. The fire zone heals Phoenix instead of dealing damage. ALT FIRE to lob."
+    "text": "EQUIP <whitebold>Hot Hands</>. FIRE to throw. ALT FIRE to lob. On landing, create a <whitebold>fire</> zone that deals <debuffred>damage</> to all players."
    },
    {
     "key": "X",
     "slot": "ultimate",
     "name": "Run it Back",
-    "text": "INSTANTLY place a marker at Phoenix's location. While this ability is active, dying or allowing the timer to expire will end this ability and bring Phoenix back to this location with full health and the amount of armor he had when the ability was cast."
+    "text": "INSTANTLY place a marker at your location. Upon taking <debuffred>lethal damage</> or when <whitebold>Run it Back</> expires, return to the marker with full health and the amount of armor you had when the ability was activated."
    },
    {
     "key": "Passive",
     "slot": "passive",
-    "name": "Heating Up",
-    "text": "PASSIVELY Heal Phoenix instead of taking damage after standing in Phoenix's own fire"
+    "name": "Inner Fire",
+    "text": "Phoenix <teal>heals</> while standing in his own <whitebold>fire</> instead of taking damage."
    }
   ]
  },
@@ -648,25 +712,25 @@ export const KITS: Record<string, Kit> = {
     "key": "C",
     "slot": "grenade",
     "name": "Boom Bot",
-    "text": "EQUIP a Boom Bot. FIRE will deploy the bot, causing it to travel in a straight line on the ground, bouncing off walls. The Boom Bot will lock on to any enemies in its frontal cone and chase them, exploding for heavy damage if it reaches them."
+    "text": "EQUIP a destructible <whitebold>Boom Bot</>. FIRE to send it forward. <debuffred>Chases</> the first enemy it sees, exploding and dealing <debuffred>damage</> to enemies on impact."
    },
    {
     "key": "Q",
     "slot": "ability1",
     "name": "Blast Pack",
-    "text": "INSTANTLY throw a Blast Pack that will stick to surfaces. RE-USE the ability after deployment to detonate, moving anything hit and dealing damage if fully armed."
+    "text": "INSTANTLY throw a destructible <whitebold>Blast Pack</> that sticks to surfaces that fully arms after a delay. REACTIVATE to detonate, <debuffred>knocking away</> anything hit. If fully armed, <whitebold>Blast Pack</> will also deal <debuffred>damage</> to enemies."
    },
    {
     "key": "E",
     "slot": "ability2",
     "name": "Paint Shells",
-    "text": "EQUIP a cluster grenade. FIRE to throw the grenade, which does damage and creates sub-munitions, each doing damage to anyone in their range. ALT FIRE to lob. Paint Shells charge resets every two kills."
+    "text": "EQUIP <whitebold>Paint Shells</>. FIRE to throw. ALT FIRE to lob. After a delay, explode, dealing <debuffred>damage</> and creating sub-munitions, each also dealing <debuffred>damage</> to all players. Resets every two kills."
    },
    {
     "key": "X",
     "slot": "ultimate",
     "name": "Showstopper",
-    "text": "EQUIP a rocket launcher. FIRE to shoot a rocket that does massive area damage on contact with anything."
+    "text": "INSTANTLY prepare <whitebold>Showstopper</>. FIRE to launch. Explodes on any surface, dealing high <debuffred>damage</> to all players."
    }
   ]
  },
@@ -682,25 +746,31 @@ export const KITS: Record<string, Kit> = {
     "key": "C",
     "slot": "grenade",
     "name": "Leer",
-    "text": "EQUIP an ethereal, destructible eye. ACTIVATE to cast the eye a short distance forward. The eye will Nearsight all enemies who look at it."
+    "text": "EQUIP a destructible <whitebold>Leer</>. FIRE to send. After a delay, form, <debuffred>nearsighting</> enemies looking at it."
    },
    {
     "key": "Q",
     "slot": "ability1",
     "name": "Devour",
-    "text": "Soul Harvest: Enemies that die within 3 seconds of taking damage from Reyna leave behind Soul Orbs that last 3 seconds. Devour: INSTANTLY consume a soul orb, rapidly gaining Temporary Health. If EMPRESS is active then Devour automatically casts, does not consume the Soul Orb, and Healing is permanent."
+    "text": "INSTANTLY consume a <whitebold>Soul Orb</> to <teal>heal</>. Excess healing is converted into <teal>overheal</>. While ULTIMATE is active, <whitebold>Devour</> auto-casts."
    },
    {
     "key": "E",
     "slot": "ability2",
     "name": "Dismiss",
-    "text": "INSTANTLY consume a nearby Soul Orb, becoming Intangible for a short duration. If EMPRESS is active, also become Invisible."
+    "text": "INSTANTLY consume a <whitebold>Soul Orb</> to briefly become <teal>intangible</>. REACTIVATE to cancel early. While ULTIMATE is active, also gain <teal>invisibility</>."
    },
    {
     "key": "X",
     "slot": "ultimate",
     "name": "Empress",
-    "text": "INSTANTLY enter a frenzy, gaining a Combat Stim that increases firing, equip and reload speed dramatically. Gain infinite charges of Soul Harvest abilities."
+    "text": "INSTANTLY gain <teal>Empress</>. <teal>Empress</> grants <teal>combat stim</>, endless <whitebold>Soul Orb</> consumption, and permanent <teal>overheal</>."
+   },
+   {
+    "key": "Passive",
+    "slot": "passive",
+    "name": "Vitality",
+    "text": "Spawn a <whitebold>Soul Orb</> from dead enemies Reyna has damaged or killed."
    }
   ]
  },
@@ -716,25 +786,25 @@ export const KITS: Record<string, Kit> = {
     "key": "C",
     "slot": "grenade",
     "name": "Barrier Orb",
-    "text": "EQUIP a barrier orb. FIRE places a wall that fortifies after a few seconds. ALT FIRE rotates the targeter."
+    "text": "EQUIP a destructible <whitebold>Barrier Orb</>. While equipped, REACTIVATE to pivot the wall or HOLD ALT FIRE to rotate. FIRE to place a destructible wall that fortifies after a delay."
    },
    {
     "key": "Q",
     "slot": "ability1",
     "name": "Slow Orb",
-    "text": "EQUIP a slowing orb. FIRE to throw a slowing orb forward that detonates upon landing, creating a lingering field that Slows and reduces the dash speed of players caught inside of it."
+    "text": "EQUIP a <whitebold>Slow Orb</>. FIRE to throw. On landing, create a zone that <debuffred>slows</> all players and plays an audio cue when enemies run through it."
    },
    {
     "key": "E",
     "slot": "ability2",
     "name": "Healing Orb",
-    "text": "EQUIP a healing orb. FIRE with your crosshairs over a damaged ally to activate a Heal-Over-Time on them. ALT FIRE while Sage is damaged to activate a self Heal-Over-Time."
+    "text": "EQUIP <whitebold>Healing Orb</>. FIRE on a damaged ally to grant <teal>healing</>. ALT FIRE to self-cast."
    },
    {
     "key": "X",
     "slot": "ultimate",
     "name": "Resurrection",
-    "text": "EQUIP a resurrection ability. FIRE with your crosshairs placed over a dead ally to begin resurrecting them. After a brief channel, the ally will be brought back to life with full health."
+    "text": "EQUIP <whitebold>Resurrection</>. FIRE on a targeted dead ally to <teal>resurrect</> them."
    }
   ]
  },
@@ -750,25 +820,25 @@ export const KITS: Record<string, Kit> = {
     "key": "C",
     "slot": "grenade",
     "name": "Regrowth",
-    "text": "EQUIP a healing trinket. HOLD FIRE to channel, Healing allies in range and line of sight. Can be reused until her healing pool is depleted. Skye cannot heal herself."
+    "text": "EQUIP <whitebold>Regrowth</>. HOLD FIRE to <teal>heal</> allies in range and line of sight. Uses a limited healing pool. Cannot heal self."
    },
    {
     "key": "Q",
     "slot": "ability1",
     "name": "Trailblazer",
-    "text": "EQUIP a Tasmanian tiger trinket. FIRE to send out and take control of the predator. While in control, FIRE to leap forward, exploding in a Concussive blast on impact and damaging directly hit enemies."
+    "text": "EQUIP a destructible <whitebold>Trailblazer</>. FIRE to take control. FIRE again to lunge and explode, <debuffred>concussing</> all players and dealing <debuffred>damage</> to enemies on direct hits."
    },
    {
     "key": "E",
     "slot": "ability2",
     "name": "Guiding Light",
-    "text": "EQUIP a hawk trinket. FIRE to send it forward. HOLD FIRE to guide the hawk in the direction of your crosshair. RE-USE while the hawk is in flight to transform it into a flash. The flash reaches max potency after a short duration during the hawk's flight."
+    "text": "EQUIP a <whitebold>Guiding Light</>. FIRE to send it forward. HOLD FIRE to steer towards your crosshair. REACTIVATE to detonate, <debuffred>flashing</> all players looking at it."
    },
    {
     "key": "X",
     "slot": "ultimate",
     "name": "Seekers",
-    "text": "EQUIP a Seeker trinket. FIRE to send out three Seekers to track down the three closest enemies. If a Seeker reaches its target, it Nearsights and slows them. Enemies can destroy the Seekers."
+    "text": "EQUIP destructible <whitebold>Seekers</>. FIRE to send out up to three <whitebold>Seekers</>. <debuffred>Chases</> the three closest enemies, <debuffred>nearsighting</> and <debuffred>slowing</> on impact."
    }
   ]
  },
@@ -784,31 +854,25 @@ export const KITS: Record<string, Kit> = {
     "key": "C",
     "slot": "grenade",
     "name": "Owl Drone",
-    "text": "EQUIP an owl drone. FIRE to deploy and take control of movement of the drone. While in control of the drone, FIRE to shoot a marking dart. This dart will Reveal the location of any player struck by the dart. Enemies can destroy the Owl Drone."
+    "text": "EQUIP a destructible <whitebold>Owl Drone</>. FIRE to take control. FIRE again to shoot a dart that repeatedly <debuffred>reveals</> enemies."
    },
    {
     "key": "Q",
     "slot": "ability1",
     "name": "Shock Bolt",
-    "text": "EQUIP a bow with a shock bolt. FIRE to send the explosive bolt forward, detonating upon collision and damaging players nearby. HOLD FIRE to extend the range of the projectile. ALT FIRE to add up to two bounces to this arrow."
+    "text": "EQUIP a <whitebold>Shock Bolt</>. FIRE to shoot a bolt that explodes on any surface, dealing <debuffred>damage</> to all players. HOLD FIRE to increase the bolt’s velocity. ALT FIRE to add up to two bounces."
    },
    {
     "key": "E",
     "slot": "ability2",
     "name": "Recon Bolt",
-    "text": "EQUIP a bow with recon bolt. FIRE to send the recon bolt forward, activating upon collision and Revealing the location of nearby enemies caught in the line of sight of the bolt. Enemies can destroy this bolt. HOLD FIRE to extend the range of the projectile. ALT FIRE to add up to two bounces to this arrow."
+    "text": "EQUIP a destructible <whitebold>Recon Bolt</>. FIRE to shoot a bolt that repeatedly <debuffred>reveals</> nearby enemies in range and line of sight. HOLD FIRE to increase the bolt’s velocity. ALT FIRE to add up to two bounces."
    },
    {
     "key": "X",
     "slot": "ultimate",
     "name": "Hunter's Fury",
-    "text": "EQUIP a bow with three long-range, wall-piercing energy blasts. FIRE to release an energy blast in a line in front of Sova, dealing damage and Revealing the location of enemies caught in the line. This ability can be RE-USED up to two more times while the ability timer is active."
-   },
-   {
-    "key": "Passive",
-    "slot": "passive",
-    "name": "Uncanny Marksman",
-    "text": "Sova's custom bow can fire his arrows and bounce them off terrain. Holding fire charges the bow's power, and the bolt is loosed when released. Press alt fire to change the number of bounces.Your arrows can bounce off terrain. Holding left click increases the bow's range trajectory. Right clicking Toggle through the desired number of terrain bounces by right clicking. The arrow is loosed when left click is released."
+    "text": "EQUIP <whitebold>Hunter’s Fury</>. FIRE to shoot a zone that deals <debuffred>damage</>. Can be fired up to two more times. Enemies hit are <debuffred>revealed</> to Sova."
    }
   ]
  },
@@ -824,25 +888,25 @@ export const KITS: Record<string, Kit> = {
     "key": "C",
     "slot": "grenade",
     "name": "Stealth Drone",
-    "text": "EQUIP a stealth drone. FIRE to throw the drone forward, assuming direct control of its movement. FIRE again to trigger a pulse that Suppresses and Reveals enemies hit."
+    "text": "EQUIP a destructible <whitebold>Stealth Drone</>. FIRE to take control. FIRE again to <debuffred>reveal</> and <debuffred>suppress</> nearby enemies in range and line of sight."
    },
    {
     "key": "Q",
     "slot": "ability1",
     "name": "Special Delivery",
-    "text": "EQUIP a sticky grenade. FIRE to launch. The grenade sticks to the first surface it hits and explodes, Concussing and dealing damage to any targets caught in the blast. ALT FIRE to launch the grenade with a single bounce instead."
+    "text": "EQUIP <whitebold>Special Delivery</>. FIRE to launch. ALT FIRE to launch with a bounce. Explodes on any surface, <debuffred>concussing</> and <debuffred>damaging</> all players."
    },
    {
     "key": "E",
     "slot": "ability2",
     "name": "Guided Salvo",
-    "text": "EQUIP an AR targeting system. FIRE to select up to two target locations on the map. ALT FIRE to launch missiles that autonomously navigate to target locations, detonating repeatedly for damage on arrival."
+    "text": "EQUIP a tactical map. FIRE to set locations. ALT FIRE to launch missiles that travel to and repeatedly pulse, dealing <debuffred>damage</> to all players."
    },
    {
     "key": "X",
     "slot": "ultimate",
     "name": "Armageddon",
-    "text": "EQUIP a tactical strike targeting map. FIRE to select the origin point of the strike. FIRE again to set the end point and launch the attack, unleashing a wave of lethal damaging explosions along the strike path. ALT FIRE during map targeting to cancel the origin point."
+    "text": "EQUIP a tactical map. FIRE to set, pivot and FIRE again to cast a wave that deals high <debuffred>damage</> to all players. ALT FIRE to cancel targeting."
    }
   ]
  },
@@ -858,25 +922,25 @@ export const KITS: Record<string, Kit> = {
     "key": "C",
     "slot": "grenade",
     "name": "Crosscut",
-    "text": "EQUIP a vortex. FIRE to place on the ground. While in range and looking at the vortex, ACTIVATE to teleport to the vortex. During the BUY PHASE, the vortex can be reclaimed to be REDEPLOYED."
+    "text": "EQUIP a destructible <whitebold>Crosscut</>. FIRE to place. While in range, INTERACT to teleport to it. Can be recalled during BUY PHASE."
    },
    {
     "key": "Q",
     "slot": "ability1",
     "name": "Chokehold",
-    "text": "EQUIP a viscous fragment of your mutation. FIRE to throw. The fragment deploys upon hitting the ground, creating a trap to hold enemies in place. Held enemies are Deafened, and Decayed. Enemies can destroy the trap before activation."
+    "text": "EQUIP a destructible <whitebold>Chokehold</>. FIRE to throw. <whitebold>Chokehold</> <teal>stealths</> after landing. Triggers on nearby visible enemies in range, <debuffred>deafening</>, <debuffred>decaying</>, and <debuffred>tethering</> enemies. Can be recalled during BUY PHASE."
    },
    {
     "key": "E",
     "slot": "ability2",
     "name": "Interceptor",
-    "text": "EQUIP the Interceptor. FIRE to place the Interceptor at projected location. Once placed, RE-USE to activate. Once active, it will destroy any utility that would BOUNCE off a player and/or be destroyed naturally by gunfire. Enemies can destroy the Interceptor."
+    "text": "EQUIP a destructible <whitebold>Interceptor</>. FIRE to place. REACTIVATE to activate. While active, destroy any enemy utility that can be shot or would bounce off players in range and line of sight. Can be recalled."
    },
    {
     "key": "X",
     "slot": "ultimate",
     "name": "Evolution",
-    "text": "INSTANTLY begin to fully mutate, gaining a combat stim, regeneration, and becoming IMMUNE to all forms of debuffs."
+    "text": "INSTANTLY gain <teal>evolution</>. <teal>Evolution</> grants <teal>combat stim</>, continuous <teal>healing</>, and <teal>immunity</> to all debuffs and damage, except weapons."
    }
   ]
  },
@@ -892,31 +956,31 @@ export const KITS: Record<string, Kit> = {
     "key": "C",
     "slot": "grenade",
     "name": "Snake Bite",
-    "text": "EQUIP a chemical launcher. FIRE to launch a canister that shatters upon hitting the floor, creating a lingering chemical zone that damages and applies Vulnerable."
+    "text": "EQUIP <whitebold>Snake Bite</>. FIRE to launch. On landing, create a zone that grants <debuffred>vulnerable</> and deals low <debuffred>damage</> to all players."
    },
    {
     "key": "Q",
     "slot": "ability1",
     "name": "Poison Cloud",
-    "text": "EQUIP a gas emitter. FIRE to throw the emitter that perpetually remains throughout the round. ALT FIRE to lob. RE-USE the ability to create a toxic gas cloud that Decays opponents inside it at the cost of fuel. This ability can be picked up to be REDEPLOYED before the round starts and can be RE-USED more than once throughout the round."
+    "text": "EQUIP <whitebold>Poison Cloud</>. FIRE to throw. ALT FIRE to lob. REACTIVATE to consume fuel to create a <whitebold>toxic</> smoke that <debuffred>decays</> enemies. Can be picked up during BUY PHASE."
    },
    {
     "key": "E",
     "slot": "ability2",
     "name": "Toxic Screen",
-    "text": "EQUIP a gas emitter launcher that penetrates terrain. FIRE to deploy a long line of gas emitters. RE-USE the ability to create a tall wall of toxic gas that Decays opponents that cross it at the cost of fuel. This ability can be RE-USED more than once."
+    "text": "EQUIP <whitebold>Toxic Screen</>. FIRE to send forward and place a line of emitters. REACTIVATE to consume fuel to create a <whitebold>toxic</> vision-blocking wall that <debuffred>decays</> enemies."
    },
    {
     "key": "X",
     "slot": "ultimate",
     "name": "Viper's Pit",
-    "text": "EQUIP a chemical sprayer. FIRE to spray a chemical cloud in all directions around Viper, creating a large cloud that Nearsights players and Decays the health of enemies inside of it. HOLD the ability key to disperse the cloud early."
+    "text": "EQUIP <whitebold>Viper’s Pit</>. FIRE to form a large <whitebold>toxic</> vision-blocking cloud that <debuffred>decays</> enemies inside. HOLD ACTIVATE to cancel the cloud."
    },
    {
     "key": "Passive",
     "slot": "passive",
-    "name": "Toxic",
-    "text": "You gradually generate and replenish the toxin that fuels your abilities. Enemies that cross through Viper's Poison Cloud, Toxic Screen, or Viper's Pit are instantly inflicted with at least 30 Decay. Their Decay level increases the longer they remain in contact with it."
+    "name": "Toxin",
+    "text": "Viper’s <whitebold>Toxin</> continuously inflicts <debuffred>decay</> when enemies come in contact. Passively recharge fuel over time."
    }
   ]
  },
@@ -932,25 +996,25 @@ export const KITS: Record<string, Kit> = {
     "key": "C",
     "slot": "grenade",
     "name": "Razorvine",
-    "text": "EQUIP a nest of liquid metal. FIRE to launch. Upon landing, the nest becomes invisible. When ACTIVATED, it sprawls out into a large razorvine nest which slows and damages all players who move through it."
+    "text": "EQUIP a destructible <whitebold>Razorvine</>. FIRE to throw. <whitebold>Razorvine</> <teal>stealths</> after landing. INTERACT to create a zone that <debuffred>slows</> and deals <debuffred>damage</> when players move through it. Can be recalled during BUY PHASE."
    },
    {
     "key": "Q",
     "slot": "ability1",
     "name": "Shear",
-    "text": "EQUIP filaments of liquid metal. FIRE to place a hidden wall trap. When an enemy crosses, an indestructible wall bursts from the ground behind them. The wall lasts for a brief time before dissipating."
+    "text": "EQUIP <whitebold>Shear</>. FIRE to place. <whitebold>Shear</> <teal>stealths</> after placement. Triggers when enemies walk on it, and after a delay, create a brief indestructible wall. Can be recalled during BUY PHASE."
    },
    {
     "key": "E",
     "slot": "ability2",
     "name": "Arc Rose",
-    "text": "EQUIP an Arc Rose. Target a surface and FIRE to place a stealthed Arc Rose, or ALT FIRE to place the Arc Rose through it. REUSE to blind all players looking at it. This ability can be picked up to be REDEPLOYED."
+    "text": "EQUIP a destructible <whitebold>Arc Rose</>. FIRE to place. ALT FIRE to place it through a wall. REACTIVATE to <debuffred>flash</> all players looking at it. Can be recalled."
    },
    {
     "key": "X",
     "slot": "ultimate",
     "name": "Steel Garden",
-    "text": "EQUIP a bramble of liquid metal. FIRE to send the metal erupting from you as a torrent of metal thorns, JAMMING enemy primary weapons after a brief windup."
+    "text": "EQUIP <whitebold>Steel Garden</>. FIRE to prepare a zone. After a delay, <debuffred>jam</> enemy primary weapons within range."
    }
   ]
  },
@@ -966,25 +1030,25 @@ export const KITS: Record<string, Kit> = {
     "key": "C",
     "slot": "grenade",
     "name": "Saturate",
-    "text": "EQUIP a cluster of light. FIRE to throw the cluster, which upon contact with the ground explodes, Hindering nearby players with a powerful movement and weapon slow."
+    "text": "EQUIP <whitebold>Saturate</>. FIRE to throw. Explodes on landing, <debuffred>hindering</> all players."
    },
    {
     "key": "Q",
     "slot": "ability1",
     "name": "Lightspeed",
-    "text": "EQUIP to prepare for a burst of speed. FIRE to dash forward twice. ALT FIRE to dash once. Only your first dash can send you upward."
+    "text": "EQUIP <whitebold>Lightspeed</>. FIRE to dash forward twice. ALT FIRE to dash forward once. Only the first dash can launch upward."
    },
    {
     "key": "E",
     "slot": "ability2",
     "name": "Refract",
-    "text": "INSTANTLY create a beacon of light on the floor. REACTIVATE to speed back to your beacon as a mote of pure light. You are invulnerable as you travel. Refract resets a charge every two kills."
+    "text": "INSTANTLY place a marker at your location. REACTIVATE to travel to it. While traveling, Waylay is <teal>immune</> but cannot see enemies. Resets every two kills."
    },
    {
     "key": "X",
     "slot": "ultimate",
     "name": "Convergent Paths",
-    "text": "EQUIP to focus your prismatic power. FIRE to create an afterimage of yourself that projects a beam of light. After a brief delay, you gain a powerful speed boost and the beam expands, Hindering other players in the area."
+    "text": "EQUIP <whitebold>Convergent Paths</>. FIRE to gain <teal>haste</> and send forward a zone that <debuffred>hinders</> all players."
    }
   ]
  },
@@ -1000,25 +1064,25 @@ export const KITS: Record<string, Kit> = {
     "key": "C",
     "slot": "grenade",
     "name": "Fakeout",
-    "text": "EQUIP an echo that transforms into a mirror image of Yoru when activated. FIRE to instantly activate the mirror image and send it forward. ALT FIRE to place an inactive echo. USE to transform an inactive echo into a mirror image and send it forward. Mirror images explode in a Blinding flash when destroyed by enemies."
+    "text": "EQUIP <whitebold>Fakeout</>. FIRE to send a destructible clone forward. ALT FIRE to place a marker at your location. INTERACT to transform the marker into a clone. Clones continuously walk forward and will turn toward the first enemy that shoots it, <debuffred>flashing</> all players looking at it."
    },
    {
     "key": "Q",
     "slot": "ability1",
     "name": "Blindside",
-    "text": "EQUIP to rip an unstable dimensional fragment from reality. FIRE to throw the fragment, activating a flash that winds up once it collides with a hard surface."
+    "text": "EQUIP <whitebold>Blindside</>. FIRE to throw. After bouncing off a surface, explode, <debuffred>flashing</> all players looking at it."
    },
    {
     "key": "E",
     "slot": "ability2",
     "name": "Gatecrash",
-    "text": "EQUIP a rift tether FIRE to send the tether forward. ALT FIRE to place a stationary tether. ACTIVATE to teleport to the tether's location. USE to trigger a fake teleport. GATECRASH resets a charge every two kills."
+    "text": "EQUIP <whitebold>Gatecrash</>. FIRE to send it forward. ALT FIRE to place. REACTIVATE to teleport to it. INTERACT to fake a teleport. Resets every two kills."
    },
    {
     "key": "X",
     "slot": "ultimate",
     "name": "Dimensional Drift",
-    "text": "EQUIP a mask that can see between dimensions. FIRE to drift into Yoru's dimension, unable to be affected or seen by enemies from the outside. REACTIVATE to exit Yoru's dimension early."
+    "text": "EQUIP <whitebold>Dimensional Drift</>. FIRE to become <teal>intangible</> and <teal>invisible</>. <whitebold>Gatecrash</> is accessible during this state. REACTIVATE to exit early."
    }
   ]
  }

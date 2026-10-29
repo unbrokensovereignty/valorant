@@ -31,9 +31,31 @@ export const BY_RANK: Record<Dim, readonly [number, number]> = {
 /**
  * Agent fit beyond the team's strengths. `pro`: the pull toward what pros play on the map, at
  * Radiant (it fades to `proLow` of that at Iron). `solo` and `skill`: at Iron, the reward for
- * agents who work alone and the cost of hard agents (both fade to nothing at Radiant).
+ * agents who work alone and the cost of hard agents (both fade to nothing at Radiant). `win`: the
+ * reward per point of ranked win rate above 50% (and the cost per point below), at full strength
+ * at WIN_RANKS.peak.
  */
-export const FIT = { pro: 0.07, proLow: 0.1, solo: 0.06, skill: 0.035 };
+export const FIT = { pro: 0.07, proLow: 0.1, solo: 0.06, skill: 0.035, win: 0.004 };
+
+/**
+ * Ranked win rates are taken across all ranks, so they mostly come from games around Gold. They
+ * count fully at `peak` (a rank's place from 0 at Iron to 1 at Radiant, as in kb/ranks.ts) and
+ * fade in a straight line to `iron` of that at Iron, where how well an agent works alone says
+ * more, and to `radiant` at Radiant, where pro play does.
+ */
+export const WIN_RANKS = { iron: 0, peak: 0.375, radiant: 0.4 };
+
+/**
+ * How much an agent's win rate has to add to (or take from) its fit before a comp's pros (or
+ * cons) say so: at Gold, where win rates count fully, about 1.3 points above 50% and 2.5 below.
+ */
+export const WIN_NOTE = { more: 0.005, fewer: 0.01 };
+
+/**
+ * An agent's first weeks are played by people still learning them, which drags the win rate down:
+ * within NEW_DAYS of release (kb/agents.ts), only this share of the gap from 50% counts.
+ */
+export const NEW_WIN_SHARE = 0.5;
 
 /**
  * On maps where pro teams run two controllers (`twoControllers` in kb/maps.ts), what a team with

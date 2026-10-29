@@ -12,10 +12,10 @@ import { answerFor } from '../solved.ts';
 import { planWith } from '../planner/store.ts';
 import { Fit } from '../planner/comp.tsx';
 import { rankWord } from '../planner/words.ts';
-import { agentById, AGENTS_BY_NAME, type Agent } from '../../core/kb/agents.ts';
-import { kitOf, abilityNames } from '../../core/kb/kits.ts';
+import { agentById, AGENTS_BY_NAME, earlyStats, type Agent } from '../../core/kb/agents.ts';
+import { kitOf, abilityNames, textParts } from '../../core/kb/kits.ts';
 import { POOL } from '../../core/kb/maps.ts';
-import { PRO } from '../../core/kb/pro.ts';
+import { PRO, proKnown } from '../../core/kb/pro.ts';
 import { DIM_INFO, DIMS, ROLES, roleOf, type Role } from '../../core/kb/roles.ts';
 import { PAIRS, type Pair } from '../../core/kb/synergy.ts';
 import { agentTips } from '../../core/engine/tips.ts';
@@ -67,7 +67,7 @@ function Kit({ a }: { a: Agent }) {
             <span class="kit-icon">{k.key === 'Passive' ? <Icon name="sparkle" size={22} /> : <AbilityIcon agent={a.id} k={k.key} size={30} />}</span>
             <div>
               <b>{k.name}</b> <span class="kit-key">{k.key === 'Passive' ? 'Passive' : k.key}</span>
-              <p class="muted small">{k.text}</p>
+              <p class="muted small">{textParts(k.text).map((t, i) => (t.kind === 'plain' ? t.text : t.kind === 'name' ? <b key={i}>{t.text}</b> : <span key={i} class={`kit-fx ${t.kind}`}>{t.text}</span>))}</p>
             </div>
           </li>
         ))}
@@ -187,12 +187,14 @@ function AgentPage({ a }: { a: Agent }) {
             </section>
           )}
           <section class="panel stack">
-            <h2>How often they’re picked</h2>
+            <h2>In ranked and pro play</h2>
             <dl class="facts">
               <dt>In ranked</dt><dd>{a.estimate ? 'Not known yet' : `${a.pop}% of all picks`}</dd>
-              <dt>By pros</dt><dd>{a.estimate ? 'Not known yet' : `${a.pro}% of maps at the year’s top events`}</dd>
+              <dt>Games won</dt><dd>{a.estimate ? 'Not known yet' : `${a.win}% in ranked`}</dd>
+              <dt>By pros</dt><dd>{a.estimate ? 'Not known yet' : proKnown(a) ? `${a.pro}% of maps at the year’s top events` : `None yet: ${a.name} came out after the year’s top events`}</dd>
               <dt>Released</dt><dd>{fmtLongDay(a.released)}</dd>
             </dl>
+            {!a.estimate && earlyStats(a) && <p class="small muted">The ranked numbers are from {a.name}’s first days, while players are still learning the agent.</p>}
           </section>
         </div>
       </div>

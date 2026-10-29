@@ -97,6 +97,11 @@
 .kit { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
 .kit li { display: flex; gap: 12px; align-items: flex-start; }
 .kit li p { margin: 2px 0 0; line-height: 1.45; }
+.kit li p b { color: var(--text); font-weight: 650; }
+/* the game's marks: what an ability does to enemies, and what it gives the agent's side */
+.kit-fx { font-weight: 650; }
+.kit-fx.enemy { color: var(--bad-text); }
+.kit-fx.ally { color: var(--good-text); }
 .kit-icon { display: grid; place-items: center; flex: none; width: 44px; height: 44px; border-radius: var(--r); background: var(--surface-2); color: var(--text); }
 .kit-key { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 5px; background: var(--surface-3); color: var(--text2); font-size: 0.72rem; font-weight: 700; vertical-align: 1px; }
 .agent-strengths { width: 100%; border-collapse: collapse; font-size: 0.9rem; }

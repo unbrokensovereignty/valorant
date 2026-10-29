@@ -1,6 +1,6 @@
 {
   "name": "playbook",
-  "version": "0.1.0",
+  "version": "0.1.5",
   "private": true,
   "description": "Offline team comp planner for VALORANT, in one HTML file.",
   "license": "UNLICENSED",
