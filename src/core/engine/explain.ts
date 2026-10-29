@@ -149,7 +149,10 @@ export function explainTeam(m: Model, ids: readonly string[]): Explanation {
   for (const row of gaps.slice(0, 3)) {
     const info = DIM_INFO[row.dim];
     const lead = row.cover < 0.25 ? 'No' : info.few ? 'Few' : 'Little';
-    cons.push(`${lead} ${info.lacks}${bump(row.dim) >= 0.15 ? `, which ${where} needs` : ''}: ${MAKE_UP[row.dim]}.`);
+    // who brings what there is of it, so a team with a little doesn't read as having none
+    const some = row.by.slice(0, 2).map((b) => `${agentById(b.id)!.name}’s`);
+    const besides = lead !== 'No' && some.length ? ` other than ${listJoin(some)}` : '';
+    cons.push(`${lead} ${info.lacks}${besides}${bump(row.dim) >= 0.15 ? `, which ${where} needs` : ''}: ${MAKE_UP[row.dim]}.`);
   }
   // a comp with no real gap still has a thinnest spot worth playing around
   if (!cons.length) {

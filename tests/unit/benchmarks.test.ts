@@ -131,8 +131,12 @@ function untrue(s: Situation, team: readonly string[]): string[] {
         for (const a of agents) if (who.includes(a.name) && !r.by.some((b) => b.id === a.id && b.value >= 0.45)) no(`${a.name} doesn't bring ${d}`);
       }
       for (const lead of ['No', 'Few', 'Little']) {
-        if (kind !== 'con' || !(line.startsWith(`${lead} ${info.lacks}`) && /^[,:.]/.test(line.slice(lead.length + info.lacks.length + 1)))) continue;
+        if (kind !== 'con' || !(line.startsWith(`${lead} ${info.lacks}`) && /^(?:[,:.]| other than )/.test(line.slice(lead.length + info.lacks.length + 1)))) continue;
         if (r.cover >= (lead === 'No' ? 0.25 : 0.55) || r.need < 0.9) no(`${d} covers ${r.cover.toFixed(2)} at need ${r.need.toFixed(2)}`);
+        // what little there is comes from the agents who bring some of it
+        const besides = /^ other than (.+?)(?:, which|:)/.exec(line.slice(lead.length + info.lacks.length + 1))?.[1] ?? '';
+        for (const a of agents) if (besides.includes(`${a.name}’s`) && !r.by.some((b) => b.id === a.id)) no(`${a.name} brings no ${d}`);
+        if (lead !== 'No' && r.by.length && !besides) no(`${d}: says nothing of what ${r.by.map((b) => name(b.id)).join(', ')} bring`);
       }
       if (line.startsWith(`Its thinnest spot is ${info.lacks}:`) && (r.cover >= 0.8 || r.need < 1)) no(`${d} covers ${r.cover.toFixed(2)}`);
     }
