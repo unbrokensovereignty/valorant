@@ -36,7 +36,7 @@ export const KIT_RULES: readonly KitRule[] = [
   // ------------------------------------------------ Hush
   {
     agent: 'hush', mechanic: 'doors', side: 'attack', caps: 'entry +.25; disrupt +.2; postplant +.15; flash +.05',
-    why: 'Hush’s Telekinesis works switches from range, so she can turn {map}’s doors to fake a hit, split the defenders or shut a retake path without standing in the doorway.',
+    why: 'Hush’s Telekinesis works switches from range, so she can work {map}’s doors to fake a hit, split the defenders or shut a retake path without standing in the doorway.',
   },
   {
     agent: 'hush', mechanic: 'doors', side: 'defense', caps: 'stall +.1; retake +.05',
@@ -48,7 +48,7 @@ export const KIT_RULES: readonly KitRule[] = [
   },
   {
     agent: 'hush', space: 'open', caps: 'disrupt -.2; clear -.15',
-    why: 'Hush’s Displacement only concusses enemies it pulls into a wall or into each other, and {map} is mostly open ground.',
+    why: 'Hush’s Displacement only concusses enemies it pulls into a wall or into each other, and {map}’s open ground has few walls to pull them into.',
   },
   {
     agent: 'hush', space: 'open', side: 'attack', caps: 'entry -.1; mobility -.1',
@@ -65,7 +65,7 @@ export const KIT_RULES: readonly KitRule[] = [
   },
   {
     agent: 'raze', map: 'split', caps: 'mobility +.15; entry +.1',
-    why: 'Raze’s Blast Pack jumps reach Split’s high ground, A Rafters and B Tower, faster than the ropes.',
+    why: 'Raze’s Blast Pack jumps reach Split’s high ground, A Tower and B Tower, faster than the ropes.',
   },
   {
     agent: 'breach', space: 'tight', caps: 'clear +.1; disrupt +.05; flash +.05',
@@ -105,7 +105,7 @@ export const KIT_RULES: readonly KitRule[] = [
   },
   {
     agent: 'kayo', space: 'tight', caps: 'clear +.05',
-    why: 'KAY/O’s FRAG/ment clears the close corners {map} is full of.',
+    why: 'KAY/O’s FRAG/ment clears {map}’s many close corners.',
   },
   {
     agent: 'deadlock', space: 'tight', caps: 'stall +.1; anchor +.05',
@@ -216,3 +216,18 @@ export const rulesFor = (agent: string, mapId: string, side: Side, sites: readon
 
 /** A rule's reason for a map: "{map}" filled in. */
 export const ruleWhy = (r: KitRule, mapId: string): string => r.why.replaceAll('{map}', mapById(mapId)?.name ?? 'this map');
+
+/** A rule's reason for the maps it covers: one map by name, several as "these maps". */
+export const ruleWhyAt = (r: KitRule, mapIds: readonly string[]): string =>
+  mapIds.length === 1 ? ruleWhy(r, mapIds[0]!) : r.why.replaceAll('{map}’s', 'these maps’').replaceAll('{map}', 'these maps');
+
+/** An agent's rules, each with the maps it applies on (on either side, for all sites), in map order. */
+export function agentRules(agent: string): { rule: ParsedRule; maps: string[] }[] {
+  return RULES.filter((r) => r.agent === agent).map((rule) => ({
+    rule,
+    maps: MAPS.filter((m) => (['attack', 'defense'] as const).some((side) => ruleApplies(rule, m.id, side, []))).map((m) => m.id),
+  })).filter((x) => x.maps.length);
+}
+
+/** Whether a rule helps (it adds more than it takes away). */
+export const ruleHelps = (r: ParsedRule): boolean => Object.values(r.bumps).reduce((a, b) => a + b, 0) > 0;

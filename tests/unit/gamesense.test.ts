@@ -11,7 +11,7 @@ import { modelFor, type RankPick } from '../../src/core/engine/model.ts';
 import { TIERS } from '../../src/core/engine/weights.ts';
 import { agentById } from '../../src/core/kb/agents.ts';
 import { MAPS, type Side, type Space } from '../../src/core/kb/maps.ts';
-import { KIT_RULES, RULES, ruleWhy } from '../../src/core/kb/kitfit.ts';
+import { KIT_RULES, RULES, ruleWhy, ruleWhyAt } from '../../src/core/kb/kitfit.ts';
 
 const none = (problems: string[]) => assert.deepEqual(problems, [], `\n${problems.join('\n')}`);
 const name = (id: string) => agentById(id)!.name;
@@ -128,6 +128,9 @@ test('every kit rule applies somewhere, and its reason reads as a full sentence 
       if (!/^[A-Z].*\.$/.test(why) || why.includes('{')) problems.push(`rule ${i + 1} on ${m.name}: "${why}"`);
       if (!why.includes(name(r.agent))) problems.push(`rule ${i + 1}: the reason doesn't name ${name(r.agent)}`);
     }
+    // the agent page says it once for all the maps it covers
+    const many = ruleWhyAt(r, where.map((m) => m.id));
+    if (where.length > 1 && (/these maps (?:is|has|was)\b/.test(many) || many.includes('{'))) problems.push(`rule ${i + 1} for several maps: "${many}"`);
   });
   if (KIT_RULES.length !== RULES.length) problems.push('a rule was dropped');
   none(problems);

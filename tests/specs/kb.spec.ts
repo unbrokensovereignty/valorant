@@ -1,7 +1,8 @@
 import { describe, spec, eq, ok, throws } from './harness.ts';
 import { AGENTS, agentById, isNew, parseCaps } from '../../src/core/kb/agents.ts';
 import { kitOf, abilityOn, abilityNames, plainText, textParts } from '../../src/core/kb/kits.ts';
-import { MAPS, POOL, mapById, parseNeeds, calloutLabel } from '../../src/core/kb/maps.ts';
+import { MAPS, MECHANICS, POOL, mapById, parseNeeds, calloutLabel } from '../../src/core/kb/maps.ts';
+import { AGENT_MAP_TIPS, MAP_TIPS } from '../../src/core/kb/tips.ts';
 import { PRO, PRO_MAPS_COUNTED, RECORDED, proKnown, proOverall, proPick, proRoleMix } from '../../src/core/kb/pro.ts';
 import { PAIRS, pairOf } from '../../src/core/kb/synergy.ts';
 import { RANKS } from '../../src/core/kb/ranks.ts';
@@ -201,5 +202,45 @@ describe('ranks and strengths', () => {
     eq(RANKS.map((r) => r.id), ['iron', 'bronze', 'silver', 'gold', 'platinum', 'diamond', 'ascendant', 'immortal', 'radiant']);
     for (let i = 1; i < RANKS.length; i++) ok(RANKS[i]!.t > RANKS[i - 1]!.t);
     for (const d of DIMS) ok(DIM_INFO[d].name && DIM_INFO[d].has && DIM_INFO[d].lacks && DIM_INFO[d].blurb, `${d} is described`);
+  });
+});
+
+describe('map tips and mechanics', () => {
+  // words that start an ability's or agent's name ("A Toxic Screen", "A Killjoy Alarmbot"), not a callout
+  const names = new Set(AGENTS.flatMap((a) => [a.name, ...(kitOf(a.id)?.abilities.map((x) => x.name) ?? [])]).flatMap((n) => n.split(/[\s/]+/)));
+  /** "A Main", "Mid Market" and the like in a text that aren't callouts on the map. */
+  const unknownCallouts = (mapId: string, text: string): string[] => {
+    const map = mapById(mapId)!;
+    const has = (name: string) => map.callouts.some((c) => c.name === name);
+    const out: string[] = [];
+    for (const m of text.matchAll(/\b(A|B|C|Mid) ([A-Z][a-z]+)(?: ([A-Z][a-z]+))?/g)) {
+      if (names.has(m[2]!) || (m[1] === 'A' && m.index === 0)) continue;
+      if (!has(`${m[1]} ${m[2]}`) && !(m[3] && has(`${m[1]} ${m[2]} ${m[3]}`))) out.push(m[0]);
+    }
+    return out;
+  };
+  spec('every callout named in a map’s tips, agent tips and mechanics is one of the map’s own', () => {
+    for (const m of MAPS) {
+      const texts = [...(MAP_TIPS[m.id]?.attack ?? []), ...(MAP_TIPS[m.id]?.defense ?? []), ...(m.mechanics ?? []).map((x) => x.about)];
+      for (const t of Object.values(AGENT_MAP_TIPS[m.id] ?? {})) texts.push(...(typeof t === 'string' ? [t] : Object.values(t)));
+      for (const t of texts) eq(unknownCallouts(m.id, t), [], `${m.name}: “${t}”`);
+    }
+  });
+  spec('agent tips are for real agents on real maps, and each is a full sentence', () => {
+    for (const [map, byAgent] of Object.entries(AGENT_MAP_TIPS)) {
+      ok(mapById(map), `${map} is a map`);
+      for (const [agent, t] of Object.entries(byAgent)) {
+        ok(agentById(agent), `${agent} is an agent`);
+        for (const text of typeof t === 'string' ? [t] : Object.values(t)) ok(/^[A-Z].*[.]$/.test(text) && !text.includes('!'), `${map} ${agent}: “${text}”`);
+      }
+    }
+  });
+  spec('every map says how open it is, and only names mechanics it has once', () => {
+    for (const m of MAPS) {
+      ok(['tight', 'mixed', 'open'].includes(m.space), `${m.name}: space`);
+      const ids = (m.mechanics ?? []).map((x) => x.id);
+      eq(new Set(ids).size, ids.length, `${m.name}: mechanics listed once`);
+      for (const x of m.mechanics ?? []) ok(MECHANICS[x.id] && /[.]$/.test(x.about), `${m.name}: ${x.id}`);
+    }
   });
 });

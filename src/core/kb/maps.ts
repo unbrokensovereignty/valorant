@@ -20,6 +20,12 @@ export type SiteId = 'A' | 'B' | 'C';
  */
 export type Space = 'tight' | 'mixed' | 'open';
 
+export const SPACE_INFO: Record<Space, { name: string; blurb: string }> = {
+  tight: { name: 'Tight', blurb: 'Fights happen at chokes and close corners, where stuns, traps and walls across a way in do the most.' },
+  mixed: { name: 'Mixed', blurb: 'Some long sightlines and some close corners, so most kits work.' },
+  open: { name: 'Open', blurb: 'Fights happen across long sightlines and wide ground, where long walls, the Operator and information do the most.' },
+};
+
 /** Things on a map that change how a round is played, and that some kits use (kb/kitfit.ts). */
 export type Mechanic = 'doors' | 'teleporters' | 'ropes' | 'ziplines' | 'breakable';
 export const MECHANICS: Record<Mechanic, { name: string; blurb: string }> = {
@@ -182,7 +188,7 @@ const DEFS: readonly MapDef[] = [
   },
   {
     id: 'split', name: 'Split', pool: false, space: 'tight',
-    mechanics: [{ id: 'ropes', about: 'Ropes lead up to high ground on each site (A Rafters, B Tower), which defenders use to hold from above.' }],
+    mechanics: [{ id: 'ropes', about: 'Ropes lead up to high ground on each site (A Tower and B Tower, both called Heaven), which defenders use to hold from above.' }],
     about: 'Tight, vertical sites with ropes up to high ground, and a mid that leads to both. Chokes everywhere.',
     keys: 'Smokes and clearing: Viper and Omen together, with Neon to take space and Fade for information.',
     needs: { both: 'clear +.3; smoke +.25; disrupt +.15; flank +.2; wall +.4; recon +.1; angles -.5', defense: 'stall +.15' },

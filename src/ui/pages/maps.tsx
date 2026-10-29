@@ -16,12 +16,14 @@ import { CompRow, TeamIcons } from '../planner/comp.tsx';
 import { PlaysPanel } from '../planner/plays.tsx';
 import { rankWord } from '../planner/words.ts';
 import { agentById } from '../../core/kb/agents.ts';
-import { mapById, MAPS, type MapInfo, type Side } from '../../core/kb/maps.ts';
+import { mapById, MAPS, MECHANICS, SPACE_INFO, type MapInfo, type Side } from '../../core/kb/maps.ts';
+import { RULES, ruleApplies, ruleHelps } from '../../core/kb/kitfit.ts';
 import { PRO } from '../../core/kb/pro.ts';
 import { DIM_INFO, DIMS, type Dim } from '../../core/kb/roles.ts';
 import { MAP_TIPS } from '../../core/kb/tips.ts';
 import { needsFor, proMixOf, type RankPick } from '../../core/engine/model.ts';
 import { newQuery } from '../../core/engine/query.ts';
+import { mapAgentTips } from '../../core/engine/tips.ts';
 import { listJoin } from '../../core/text.ts';
 import type { PageProps } from './index.ts';
 
@@ -76,6 +78,35 @@ function Pro({ m }: { m: MapInfo }) {
   );
 }
 
+/** How open the map is, its mechanics, and the agents whose kits make the most of them. */
+function HowItPlays({ m }: { m: MapInfo }) {
+  // agents a rule helps here, on either side (agents.ts names them)
+  const users = (keep: (r: (typeof RULES)[number]) => boolean) =>
+    [...new Set(RULES.filter((r) => keep(r) && ruleHelps(r) && (['attack', 'defense'] as const).some((sd) => ruleApplies(r, m.id, sd, []))).map((r) => r.agent))];
+  const space = SPACE_INFO[m.space];
+  const forSpace = users((r) => r.space === m.space);
+  const who = (ids: string[]) => ids.length > 0 && (
+    <small class="muted map-users">Kits that make the most of it: {ids.map((id, i) => (
+      <>{i > 0 && (i === ids.length - 1 ? ' and ' : ', ')}<a key={id} href={`#/agents/${id}`}>{agentById(id)?.name}</a></>
+    ))}.</small>
+  );
+  return (
+    <section class="panel stack" data-tour="map-how">
+      <h2>How it plays</h2>
+      <dl class="facts">
+        <dt>{space.name}</dt>
+        <dd>{space.blurb}{who(forSpace)}</dd>
+        {(m.mechanics ?? []).map((x) => {
+          return [
+            <dt key={x.id + 't'}>{MECHANICS[x.id].name}</dt>,
+            <dd key={x.id + 'd'}>{x.about}{who(users((r) => r.mechanic === x.id))}</dd>,
+          ];
+        })}
+      </dl>
+    </section>
+  );
+}
+
 function BestComps({ m, side, rank, newAgents }: { m: MapInfo; side: Side; rank: RankPick; newAgents: boolean }) {
   const [open, setOpen] = useState(-1);
   const ans = answerFor({ map: m.id, side, rank, sites: [] }, newAgents);
@@ -106,6 +137,7 @@ function MapPage({ m }: { m: MapInfo }) {
   const [names, setNames] = useView<string>('maps.names', 'yes', (v) => v === 'yes' || v === 'no');
   const rank = s.defaultRank as RankPick;
   const tips = MAP_TIPS[m.id]?.[side] ?? [];
+  const agentTips = mapAgentTips(m.id).filter((t) => !t.side || t.side === side);
   return (
     <>
       <PageHead
@@ -145,6 +177,7 @@ function MapPage({ m }: { m: MapInfo }) {
               ))}
             </ul>
           </section>
+          <HowItPlays m={m} />
           <Pro m={m} />
         </div>
       </div>
@@ -157,6 +190,14 @@ function MapPage({ m }: { m: MapInfo }) {
         <ul class="tips map-tips" aria-label={`Tips for ${side === 'attack' ? 'attack' : 'defense'}`}>{tips.map((t) => <li key={t}><span>{t}</span></li>)}</ul>
       )}
       <BestComps m={m} side={side} rank={rank} newAgents={s.includeNew} />
+      {agentTips.length > 0 && (
+        <section class="stack map-agent-tips">
+          <h3>Agents on {side === 'attack' ? 'attack' : 'defense'}</h3>
+          <ul class="tips">
+            {agentTips.map((t) => <li key={t.agent}><b><a href={`#/agents/${t.agent}`}>{agentById(t.agent)?.name}</a></b><span>{t.text}</span></li>)}
+          </ul>
+        </section>
+      )}
       <Plays m={m} side={side} rank={rank} newAgents={s.includeNew} />
     </>
   );

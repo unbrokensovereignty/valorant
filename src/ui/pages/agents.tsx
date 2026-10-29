@@ -15,12 +15,13 @@ import { Fit } from '../planner/comp.tsx';
 import { rankWord } from '../planner/words.ts';
 import { agentById, AGENTS_BY_NAME, earlyStats, STATS_ON, type Agent } from '../../core/kb/agents.ts';
 import { kitOf, abilityNames, textParts } from '../../core/kb/kits.ts';
-import { POOL } from '../../core/kb/maps.ts';
+import { mapById, MAPS, POOL } from '../../core/kb/maps.ts';
+import { agentRules, ruleHelps, ruleWhyAt } from '../../core/kb/kitfit.ts';
 import { PRO, PRO_MAPS_COUNTED, proKnown } from '../../core/kb/pro.ts';
 import { RANKS } from '../../core/kb/ranks.ts';
 import { DIM_INFO, DIMS, ROLES, roleOf, type Role } from '../../core/kb/roles.ts';
 import { PAIRS, type Pair } from '../../core/kb/synergy.ts';
-import { agentTips } from '../../core/engine/tips.ts';
+import { agentMapTips, agentTips } from '../../core/engine/tips.ts';
 import type { RankPick } from '../../core/engine/model.ts';
 import { tierOf } from '../../core/engine/weights.ts';
 import { fmtLongDay } from '../../core/dates.ts';
@@ -176,6 +177,32 @@ function Partners({ a }: { a: Agent }) {
   );
 }
 
+/** The maps' names, joined ("Bind, Lotus and Split"), or "Every map". */
+const mapNames = (ids: readonly string[]) => (ids.length === MAPS.length ? 'Every map' : listJoin(ids.map((id) => mapById(id)?.name ?? id)));
+
+/** What the agent's kit does on particular maps: the tips for each map, and where the kit does more or less. */
+function MapByMap({ a }: { a: Agent }) {
+  const tips = agentMapTips(a.id);
+  const rules = agentRules(a.id);
+  if (!tips.length && !rules.length) return null;
+  const side = (s?: string) => (s === 'attack' ? ', attack' : s === 'defense' ? ', defense' : '');
+  const more = rules.filter((r) => ruleHelps(r.rule)), less = rules.filter((r) => !ruleHelps(r.rule));
+  return (
+    <section class="panel stack" data-tour="agent-map-by-map">
+      <h2>Map by map</h2>
+      {tips.length > 0 && (
+        <ul class="tips">
+          {tips.map((t) => (
+            <li key={t.map + (t.side ?? '')}><b><a href={`#/maps/${t.map}`}>{mapById(t.map)?.name}</a>{side(t.side)}</b><span>{t.text}</span></li>
+          ))}
+        </ul>
+      )}
+      {more.length > 0 && <><h3 class="row good-text"><Icon name="check" size={16} />Where the kit does more</h3><ul class="tips">{more.map((r) => <li key={r.rule.caps + r.maps.join()}><b>{mapNames(r.maps)}{side(r.rule.side)}</b><span>{ruleWhyAt(r.rule, r.maps)}</span></li>)}</ul></>}
+      {less.length > 0 && <><h3 class="row bad-text"><Icon name="warning" size={16} />Where it does less</h3><ul class="tips">{less.map((r) => <li key={r.rule.caps + r.maps.join()}><b>{mapNames(r.maps)}{side(r.rule.side)}</b><span>{ruleWhyAt(r.rule, r.maps)}</span></li>)}</ul></>}
+    </section>
+  );
+}
+
 function AgentPage({ a }: { a: Agent }) {
   const s = useSettings();
   const rank = s.defaultRank as RankPick;
@@ -204,6 +231,7 @@ function AgentPage({ a }: { a: Agent }) {
           <BestMaps a={a} rank={rank} newAgents={newAgents} />
           <ByRank a={a} rank={rank} newAgents={newAgents} />
           <Partners a={a} />
+          <MapByMap a={a} />
           {tips.length > 0 && (
             <section class="panel stack">
               <h2>Tips</h2>

@@ -4,6 +4,12 @@ Every version of Playbook By Sovereign and what it changed.
 
 ## 0.2.5 (in progress)
 
+- **Kits by map.** A kit now counts for more or less depending on the map, side and site, for the reasons a coach would give, and a comp's pros and cons say why. Hush's Telekinesis works Lotus's and Ascent's doors from range, which makes her one of the best duelists on Lotus attack; Displacement only concusses enemies pulled into a wall, so she's better on tight maps than on open ones. Raze's, Breach's and Phoenix's utility needs corners, Cypher's Trapwires and Deadlock's Barrier Mesh need chokes, Sova's darts see little in walled-in sites, Brimstone's smokes don't reach across Breeze or Abyss, and a trap on one of Bind's teleporter exits catches whoever comes through.
+- **How each map plays.** Each map's page says whether it's tight, open or in between, what its doors, teleporters, ropes, ziplines and breakable walls do, and which kits make the most of them. Below the best comps, tips for the agents pros pick there, like where Viper walls on Icebox or how Hush uses Lotus's doors.
+- **Map by map, for each agent.** An agent's page lists their tips for each map and where their kit does more or less.
+- **Fairer to sentinels.** A sentinel on a map where pros mostly play without one no longer drops to the bottom on defense: Chamber holds Breeze's long angles as a fair pick again.
+- **Hush, reviewed.** Her numbers are a little lower everywhere, with her kit adding back where it works best, so she no longer rates near the top on open maps like Breeze.
+
 ## 0.2.0 (2026-10-29)
 
 - **Answers that fit your rank.** A comp now counts each agent for what a team at your rank gets out of them: a hard or team-dependent kit counts for less at low ranks and in full at Radiant, while gun play counts the same everywhere. Ranked win rates (metabot.gg and winio.ai, October 2026) count too, most in the middle ranks where most games are played, and the pull toward what pro teams play grows mostly from Diamond up. When a comp has an agent who's notably hard to play, like Astra or Yoru, its cons say so from Iron to Platinum, with how much of the kit a team at your rank usually gets.

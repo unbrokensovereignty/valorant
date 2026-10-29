@@ -6,7 +6,7 @@ import { agentById } from '../kb/agents.ts';
 import { mapById, SIDES, type Side } from '../kb/maps.ts';
 import { rankOf } from '../kb/ranks.ts';
 import { ROLES, ROLE_IDS } from '../kb/roles.ts';
-import { AGENT_TIPS, ATTACK_TIPS, DEFENSE_TIPS, DOUBLE_TIPS, MAP_TIPS, PARTY_TIPS, RANK_TIPS, rankBand } from '../kb/tips.ts';
+import { AGENT_MAP_TIPS, AGENT_TIPS, ATTACK_TIPS, DEFENSE_TIPS, DOUBLE_TIPS, MAP_TIPS, PARTY_TIPS, RANK_TIPS, agentMapTip, rankBand } from '../kb/tips.ts';
 import type { Situation } from './model.ts';
 import type { PartySize } from './query.ts';
 
@@ -37,7 +37,9 @@ export function tipsFor(team: readonly string[], s: Situation, party: PartySize 
   const yours = party < 5 && partyAgents.length ? agents.filter((a) => partyAgents.includes(a.id)) : agents;
   for (const a of yours) {
     const tips = AGENT_TIPS[a.id];
-    const text = (s.side === 'defense' ? DEFENSE_TIPS[a.id] : s.side === 'attack' ? ATTACK_TIPS[a.id] : undefined) ?? tips?.[0];
+    // what the agent does on this map comes first, then what they do on this side anywhere
+    const text = (map ? agentMapTip(a.id, map.id, s.side) : undefined)
+      ?? (s.side === 'defense' ? DEFENSE_TIPS[a.id] : s.side === 'attack' ? ATTACK_TIPS[a.id] : undefined) ?? tips?.[0];
     if (text) out.push({ about: a.name, text });
   }
   if (s.rank !== 'any') {
@@ -57,3 +59,24 @@ export function agentTips(id: string): readonly string[] {
   const tips: readonly string[] = AGENT_TIPS[id] ?? [];
   return [...tips, ...[ATTACK_TIPS[id], DEFENSE_TIPS[id]].filter((t): t is string => !!t && !tips.includes(t))];
 }
+
+/** A map tip for an agent: the map, the side it's for (none for both) and the tip. */
+export interface MapTip { map: string; agent: string; side?: Side; text: string }
+
+function mapTipsWhere(keep: (map: string, agent: string) => boolean): MapTip[] {
+  const out: MapTip[] = [];
+  for (const [map, byAgent] of Object.entries(AGENT_MAP_TIPS)) {
+    for (const [agent, t] of Object.entries(byAgent)) {
+      if (!keep(map, agent)) continue;
+      if (typeof t === 'string') out.push({ map, agent, text: t });
+      else for (const side of ['attack', 'defense'] as const) if (t[side]) out.push({ map, agent, side, text: t[side]! });
+    }
+  }
+  return out;
+}
+
+/** An agent's tips for each map, for their own page, in map order. */
+export const agentMapTips = (agent: string): MapTip[] => mapTipsWhere((_, a) => a === agent);
+
+/** The agent tips for a map, for its page. */
+export const mapAgentTips = (map: string): MapTip[] => mapTipsWhere((m) => m === map);
