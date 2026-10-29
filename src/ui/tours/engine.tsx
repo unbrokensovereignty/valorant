@@ -86,6 +86,11 @@ function step(dir: 1 | -1) {
   play('tap');
   tourState.value = { tour: live.tour, step: i };
 }
+/** Leaving the tour's page yourself ends it. */
+function leftTour() {
+  stopTour();
+  toast('Tour closed. Replay it any time from Help → Tours.');
+}
 export const nextStep = () => step(1);
 export const prevStep = () => step(-1);
 
@@ -140,6 +145,8 @@ async function arrive(live: Live, alive: () => boolean): Promise<HTMLElement | n
   }
   const start = performance.now();
   while (alive() && routeNow() !== want && performance.now() - start < 2000) await frame();
+  // you went somewhere else before the tour's page came up
+  if (alive() && routeNow() !== want) { expected = ''; leftTour(); return null; }
   const hook = live.tour.steps[live.step]?.target;
   if (!hook) { while (alive() && !pageSettled() && performance.now() - start < 1500) await frame(); return null; }
   let el: HTMLElement | null = null, last: DOMRect | null = null, still = 0, scrolled = false;
@@ -217,8 +224,7 @@ export function TourHost() {
     const now = routeNow();
     if (now === expected) { expected = ''; return; }
     if (now === pageOf(cur.tour, cur.step)) return;
-    stopTour();
-    toast('Tour closed. Replay it any time from Help → Tours.');
+    leftTour();
   }), []);
 
   // each step: fade out, go to its page, wait for its target, then show
@@ -303,7 +309,7 @@ export function TourHost() {
         {s && (
           <>
             <div class="tour-top">
-              <span class="tour-count">{live.tour.name} · {live.step + 1} of {count}</span>
+              <span class="tour-count">{live.tour.name} · <span class="nowrap">{live.step + 1} of {count}</span></span>
               <IconButton icon="x" size="sm" label="End the tour (Esc)" onClick={() => { stopTour(); play('close'); }} sound={false} />
             </div>
             <h2 id="tour-title">{s.title}</h2>

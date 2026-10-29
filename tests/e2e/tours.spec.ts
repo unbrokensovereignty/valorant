@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import type { Page } from '@playwright/test';
-import { expect, go, open, reload, saved, test } from './app.ts';
+import { APP_URL, expect, go, open, reload, saved, test } from './app.ts';
 import { TOURS, tourById } from '../../src/ui/tours/list.ts';
 import { capitalize, countWord } from '../../src/core/util.ts';
 
@@ -88,6 +88,14 @@ test('a tour goes back, ends with Esc, keeps the page from being clicked, and en
   await go(page, 'maps');
   await expect(page.locator('.tour')).toHaveCount(0);
   await expect(page.locator('.toast')).toContainText('Replay it any time from Help → Tours');
+
+  // so does going back before the tour's page has come up
+  await go(page, 'help/tours');
+  await page.locator('#start-tour-plan').click();
+  await page.goto(`${APP_URL}#/help/tours`);
+  await page.waitForTimeout(2500);
+  await expect(page.locator('.tour')).toHaveCount(0);
+  await expect(page).toHaveURL(/#\/help\/tours$/);
   expect(errors).toEqual([]);
 });
 
