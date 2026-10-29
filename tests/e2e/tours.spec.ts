@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import type { Page } from '@playwright/test';
-import { APP_URL, expect, go, open, reload, saved, test } from './app.ts';
+import { APP_URL, expect, go, open, reload, saved, still, test } from './app.ts';
 import { TOURS, tourById } from '../../src/ui/tours/list.ts';
 import { capitalize, countWord } from '../../src/core/util.ts';
 
@@ -34,6 +34,26 @@ test('Home offers the first steps once, and Not now puts it away for good', asyn
   await reload(page);
   await expect(page.locator('.home')).toBeVisible();
   await expect(offer).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
+test('a second tab offers the tour only once it takes over saving', async ({ page, context, errors }) => {
+  const offer = (p: Page) => p.getByRole('complementary', { name: 'Take the tour' });
+  await open(page);
+  await expect(offer(page)).toBeVisible();
+  const other = await context.newPage();
+  other.on('pageerror', (e) => errors.push('pageerror: ' + e.message));
+  other.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+  await other.goto(`${APP_URL}#/home`);
+  await expect(other.locator('.save-state')).toHaveText('Read-only');
+  await expect(other.locator('.home')).toBeVisible();
+  await expect(offer(other)).toHaveCount(0);
+  await other.getByRole('button', { name: 'Use this tab instead' }).click();
+  await expect(other.locator('.save-state')).not.toHaveText('Read-only');
+  await expect(offer(other)).toBeVisible();
+  // the first tab is the read-only one now
+  await expect(page.locator('.save-state')).toHaveText('Read-only');
+  await expect(offer(page)).toHaveCount(0);
   expect(errors).toEqual([]);
 });
 
@@ -143,9 +163,7 @@ test('the tour card passes the accessibility check', async ({ page, errors }) =>
   await open(page, 'help/tours');
   await page.locator('#start-tour-plan').click();
   await stepNow(page);
-  await page.evaluate(() => Promise.all(document.getAnimations()
-    .filter((a) => Number.isFinite(a.effect?.getComputedTiming().endTime ?? Infinity))
-    .map((a) => a.finished.catch(() => {}))));
+  await still(page);
   const r = await new AxeBuilder({ page }).include('.tour-card').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'best-practice']).analyze();
   expect(r.violations.flatMap((v) => v.nodes.map((n) => `${v.id} at ${n.target.join(' ')}`))).toEqual([]);
   await expect(page.getByRole('dialog', { name: tourById('plan')!.steps[0]!.title })).toBeVisible();

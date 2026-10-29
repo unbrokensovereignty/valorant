@@ -14,7 +14,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { Button, IconButton } from '../components/controls.tsx';
 import { Icon } from '../icons.tsx';
-import { data, go, keysMoveFocus, overlayOpen, route, safely, toast, typingIn, watch, type Page } from '../state.ts';
+import { data, go, keysMoveFocus, overlayOpen, route, safely, tabRole, toast, typingIn, watch, type Page } from '../state.ts';
 import { play } from '../sound.ts';
 import { capitalize, countWord } from '../../core/util.ts';
 import { tourById, type Side, type Tour } from './list.ts';
@@ -333,7 +333,8 @@ export function TourHost() {
 export function TourOffer() {
   const r = watch('meta');
   const firstSteps = capitalize(countWord(tourById('first')?.steps.length ?? 0));
-  if (r.db.readOnly || r.app().tips.includes(OFFER_KEY) || touring.value) return null;
+  // a read-only tab doesn't offer it; one that takes over saving does, straight away
+  if (tabRole.value === 'reader' || r.app().tips.includes(OFFER_KEY) || touring.value) return null;
   return (
     <aside class="tour-offer panel" aria-label="Take the tour">
       <span class="tour-offer-icon"><Icon name="compass" size={22} /></span>

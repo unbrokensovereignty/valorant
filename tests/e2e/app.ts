@@ -34,13 +34,26 @@ export async function reload(page: Page) {
 }
 
 /**
- * Waits until the page is drawn and is the tab that saves. Just after a reload, the page being
- * replaced can still hold the saving lock for a moment, and this one opens read-only until it lets
- * go; the banner that says so comes and goes above the page and moves everything on it.
+ * Waits until the page is drawn, is the tab that saves, and has stopped moving. Just after a
+ * reload, the page being replaced can still hold the saving lock for a moment, and this one opens
+ * read-only until it lets go; the banner that says so comes and goes above the page and moves
+ * everything on it. Firefox now and then lost a click made just as the page opened, so the first
+ * click waits for the page to stop moving too.
  */
 async function ready(page: Page) {
   await page.waitForSelector('.shell');
   await expect(page.locator('.save-state')).not.toHaveText('Read-only', { timeout: 10_000 });
+  await still(page);
+}
+
+/** Waits until everything that moves by itself has finished (a page sliding in, a card rising), and the next frame is drawn. */
+export async function still(page: Page) {
+  await page.evaluate(async () => {
+    await Promise.all(document.getAnimations()
+      .filter((a) => Number.isFinite(a.effect?.getComputedTiming().endTime ?? Infinity))
+      .map((a) => a.finished.catch(() => {})));
+    await new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done)));
+  });
 }
 
 /** Puts focus on a control as if reached with Tab (the keyboard is in use, not the mouse), so Enter and Space go to it. */
