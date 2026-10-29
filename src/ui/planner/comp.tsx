@@ -24,7 +24,7 @@ import { data, go, safely, toast, useSettings } from '../state.ts';
 import { play } from '../sound.ts';
 import { tourHook } from '../tours/now.ts';
 import { PlaysPanel } from './plays.tsx';
-import { askedLine, askedTitle } from './words.ts';
+import { askedLine, askedTitle, howOften } from './words.ts';
 
 const nameOf = (id: string) => agentById(id)?.name ?? id;
 
@@ -145,7 +145,7 @@ function PartyBox({ c, i, ans }: { c: CompAnswer; i: number; ans: SituationAnswe
       </p>
       {ask.length > 0 && (
         <p>
-          Ask your teammates for a <b>{role(ask[0]!.role)}</b> first: with one, expect about <span class="num">{Math.round(ask[0]!.fit)}</span>.
+          Ask your teammates for a <b>{role(ask[0]!.role)}</b> first: they pick one on their own {howOften(ask[0]!.chance)}, and with one, expect about <span class="num">{Math.round(ask[0]!.fit)}</span>.
           {ask[1] && <> A <b>{role(ask[1].role)}</b> helps next (<span class="num">{Math.round(ask[1].fit)}</span>).</>}
         </p>
       )}

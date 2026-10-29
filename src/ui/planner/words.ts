@@ -11,6 +11,12 @@ import { listJoin } from '../../core/text.ts';
 /** "S from 95, A from 88, …": the tiers as the engine sets them. */
 export const tierWords = (): string => listJoin(TIERS.map((t, i) => (t.min > 0 ? `${t.id} from ${t.min}` : `${t.id} below ${TIERS[i - 1]?.min ?? 0}`)));
 
+/** How often something happens, out of ten games: "in about 6 of 10 games", "in nearly every game", "hardly ever". */
+export function howOften(x: number): string {
+  const n = Math.round(x * 10);
+  return n >= 10 ? 'in nearly every game' : n <= 0 ? 'hardly ever' : `in about ${n} of 10 games`;
+}
+
 const COUNT = ['no', 'one', 'two', 'three', 'four', 'five'];
 
 export const mapWord = (map: string): string => (map === 'best' ? 'Best map' : map === 'any' ? 'Any map' : mapById(map)?.name ?? 'Any map');

@@ -316,6 +316,10 @@ describe('duos and trios', () => {
     const party = [ix('jett'), ix('raze'), ix('reyna')];
     const ask = askFor(m, party, rules, 0.5);
     eq(ask[0]!.role, 'controller', 'three duelists want a controller most');
+    ok(ask.every((x) => x.chance > 0 && x.chance < 1), 'random teammates bring each role in some games, not all');
+    // the two random teammates play two agents, so the chances of the four roles add up to between one and two
+    const total = ask.reduce((n, x) => n + x.chance, 0);
+    ok(total >= 1 - 1e-9 && total <= 2 + 1e-9, `the chances add up to ${total}`);
   });
 });
 

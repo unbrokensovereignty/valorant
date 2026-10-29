@@ -210,9 +210,10 @@ export function searchParties(m: Model, rules: PartyRules, size: number, rankT =
 
 /**
  * For one party: which role random teammates should pick. Returns each role with the expected
- * score when at least one random teammate plays it, best first.
+ * score when at least one random teammate plays it, and how often they do without being asked
+ * (0 to 1), best first.
  */
-export function askFor(m: Model, party: readonly number[], rules: PartyRules, rankT = ALL_RANKS_T): { role: string; expected: number }[] {
+export function askFor(m: Model, party: readonly number[], rules: PartyRules, rankT = ALL_RANKS_T): { role: string; expected: number; chance: number }[] {
   const fixed = [...party, ...rules.locked];
   const fixedSet = new Set(fixed);
   const pool: number[] = [];
@@ -220,17 +221,19 @@ export function askFor(m: Model, party: readonly number[], rules: PartyRules, ra
   const fills = allFills(m, pool, 5 - fixed.length, rankT);
   const sums = ROLE_IDS.map(() => ({ w: 0, ws: 0 }));
   const counts = new Int32Array(ROLES_N);
+  let all = 0;
   for (let i = 0; i < fills.n; i++) {
     const team = [...fixed, ...fills.agents.subarray(i * fills.size, (i + 1) * fills.size)];
     counts.fill(0);
     for (const a of team) counts[ROLE_OF[a]!]!++;
     const s = scoreTeam(m, team);
     const wt = fills.weight[i]! * fillLikelihood(counts);
+    all += wt;
     for (let r = 0; r < ROLES_N; r++) {
       if (fills.counts[i * ROLES_N + r]! > 0) { sums[r]!.w += wt; sums[r]!.ws += wt * s; }
     }
   }
-  return ROLE_IDS.map((role, r) => ({ role, expected: sums[r]!.w ? sums[r]!.ws / sums[r]!.w : -Infinity }))
+  return ROLE_IDS.map((role, r) => ({ role, expected: sums[r]!.w ? sums[r]!.ws / sums[r]!.w : -Infinity, chance: all ? sums[r]!.w / all : 0 }))
     .filter((x) => x.expected > -Infinity)
     .sort((a, b) => b.expected - a.expected);
 }
