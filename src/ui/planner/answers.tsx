@@ -5,7 +5,9 @@
 import { useEffect, useState } from 'preact/hooks';
 import { agentById } from '../../core/kb/agents.ts';
 import { ROLES, type Role } from '../../core/kb/roles.ts';
-import type { AgentAnswer, SituationAnswer } from '../../core/engine/plan.ts';
+import { whyBelow } from '../../core/engine/explain.ts';
+import { modelFor } from '../../core/engine/model.ts';
+import { teamFit, type AgentAnswer, type SituationAnswer } from '../../core/engine/plan.ts';
 import { asksBest, nothingFixed, partyOf, type Query } from '../../core/engine/query.ts';
 import { tierOf } from '../../core/engine/weights.ts';
 import { listJoin } from '../../core/text.ts';
@@ -65,7 +67,8 @@ export function Answers() {
           {ans.comps.map((c, i) => <CompRow key={c.team.join()} c={c} i={i} ans={ans} q={r.query} open={open === i || (onComp && i === 0)} onToggle={() => setOpen(open === i ? -1 : i)} />)}
         </ol>
       ) : (
-        <AgentList agents={ans.agents} plan={(id) => ask({ include: [...new Set([...r.query.include, id])].slice(0, r.query.party) }, true)} />
+        <AgentList agents={ans.agents} plan={(id) => ask({ include: [...new Set([...r.query.include, id])].slice(0, r.query.party) }, true)}
+          versus={r.query.party === 5 ? { ans, newAgents: r.query.newAgents } : undefined} />
       )}
     </div>
   );
@@ -110,8 +113,11 @@ function Situations({ answers, vary, pick, setPick, same }: { answers: readonly 
   );
 }
 
-/** Agents ranked for the situation, with a role filter; each opens to the best comp it fits into. */
-export function AgentList({ agents, plan }: { agents: readonly AgentAnswer[]; plan?: (id: string) => void }) {
+/**
+ * Agents ranked for the situation, with a role filter; each opens to the best comp it fits into
+ * and, given the situation's answer (`versus`, for a five-stack), why that comp ranks below the best.
+ */
+export function AgentList({ agents, plan, versus }: { agents: readonly AgentAnswer[]; plan?: (id: string) => void; versus?: { ans: SituationAnswer; newAgents: boolean } }) {
   const [role, setRole] = useView<Role | 'all'>('planner.role', 'all', (v) => v === 'all' || ROLES.some((r) => r.id === v));
   const [open, setOpen] = useState('');
   const shown = agents.filter((a) => role === 'all' || agentById(a.id)?.role === role);
@@ -134,6 +140,7 @@ export function AgentList({ agents, plan }: { agents: readonly AgentAnswer[]; pl
                 <div class="agent-more">
                   <p class="muted">{ag.line}</p>
                   <div class="row wrap"><span class="muted small">Best comp with {ag.name}:</span><TeamIcons team={a.team} size={28} /></div>
+                  {versus && <WhyNot a={a} versus={versus} />}
                   <div class="row wrap">
                     {plan && <Button size="sm" kind="soft" icon="planner" onClick={() => plan(a.id)}>Plan with {ag.name}</Button>}
                     <Button size="sm" kind="quiet" iconRight="arrow-right" onClick={() => go('agents', a.id)}>About {ag.name}</Button>
@@ -145,6 +152,23 @@ export function AgentList({ agents, plan }: { agents: readonly AgentAnswer[]; pl
         })}
       </ol>
       {!shown.length && <p class="muted">No agents of this role are in the answers.</p>}
+    </div>
+  );
+}
+
+/** Why an agent's best comp ranks below the best comp, read off the same score (explain.ts, whyBelow). */
+function WhyNot({ a, versus: { ans, newAgents } }: { a: AgentAnswer; versus: { ans: SituationAnswer; newAgents: boolean } }) {
+  const best = ans.comps[0];
+  if (!best || best.team.includes(a.id)) return null;
+  const name = agentById(a.id)!.name;
+  const why = whyBelow(modelFor(ans.situation), best.team, a.team);
+  const fit = Math.round(teamFit(ans.situation, a.team, newAgents).fit), top = Math.round(best.fit);
+  const names = (ids: readonly string[]) => listJoin(ids.map((id) => agentById(id)?.name ?? id));
+  return (
+    <div class="why-not">
+      <p><b>Why not {name} in the best comp?</b> {name}’s best comp plays {names(why.in)} instead of {names(why.out)}, and fits <span class="num">{fit}</span> against <span class="num">{top}</span>{fit >= top ? ', as good as the best' : ''}.</p>
+      {why.loses.length > 0 && <div><span class="muted small">Where it falls short</span><ul class="reasons">{why.loses.map((x) => <li key={x}>{x}</li>)}</ul></div>}
+      {why.gains.length > 0 && <div><span class="muted small">Where it’s better</span><ul class="reasons">{why.gains.map((x) => <li key={x}>{x}</li>)}</ul></div>}
     </div>
   );
 }

@@ -3,12 +3,16 @@
 // known team. Every agent a line names is in the comp, every ability it names belongs to that
 // agent (and the kit word it uses, "Omen’s smokes", is one the kit has), a play gives a job to an
 // agent with the tools for it or says the agent stands in, and the other team's answers are named
-// by the abilities that answer them. Pros, cons and notes have their own checks in benchmarks.ts.
+// by the abilities that answer them. How a comp wins names only strengths it covers well, and why a
+// comp ranks below the best names what the swapped agents really bring. Pros, cons and notes have
+// their own checks in benchmarks.ts.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { solve } from '../../src/core/engine/plan.ts';
 import { newQuery } from '../../src/core/engine/query.ts';
-import { explainTeam } from '../../src/core/engine/explain.ts';
+import { explainTeam, PHASES, whyBelow } from '../../src/core/engine/explain.ts';
+import { PLAN_NOTE } from '../../src/core/engine/weights.ts';
+import { scoreTeam } from '../../src/core/engine/search.ts';
 import { D, modelFor, viaIn, type Model, type SidePick, type Situation } from '../../src/core/engine/model.ts';
 import type { RankId } from '../../src/core/kb/ranks.ts';
 import { JOB_SKILLS, jobWords, playsFor } from '../../src/core/engine/plays.ts';
@@ -90,7 +94,7 @@ test('every agent and ability a comp’s pros, cons, notes and tips name is the 
     const m = modelFor(s);
     const e = explainTeam(m, team);
     const tips = tipsFor(team, s).map((t) => t.text);
-    for (const line of [...e.pros, ...e.cons, ...e.notes, ...tips]) {
+    for (const line of [e.plan, ...e.pros, ...e.cons, ...e.notes, ...tips].filter(Boolean)) {
       problems.push(...possessives(line, team, m));
       // a comp that has only one of something has nothing "other than" it
       if (/\bother than\b/i.test(line)) problems.push(`"${line}": "other than"`);
@@ -157,5 +161,61 @@ test('against a known team, who answers each threat is named by an ability of th
       }
     }
   }
+  none(problems);
+});
+
+test('how a comp wins names, for each part, an ability of an agent in it that brings that strength, and the comp covers it well', () => {
+  const problems: string[] = [];
+  const verbs = Object.values(PHASES).flatMap((p) => Object.entries(p) as [Dim, string][]);
+  let said = 0;
+  for (const { s, team } of CASES) {
+    const m = modelFor(s);
+    const e = explainTeam(m, team);
+    if (!e.plan) continue;
+    said++;
+    // each part is one of the phrases in PHASES, with an agent's ability in place of {ab}
+    const parts = new Set<number>();
+    for (const [d, v] of verbs) {
+      const re = new RegExp(`\\b${v.replace('{ab}', '([A-Z][\\w/]*)’s (.+?)')}(?=, | and |\\.)`, 'g');
+      for (const x of e.plan.matchAll(re)) {
+        parts.add(x.index!);
+        const a = AGENTS.find((y) => y.name === x[1]);
+        if (!a || !team.includes(a.id)) { problems.push(`"${e.plan}": ${x[1]} isn't in the comp`); continue; }
+        const keys = viaIn(m, a, d);
+        const names = [...abilityNames(a.id, keys), ...(keys.includes('G') ? ['gun play'] : [])];
+        if (!names.includes(x[2]!)) problems.push(`"${e.plan}": ${a.name}’s ${x[2]} isn't what brings ${d}`);
+        if (e.strengths.find((r) => r.dim === d)!.cover < PLAN_NOTE.cover) problems.push(`"${e.plan}": the comp is short of ${d}`);
+      }
+    }
+    if (parts.size !== (e.plan.match(/’s /g) ?? []).length) problems.push(`"${e.plan}": a part that isn't one of the phrases`);
+  }
+  assert.ok(said > CASES.length / 2, 'most comps say how they win');
+  none(problems);
+});
+
+test('why a comp ranks below the best names what the agents swapped out and in really bring', () => {
+  const problems: string[] = [];
+  let checked = 0;
+  for (const { s, team } of CASES.filter((_, i) => i % 3 === 0)) {
+    const m = modelFor(s);
+    const best = solve({ ...newQuery(s.rank, true), map: s.map, side: s.side, enemy: [...(s.enemy ?? [])] }, s, 1).comps[0]!.team;
+    if (best.join() === team.join()) continue;
+    checked++;
+    const why = whyBelow(m, best, team);
+    if (!why.out.length || why.out.length !== why.in.length) problems.push(`${team.join()}: swaps ${why.out.join()} for ${why.in.join()}`);
+    for (const [list, from] of [[why.loses, why.out], [why.gains, why.in]] as const) {
+      for (const line of list) {
+        const x = /^(?:Less|Fewer|More) .+? \(([A-Z][\w/]*)’s ([^)]+)\)$/.exec(line);
+        if (!x) continue;
+        const a = AGENTS.find((y) => y.name === x[1]);
+        if (!a || !from.includes(a.id)) problems.push(`"${line}": ${x[1]} isn't one of the agents swapped`);
+        else if (!Object.values(a.via).some((k) => [...abilityNames(a.id, k ?? ''), 'gun play'].includes(x[2]!))) problems.push(`"${line}": ${a.name} has no ${x[2]}`);
+      }
+    }
+    // a comp well below the best always says where it falls short
+    const score = (ids: readonly string[]) => scoreTeam(m, ids.map((id) => agentById(id)!.index));
+    if (score(best) - score(team) >= 0.03 && !why.loses.length) problems.push(`${team.join()}: well below ${best.join()} with nothing it gives up`);
+  }
+  assert.ok(checked > 50);
   none(problems);
 });

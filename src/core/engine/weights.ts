@@ -109,6 +109,21 @@ export const KIT_NOTE = { hard: 0.6, upTo: 0.5 };
 export const KIT_RULE_NOTE = { gain: 0.006, most: 2 };
 
 /**
+ * How a comp wins, in a line (explain.ts): the strengths it plays through are those the situation
+ * needs at least `need` (1 = an average share) and the comp covers at least `cover`, each named by
+ * the ability of an agent who brings at least `brings` of it, at most `most` before the plant or
+ * retake and one after.
+ */
+export const PLAN_NOTE = { need: 0.8, cover: 0.6, brings: 0.45, most: 3 };
+
+/**
+ * Why one comp ranks below another (explain.ts): a part of the score counts as a reason when it
+ * moves the score at least `part`, and at most `most` of what it gives up and `gains` of what it
+ * gains are said.
+ */
+export const BELOW_NOTE = { part: 0.004, most: 3, gains: 2 };
+
+/**
  * How a comp's answers to the other team are told (kb/counters.ts, explain.ts): threats that go at
  * least `level` of the way are listed; a comp covering at least `answered` of what answers one has
  * the answer, below `little` it has little of it; and it names up to `by` agents who bring at least

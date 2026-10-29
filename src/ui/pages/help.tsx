@@ -134,7 +134,7 @@ function Guide() {
         <h2>Getting started</h2>
         <ol>
           <li><b>Ask a question</b> on the Planner: a map, your side, your rank and who you’re queuing with. Leave any of them open, or ask for the best one.</li>
-          <li><b>Read the answers:</b> the comps that fit best, each with its pros and cons, the plays it can run on the map, and tips.</li>
+          <li><b>Read the answers:</b> the comps that fit best, each with how it wins, its pros and cons, the plays it can run on the map, and tips. Under Agents, open any agent to see why their best comp ranks below the best one.</li>
           <li><b>Look things up</b> on Rankings (tier lists of agents and comps), Agents (kits, strengths and partners) and Maps (sites, callouts and plays).</li>
           <li><b>Save</b> a plan you like, and your usual party with the agents each of you plays, so they’re a click away next time.</li>
         </ol>

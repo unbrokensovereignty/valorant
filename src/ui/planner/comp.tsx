@@ -111,6 +111,7 @@ export function CompDetail({ c, i, ans, q, saveable = true }: { c: CompAnswer; i
         </div>
       </div>
       {tab === 'why' && <>
+        {why.plan && <p class="comp-plan" data-tour="comp-plan"><Icon name="target" size={18} /><span><b>How it wins.</b> {why.plan}</span></p>}
         {c.party.length > 0 && <PartyBox c={c} i={i} ans={ans} locked={q.locked} />}
         {why.against.length > 0 && <Against rows={why.against} />}
         <div class="pros-cons" data-tour="comp-reasons">

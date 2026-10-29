@@ -12,7 +12,7 @@ import { DIMS, DIM_INFO, ROLE_IDS, roleOf, type Dim, type Role } from '../kb/rol
 import { pairOf } from '../kb/synergy.ts';
 import { listJoin } from '../text.ts';
 import { D, N, kitShare, needsFor, viaIn, type Model } from './model.ts';
-import { KIT_NOTE, KIT_RULE_NOTE, MIX_NOTE, SECOND_CONTROLLER, THREAT_NOTE, WIN_NOTE } from './weights.ts';
+import { BELOW_NOTE, KIT_NOTE, KIT_RULE_NOTE, MIX_NOTE, PLAN_NOTE, SECOND_CONTROLLER, THREAT_NOTE, WIN_NOTE } from './weights.ts';
 import { ruleWhy } from '../kb/kitfit.ts';
 import { threatLine } from '../kb/counters.ts';
 
@@ -44,6 +44,8 @@ export interface AgainstRow {
 }
 
 export interface Explanation {
+  /** How the comp wins, in a line, from the strengths it covers best ("Wins by …"), or '' when nothing stands out. */
+  plan: string;
   strengths: StrengthRow[];
   pros: string[];
   cons: string[];
@@ -282,7 +284,120 @@ export function explainTeam(m: Model, ids: readonly string[]): Explanation {
     else if (overlap === 4) pros.push(`Four of these five are in a comp pro teams play on ${map!.name}.`);
   }
   for (const a of team.filter((x) => x.estimate)) notes.push(`${a.name} is new, so this comp’s fit is an early estimate and will change once there’s more play to go on.`);
-  return { strengths, pros, cons, notes, against: againstOf(m, strengths) };
+  return { plan: planOf(m, strengths), strengths, pros, cons, notes, against: againstOf(m, strengths) };
+}
+
+/**
+ * What a comp does with each strength, by phase of a round: taking a site and then holding the
+ * plant on attack, holding and then retaking on defense. `{ab}` is the ability that does it.
+ */
+export const PHASES: Record<'take' | 'plant' | 'hold' | 'retake', Partial<Record<Dim, string>>> = {
+  take: {
+    smoke: 'smoking off angles with {ab}', wall: 'cutting off long sightlines with {ab}', flash: 'flashing the first fight with {ab}',
+    recon: 'finding defenders with {ab}', entry: 'taking space with {ab}', clear: 'clearing close corners with {ab}',
+    disrupt: 'breaking up the defense with {ab}', duel: 'winning fights with {ab}', angles: 'picking from long range with {ab}', mobility: 'hitting fast with {ab}',
+  },
+  plant: { postplant: 'stopping the defuse with {ab}', stall: 'slowing the retake with {ab}', anchor: 'holding the planted Spike with {ab}', flank: 'watching the flank with {ab}' },
+  hold: {
+    anchor: 'holding a site alone with {ab}', stall: 'slowing pushes with {ab}', recon: 'spotting pushes early with {ab}', angles: 'holding long angles with {ab}',
+    disrupt: 'stopping pushes with {ab}', wall: 'cutting off long sightlines with {ab}', smoke: 'smoking off the way in with {ab}', flank: 'watching the flank with {ab}', duel: 'winning fights with {ab}',
+  },
+  retake: { retake: 'retaking together with {ab}', flash: 'flashing back onto the site with {ab}', clear: 'clearing the planted site with {ab}', mobility: 'rotating fast with {ab}', sustain: 'staying in the fight with {ab}' },
+};
+
+/**
+ * How a comp wins, in a line: the strengths the situation needs that the comp covers best, by
+ * phase of the round, each named by the ability that brings the most of it. It reads off the same
+ * strengths as the score, and never names one the comp is short of (see PLAN_NOTE).
+ */
+function planOf(m: Model, strengths: readonly StrengthRow[]): string {
+  const named = new Set<string>();
+  const phase = (verbs: Partial<Record<Dim, string>>, most: number): string[] => {
+    const out: string[] = [];
+    const rows = strengths.filter((r) => verbs[r.dim] && r.need >= PLAN_NOTE.need && r.cover >= PLAN_NOTE.cover && (r.by[0]?.value ?? 0) >= PLAN_NOTE.brings);
+    for (const r of [...rows].sort((a, b) => b.need * b.cover - a.need * a.cover)) {
+      if (out.length >= most) break;
+      const ability = abilityOf(m, agentById(r.by[0]!.id)!, r.dim);
+      if (named.has(ability)) continue;
+      named.add(ability);
+      out.push(verbs[r.dim]!.replace('{ab}', ability));
+    }
+    return out;
+  };
+  const line = (first: string[], then: string[]) => (first.length ? `${listJoin(first)}${then.length ? `, then ${then[0]}` : ''}` : then[0] ?? '');
+  const attack = () => line(phase(PHASES.take, PLAN_NOTE.most), phase(PHASES.plant, 1));
+  const defense = () => line(phase(PHASES.hold, PLAN_NOTE.most), phase(PHASES.retake, 1));
+  const side = m.situation.side;
+  if (side !== 'both') {
+    const how = side === 'attack' ? attack() : defense();
+    return how ? `Wins by ${how}.` : '';
+  }
+  const a = attack(), d = defense();
+  return [a && `On attack, it wins by ${a}.`, d && `On defense, ${a ? 'by' : 'it wins by'} ${d}.`].filter(Boolean).join(' ');
+}
+
+/** "Fewer flashes", "less information" (and "more …"): how much of a strength one comp has against another. */
+const less = (d: Dim) => (d === 'disrupt' ? 'Less crowd control' : `${DIM_INFO[d].few ? 'Fewer' : 'Less'} ${DIM_INFO[d].has}`);
+const more = (d: Dim) => (d === 'disrupt' ? 'More crowd control' : `More ${DIM_INFO[d].has}`);
+
+/** Why a comp ranks below the best one: the agents it swaps, and what that gives up and gains. */
+export interface Below {
+  /** The best comp's agents it doesn't have, and the ones it plays instead. */
+  out: string[];
+  in: string[];
+  /** Where it falls short and where it's better, biggest first: "Less information (Sova’s Recon Bolt)". */
+  loses: string[];
+  gains: string[];
+}
+
+/**
+ * Why `other` scores below `best`, read off the parts of the score (see search.ts): each strength's
+ * coverage, what pros pick here, ranked win rates, how the kits play at this rank, the pairs and the
+ * role counts. Each part that moves the score at least BELOW_NOTE.part is a reason, the biggest first.
+ */
+export function whyBelow(m: Model, best: readonly string[], other: readonly string[]): Below {
+  const agents = (ids: readonly string[]) => ids.map((id) => agentById(id)).filter((a): a is Agent => !!a);
+  const A = agents(best), B = agents(other);
+  const outs = A.filter((a) => !other.includes(a.id)), ins = B.filter((a) => !best.includes(a.id));
+  const names = (list: readonly Agent[]) => listJoin(list.map(nameOf));
+  const verb = (list: readonly Agent[], one: string, many: string) => (list.length === 1 ? one : many);
+  const rankName = rankOf(m.situation.rank).name;
+  const map = mapById(m.situation.map);
+  const parts: { size: number; words: string }[] = [];
+  // each strength's coverage, as the score weighs it
+  DIMS.forEach((d, j) => {
+    const cover = (team: readonly Agent[]) => 1 - team.reduce((p, a) => p * m.miss[a.index * D + j]!, 1);
+    const size = m.weight[j]! * (cover(B) - cover(A));
+    if (Math.abs(size) < BELOW_NOTE.part) return;
+    // named by the ability of the agent who brought (or brings) the most of it
+    const from = (size < 0 ? outs : ins).map((a) => ({ a, v: 1 - m.miss[a.index * D + j]! })).sort((x, y) => y.v - x.v)[0];
+    const by = from && from.v >= 0.3 ? ` (${abilityOf(m, from.a, d)})` : '';
+    parts.push({ size, words: `${size < 0 ? less(d) : more(d)}${by}` });
+  });
+  const sum = (arr: Float64Array, team: readonly Agent[]) => team.reduce((t, a) => t + arr[a.index]!, 0);
+  const pro = sum(m.fitParts.pro, ins) - sum(m.fitParts.pro, outs);
+  const where = map ? `on ${map.name}` : 'across the pool';
+  if (Math.abs(pro) >= BELOW_NOTE.part) parts.push({ size: pro, words: `Pro teams pick ${pro < 0 ? names(outs) : names(ins)} more ${where}` });
+  const win = sum(m.fitParts.win, ins) - sum(m.fitParts.win, outs);
+  if (Math.abs(win) >= BELOW_NOTE.part) {
+    const who = win < 0 ? outs : ins;
+    parts.push({ size: win, words: `${names(who)} ${verb(who, 'wins', 'win')} more ranked games` });
+  }
+  const rank = sum(m.fitParts.rank, ins) - sum(m.fitParts.rank, outs);
+  if (Math.abs(rank) >= BELOW_NOTE.part) {
+    parts.push({ size: rank, words: rank < 0 ? `${names(ins)} ${verb(ins, 'is', 'are')} harder to play well at ${rankName}` : `${names(ins)} ${verb(ins, 'is', 'are')} easier to play well at ${rankName}` });
+  }
+  const pairs = (team: readonly Agent[]) => team.reduce((t, a, i) => t + team.slice(0, i).reduce((u, b) => u + m.pair[a.index * N + b.index]!, 0), 0);
+  const pair = pairs(B) - pairs(A);
+  if (Math.abs(pair) >= BELOW_NOTE.part) parts.push({ size: pair, words: pair < 0 ? 'The agents work less well together' : 'The agents work better together' });
+  const roles = (team: readonly Agent[]) => ROLE_IDS.reduce((t, r, ri) => t + m.roleCost[ri * 5 + Math.min(4, team.filter((a) => a.role === r).length)]!, 0);
+  const role = roles(B) - roles(A);
+  if (Math.abs(role) >= BELOW_NOTE.part) parts.push({ size: role, words: role < 0 ? `Its mix of roles suits ${map ? map.name : 'the situation'} less well` : `Its mix of roles suits ${map ? map.name : 'the situation'} better` });
+  return {
+    out: outs.map((a) => a.id), in: ins.map((a) => a.id),
+    loses: parts.filter((p) => p.size < 0).sort((x, y) => x.size - y.size).slice(0, BELOW_NOTE.most).map((p) => p.words),
+    gains: parts.filter((p) => p.size > 0).sort((x, y) => y.size - x.size).slice(0, BELOW_NOTE.gains).map((p) => p.words),
+  };
 }
 
 /** How a comp stands against one threat, after the threat itself: "This comp has the answer: …". */

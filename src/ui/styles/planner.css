@@ -169,6 +169,8 @@ html[data-motion='off'] .spinner { animation: none; border-color: var(--accent);
 @container page (max-width: 760px) { .pros-cons { grid-template-columns: minmax(0, 1fr); } }
 .pros-cons h3 { gap: 6px; margin-bottom: 6px; }
 .reasons { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; color: var(--text); font-size: 0.94rem; }
+.comp-plan { display: flex; gap: 8px; align-items: flex-start; margin: 0; font-size: 0.98rem; }
+.comp-plan > .icon { flex: none; margin-top: 3px; color: var(--accent-text); }
 .party-box { display: grid; gap: 8px; padding: 12px 14px; border-radius: var(--r); background: var(--accent-soft); font-size: 0.94rem; }
 .party-best { gap: 8px 16px; }
 .party-team { gap: 8px; }
@@ -205,6 +207,9 @@ html[data-motion='off'] .spinner { animation: none; border-color: var(--accent);
 .agent-name { flex: 1; min-width: 0; display: grid; }
 .agent-name .row { gap: 4px; }
 .agent-more { display: grid; gap: 10px; padding: 4px 12px 14px 54px; }
+.why-not { display: grid; gap: 8px; padding: 10px 12px; border-radius: var(--r); background: var(--surface-2); font-size: 0.94rem; }
+.why-not p { margin: 0; }
+.why-not .reasons { margin-top: 4px; }
 
 /* ---------------------------------------------------------------- plays */
 

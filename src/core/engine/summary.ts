@@ -1,7 +1,7 @@
 /**
- * A plan as plain text, for copying into a chat: the situation, the comp and its fit, how it
- * answers the other team (when their agents are known), pros and cons, the best play with who
- * does what, and tips.
+ * A plan as plain text, for copying into a chat: the situation, the comp and its fit, how it wins,
+ * how it answers the other team (when their agents are known), pros and cons, the best play with
+ * who does what, and tips.
  */
 import { agentById } from '../kb/agents.ts';
 import { spotName } from '../kb/maps.ts';
@@ -42,6 +42,7 @@ export function summaryText(p: SummaryParts): string {
   if (picks.length) lines.push(`Picks for your random teammates: ${listJoin(picks.map(name))}.`);
   if (p.expected !== undefined && picks.length) lines.push(`If they pick on their own, expect a team that fits about ${Math.round(p.expected)} out of 100.`);
   if (p.ask) lines.push(`Ask your random teammates for ${aWord(p.ask)} first.`);
+  if (p.why.plan) lines.push(p.why.plan);
   const list = (head: string, items: readonly string[]) => {
     if (!items.length) return;
     lines.push('', head, ...items.map((x) => `- ${x}`));
