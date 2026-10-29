@@ -147,7 +147,7 @@ export const rankBand = (t: number): 'low' | 'middle' | 'high' => (t < 0.3 ? 'lo
 export const PARTY_TIPS: Record<2 | 3, { play: string; ask: string }> = {
   2: {
     play: 'Pick two agents that work together, like a flash and an entry; the other three are random.',
-    ask: 'Ask your random teammates for the roles the planner suggests before they lock in.',
+    ask: 'Ask your random teammates for the roles the Planner suggests before they lock in.',
   },
   3: {
     play: 'Play your three together and let the random teammates take the other site or lane.',

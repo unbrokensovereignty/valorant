@@ -160,7 +160,7 @@ function Parties() {
       </div>
       {parties.length
         ? <ul class="plain-list party-cards">{parties.map((p) => <PartyCard key={p.id} p={p} />)}</ul>
-        : <p class="muted">Save the people you queue with and the agents each of you plays. Plans for the party then stick to those agents.</p>}
+        : <p class="muted">Save the people you queue with and the agents each of you plays. Plans for the party then give each player one of their own agents.</p>}
     </section>
   );
 }
