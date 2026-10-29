@@ -7,6 +7,9 @@ import { AGENT_TIPS, DEFENSE_TIPS, MAP_TIPS, RANK_TIPS, PARTY_TIPS, DOUBLE_TIPS 
 import { ROLE_IDS } from '../../src/core/kb/roles.ts';
 import { JOB_SKILLS, fillPlay, jobSkill, playsFor, WEAK_JOB } from '../../src/core/engine/plays.ts';
 import { tipsFor } from '../../src/core/engine/tips.ts';
+import { summaryText } from '../../src/core/engine/summary.ts';
+import { explainTeam } from '../../src/core/engine/explain.ts';
+import { modelFor } from '../../src/core/engine/model.ts';
 
 const plain = (s: string) => /[.?]$/.test(s) && !s.includes('!');
 
@@ -144,5 +147,16 @@ describe('tips', () => {
     ok(!duo.some((x) => x.about === 'Omen'), 'only your party’s agents');
     ok(duo.some((x) => x.about === 'Duo'));
     ok(!duo.some((x) => x.about.startsWith('Haven')));
+  });
+});
+
+describe('copying a plan', () => {
+  spec('a party’s plan names the role to ask random teammates for', () => {
+    const team = ['sova', 'clove', 'jett', 'reyna', 'chamber'];
+    const s = { map: 'haven', side: 'attack', sites: [], rank: 'gold' } as const;
+    const parts = { title: 'Haven, attack · Gold · duo', team, party: ['sova', 'clove'], fit: 100, tier: 'S', why: explainTeam(modelFor(s), team), tips: tipsFor(team, s, 2, ['sova', 'clove']) };
+    const text = summaryText({ ...parts, ask: 'sentinel' });
+    ok(text.includes('Comp: Sova, Clove, Jett, Reyna, Chamber (your party: Sova and Clove). Fit 100, tier S.\nAsk your random teammates for a sentinel first.'), text);
+    ok(!summaryText(parts).includes('teammates for a sentinel first'), 'nothing to ask, no line');
   });
 });

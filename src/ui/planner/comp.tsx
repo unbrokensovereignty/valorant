@@ -96,7 +96,8 @@ export function CompDetail({ c, i, ans, q, saveable = true }: { c: CompAnswer; i
     const map = mapById(s.map);
     const side = s.side === 'both' ? 'attack' : s.side;
     const best = map ? playsFor(c.team, map.id, side, s.sites)[0] : undefined;
-    void copyWithToast(summaryText({ title: `${askedTitle(s)} · ${askedLine({ ...q, rank: s.rank })}`, team: c.team, party: c.party, fit: c.fit, tier: c.tier, why, play: best, tips }), 'Copied the plan.');
+    const ask = asksFor(c, i, ans)[0];
+    void copyWithToast(summaryText({ title: `${askedTitle(s)} · ${askedLine({ ...q, rank: s.rank })}`, team: c.team, party: c.party, ask: ask && roleWord(ask.role), fit: c.fit, tier: c.tier, why, play: best, tips }), 'Copied the plan.');
   };
   return (
     <>
@@ -132,11 +133,14 @@ export function CompDetail({ c, i, ans, q, saveable = true }: { c: CompAnswer; i
   );
 }
 
+/** The roles worth asking random teammates for, best first: for the best party only, and only those that lift the team above what you'd expect anyway. */
+const asksFor = (c: CompAnswer, i: number, ans: SituationAnswer) => (i === 0 ? ans.askFor ?? [] : []).filter((a) => a.fit > (c.expected ?? c.fit)).slice(0, 2);
+const roleWord = (id: string) => ROLES.find((r) => r.id === id)?.name.toLowerCase() ?? id;
+
 function PartyBox({ c, i, ans }: { c: CompAnswer; i: number; ans: SituationAnswer }) {
   const expected = c.expected ?? c.fit;
-  // only the roles that would lift the team above what you'd expect anyway
-  const ask = (i === 0 ? ans.askFor ?? [] : []).filter((a) => a.fit > expected).slice(0, 2);
-  const role = (id: string) => ROLES.find((r) => r.id === id)?.name.toLowerCase() ?? id;
+  const ask = asksFor(c, i, ans);
+  const role = roleWord;
   return (
     <div class="party-box">
       <p>
