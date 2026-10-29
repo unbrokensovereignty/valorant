@@ -6,7 +6,8 @@
 //
 // <folder> holds agents.json and maps.json (the API's /v1/agents and /v1/maps), agents/<agent>.png
 // (portraits), agents/<agent>-<slot>.png (ability icons: grenade, ability1, ability2, ultimate),
-// maps/<map>-minimap.png, maps/<map>-list.png and roles/<role>.png. See CONTRIBUTING.md.
+// maps/<map>-minimap.png, maps/<map>-list.png and roles/<role>.png: `npm run fetch-art -- <folder>`
+// downloads all of it (see CONTRIBUTING.md).
 // An agent or map without art just shows its name; nothing else needs to change.
 import sharp from 'sharp';
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';

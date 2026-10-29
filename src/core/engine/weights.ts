@@ -78,4 +78,5 @@ export const AGENT_STRETCH = 5;
 export const TIERS: readonly { id: string; min: number }[] = [
   { id: 'S', min: 95 }, { id: 'A', min: 88 }, { id: 'B', min: 78 }, { id: 'C', min: 65 }, { id: 'D', min: 0 },
 ];
-export const tierOf = (fit: number): string => TIERS.find((t) => fit >= t.min)!.id;
+/** A fit's tier, going by the whole number shown, so two comps that both show 95 share a tier. */
+export const tierOf = (fit: number): string => TIERS.find((t) => Math.round(fit) >= t.min)!.id;

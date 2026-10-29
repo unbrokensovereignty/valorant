@@ -4,6 +4,7 @@ import { BACKUP_FORMAT, BACKUP_KIND, backupText, countsOf, emptyBackup, mergeBac
 import { newQuery } from '../../src/core/engine/query.ts';
 import { defaultSettings, resolveSettings, sanitizeSetting, sanitizeSettings, SETTINGS, SETTING_KEYS } from '../../src/core/settings.ts';
 import { clean, fold, listJoin } from '../../src/core/text.ts';
+import { BUILT_IN_THEMES, parseThemeCode, THEME_CODE_PREFIX, themeCode } from '../../src/core/theme.ts';
 
 const T = 1_790_000_000_000;
 const plan = (over: Record<string, unknown> = {}) => ({ id: 'p_abcd1234', name: 'Haven attack', note: '', query: { ...newQuery(), map: 'haven' }, team: ['omen', 'sova', 'jett', 'killjoy', 'breach'], starred: false, created: T, updated: T, ...over });
@@ -83,6 +84,17 @@ describe('settings', () => {
     eq(sanitizeSetting('defaultRank', 'gold 3'), undefined);
     eq(sanitizeSetting('defaultRank', 'radiant'), 'radiant');
     eq(sanitizeSettings({ resultCount: 12, sound: 'on', nothing: 1 }), { resultCount: 12 });
+  });
+});
+
+describe('theme codes', () => {
+  spec('a theme code brings back the same theme, and other text isn’t taken for one', () => {
+    for (const t of BUILT_IN_THEMES) {
+      const code = themeCode({ ...t, name: `${t.name} | mine` });
+      ok(code.startsWith(THEME_CODE_PREFIX), code);
+      eq(parseThemeCode(`  “${code}” `), { ...t, id: '', name: `${t.name} | mine` }, t.id);
+    }
+    eq([parseThemeCode(''), parseThemeCode('hello'), parseThemeCode(`${THEME_CODE_PREFIX}!!!`)], [null, null, null]);
   });
 });
 

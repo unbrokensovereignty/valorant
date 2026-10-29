@@ -12,7 +12,7 @@ import { copyWithToast } from '../files.ts';
 import { SETTINGS } from '../../core/settings.ts';
 import { baseFor, previewTheme, systemDark, themeFor } from '../theme.ts';
 import { play } from '../sound.ts';
-import { BUILT_IN_THEMES, MAX_THEMES, oklchHex, parseThemeCode, themeCode, type Base, type ThemePicks } from '../../core/theme.ts';
+import { BUILT_IN_THEMES, MAX_THEMES, oklchHex, parseThemeCode, THEME_CODE_PREFIX, themeCode, type Base, type ThemePicks } from '../../core/theme.ts';
 import type { PageProps } from './index.ts';
 
 /** The theme's colors as CSS variables, so a preview can wear a theme other than the app's. */
@@ -163,7 +163,7 @@ export function ThemesPage(_p: PageProps) {
   };
   const current = [...BUILT_IN_THEMES, ...own].find((t) => t.base === nowBase && chosen(t) === 'now') ?? BUILT_IN_THEMES[0]!;
   const importCode = async () => {
-    const code = await prompt({ title: 'Add a shared theme', label: 'Theme code', yes: 'Add theme', placeholder: 'FCTHEME:…', maxLength: 400, check: (v) => (parseThemeCode(v) ? '' : 'That isn’t a theme code. It starts with FCTHEME:') });
+    const code = await prompt({ title: 'Add a shared theme', label: 'Theme code', yes: 'Add theme', placeholder: `${THEME_CODE_PREFIX}…`, maxLength: 400, check: (v) => (parseThemeCode(v) ? '' : `That isn’t a theme code. It starts with ${THEME_CODE_PREFIX}`) });
     const t = code ? parseThemeCode(code) : null;
     if (t) await editTheme(t);
   };

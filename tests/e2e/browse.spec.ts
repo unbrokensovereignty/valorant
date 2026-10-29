@@ -1,5 +1,5 @@
 import { expect, go, open, test } from './app.ts';
-import { agentById } from '../../src/core/kb/agents.ts';
+import { AGENTS, agentById } from '../../src/core/kb/agents.ts';
 
 const hush = agentById('hush')!;
 
@@ -14,7 +14,7 @@ test('Rankings: tier lists move with the rank, comps open, and the by-map table 
   await expect(tierS).not.toHaveAttribute('aria-label', iron ?? '');
   // every agent is in exactly one tier
   const tiers = await page.locator('.tier-agents').evaluateAll((uls) => uls.map((u) => u.querySelectorAll('.tier-agent').length));
-  expect(tiers.reduce((a, b) => a + b, 0)).toBe(30);
+  expect(tiers.reduce((a, b) => a + b, 0)).toBe(AGENTS.length);
   // a role filter keeps only that role
   await page.getByRole('group', { name: 'Role' }).getByRole('button', { name: 'Controllers' }).click();
   expect(await page.locator('.tier-agent').count()).toBeLessThanOrEqual(8);

@@ -141,7 +141,7 @@ export function explainTeam(m: Model, ids: readonly string[]): Explanation {
     if (overlap === 5) pros.push(`Pro teams play this comp on ${map!.name}.`);
     else if (overlap === 4) pros.push(`Four of these five are a comp pro teams play on ${map!.name}.`);
   }
-  for (const a of team.filter((x) => x.estimate)) notes.push(`${a.name} is new, so ${a.name}’s numbers are early estimates and will change once there’s more play to go on.`);
+  for (const a of team.filter((x) => x.estimate)) notes.push(`${a.name} is new, so this comp’s fit is an early estimate and will change once there’s more play to go on.`);
   return { strengths, pros, cons, notes };
 }
 

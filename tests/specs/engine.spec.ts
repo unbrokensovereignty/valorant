@@ -133,7 +133,11 @@ describe('fits and tiers', () => {
   });
   spec('tiers go from S down, and every fit has one', () => {
     eq(TIERS.map((t) => t.id), ['S', 'A', 'B', 'C', 'D']);
-    eq([tierOf(100), tierOf(TIERS[0]!.min), tierOf(TIERS[0]!.min - 0.01), tierOf(0)], ['S', 'S', 'A', 'D']);
+    eq([tierOf(100), tierOf(TIERS[0]!.min), tierOf(TIERS[0]!.min - 0.6), tierOf(0)], ['S', 'S', 'A', 'D']);
+  });
+  spec('a tier goes by the fit as shown, so comps that show the same number share a tier', () => {
+    const min = TIERS[0]!.min;
+    eq([tierOf(min - 0.4), tierOf(min - 0.5), tierOf(min - 0.51)], ['S', 'S', 'A']);
   });
   spec('the yardstick for a situation is all teams, whatever a question fixes', () => {
     const m = modelFor(at('icebox'));

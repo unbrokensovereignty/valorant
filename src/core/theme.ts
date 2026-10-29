@@ -221,7 +221,8 @@ export function sanitizeTheme(x: unknown): ThemePicks | null {
   return { id, name: name || 'My theme', base, bg: h(x.bg), bg2: isHex(x.bg2) ? h(x.bg2) : '', surface: h(x.surface), card: h(x.card), accent: h(x.accent) };
 }
 
-const CODE_PREFIX = 'FCTHEME:';
+/** What every theme code starts with, so a pasted code is easy to tell from other text. */
+export const THEME_CODE_PREFIX = 'PLAYBOOK-THEME:';
 
 /** A short code to share a theme. */
 export function themeCode(p: ThemePicks): string {
@@ -230,15 +231,15 @@ export function themeCode(p: ThemePicks): string {
   const bytes = new TextEncoder().encode(body);
   let bin = '';
   for (const b of bytes) bin += String.fromCharCode(b);
-  return CODE_PREFIX + btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  return THEME_CODE_PREFIX + btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
 /** Reads a theme code (surrounding spaces and quotes are fine). Returns null when it isn't one. */
 export function parseThemeCode(code: string): ThemePicks | null {
   const s = code.trim().replace(/^["'“”]+|["'“”]+$/g, '');
-  if (!s.startsWith(CODE_PREFIX)) return null;
+  if (!s.startsWith(THEME_CODE_PREFIX)) return null;
   try {
-    const b64 = s.slice(CODE_PREFIX.length).replace(/-/g, '+').replace(/_/g, '/');
+    const b64 = s.slice(THEME_CODE_PREFIX.length).replace(/-/g, '+').replace(/_/g, '/');
     const bin = atob(b64 + '='.repeat((4 - (b64.length % 4)) % 4));
     const body = new TextDecoder().decode(Uint8Array.from(bin, (ch) => ch.charCodeAt(0)));
     const [base, bg, bg2, surface, card, accent, ...name] = body.split('|');

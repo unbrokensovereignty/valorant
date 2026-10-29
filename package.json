@@ -14,7 +14,8 @@
     "lint": "node tools/lint.mjs",
     "e2e": "npm run build && playwright test",
     "check": "npm run typecheck && npm run lint && npm test && npm run build",
-    "art": "node tools/prepare-art.mjs"
+    "art": "node tools/prepare-art.mjs",
+    "fetch-art": "node tools/fetch-art.mjs"
   },
   "dependencies": {
     "@preact/signals": "^2.11.2",

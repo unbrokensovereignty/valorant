@@ -10,8 +10,8 @@
  * To update her once the patch notes and a few weeks of play are in:
  * 1. Change the numbers below (what each one means is explained at the top of agents.ts), and
  *    take out `estimate: true` once they're based on real play.
- * 2. Put her ability names and text in content.gen.ts by running `npm run art` on a fresh
- *    download (see CONTRIBUTING.md), which also adds her portrait and ability icons.
+ * 2. Put her ability names and text in content.gen.ts with `npm run fetch-art -- <folder>` and
+ *    then `npm run art -- <folder>` (see CONTRIBUTING.md), which also adds her portrait and icons.
  * 3. Add her pairs to synergy.ts and her map picks to pro.ts if they've become clear.
  * 4. Run `npm run check`: the tests say if anything doesn't fit.
  */
