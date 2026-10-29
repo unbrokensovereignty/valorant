@@ -2,7 +2,7 @@
 
 Every version of Playbook By Sovereign and what it changed.
 
-## 0.2.0 (in progress)
+## 0.2.0 (2026-10-29)
 
 - **Answers that fit your rank.** A comp now counts each agent for what a team at your rank gets out of them: a hard or team-dependent kit counts for less at low ranks and in full at Radiant, while gun play counts the same everywhere. Ranked win rates (metabot.gg and winio.ai, October 2026) count too, most in the middle ranks where most games are played, and the pull toward what pro teams play grows mostly from Diamond up. When a comp has an agent who's notably hard to play, like Astra or Yoru, its cons say so from Iron to Platinum, with how much of the kit a team at your rank usually gets.
 - **This year's pro play.** Pro picks and comps come from Champions 2026 for the seven maps it played and from Masters Santiago 2026 for Bind, Breeze, Corrode and Pearl, and a map with fewer games behind it pulls less. Each map's pro role mix counts at high ranks: two controllers on Lotus, one on Sunset, and no sentinel on Abyss, Bind, Breeze and Split, where pro teams mostly play without one. A comp far from the mix says so in its cons, and a comp without a sentinel where pros play that way says that too. The Maps page says how many controllers pro teams run on each map, and its line about what wins on a map names the agents pros pick most there this year (Omen and Sova on Ascent, say, where it named Killjoy).
