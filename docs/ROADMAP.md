@@ -2,12 +2,14 @@
 
 What's planned, what the owner has approved, and what's done. Update it as work lands. Items marked **proposed** wait for the owner's OK before they're built. Small fixes don't need to be listed here.
 
-## Next: keeping the numbers current (approved)
+## Next version: more reliable answers, and a guided tour (approved)
 
-The owner asked for Hush's numbers to stay placeholders that are easy to change later.
+The owner asked (29 October 2026) for the next version to make the engine and the knowledge base much more reliable and accurate, and to expand what they cover: think about what's missing, crosscheck the answers against what pro teams play and what experts say, and test that what the app says is actually good advice, not just numbers that look right. Ranked win rates are part of it. Also a guided tour of the app, checked in every round of testing. The detailed plan comes first, then rounds of testing and fixing until two rounds in a row find nothing significant. The owner asked for this to go ahead without waiting on them.
 
-1. **Hush's real numbers and art.** Once the patch notes and a few weeks of play are in, replace the estimates in `src/core/kb/new-agents.ts` (the steps are at the top of that file and in `CONTRIBUTING.md`), take out `estimate: true`, and refresh the game's content for Hush's portrait, ability icons and ability text.
-2. **Each new patch or event.** Refresh ranked pick rates (`pop` in `agents.ts`), pro picks and comps (`pro.ts`) and the map pool (`maps.ts`; the pool changes next on 6 January 2027), and note the patch and events in each file's sources.
+## Keeping the numbers current (approved, every version)
+
+1. **Each new patch or event.** Refresh ranked pick rates (`pop` in `agents.ts`), pro picks and comps (`pro.ts`, and `PRO_CUTOFF` once there's a new event) and the map pool (`maps.ts`; the pool changes next on 6 January 2027), and note the patch and events in each file's sources.
+2. **Each new agent.** While revealed but not out, add them as an estimate in `src/core/kb/new-agents.ts`; once out, move them into `agents.ts` with numbers from their first days and refresh the game's content for their art and ability text (the steps are at the top of `new-agents.ts` and in `CONTRIBUTING.md`).
 
 ## Ideas (proposed, for the owner to pick)
 
@@ -15,6 +17,12 @@ The owner asked for Hush's numbers to stay placeholders that are easy to change 
 2. **Against a known team.** Enter the other team's comp (from the last map of a series, or after the first round) and see which of your comps and plays answer it best.
 3. **A plan sheet to print.** One page per plan with the minimap, who does what in each play, and the tips, for a team that reviews before playing.
 4. **More plays per map.** Pistol-round and eco plays, and more fakes (there are hits, splits, defaults, setups and a retake for every site now).
+
+## 0.1.5: Hush and a tidier layout (in progress)
+
+The owner asked for Hush to be added fully now that she's out, with extra research to make up for how few stats there are yet, and for a review of the whole layout for inconsistencies (the role counts in the Planner were one), with rounds of testing and fixing until two rounds in a row found nothing significant. The heavier engine and knowledge work moved to the next version.
+
+- **Built:** Hush as a full agent (the game's 13.09 text and art, numbers from her first days in ranked and from reviews of her kit, partners and tips, with pro play neutral until pros can pick her), the game's text marks for ability names and effects, Clove's 13.09 change, and layout fixes across the Planner, Settings, Rankings, agent pages and dialogs, with browser tests that catch labels that wrap and role counts that don't line up.
 
 ## 0.1.0: the first version (released 2026-10-29)
 

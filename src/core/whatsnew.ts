@@ -17,6 +17,14 @@ export interface VersionNotes { version: string; items: readonly NewThing[] }
 /** Newest first. */
 export const WHATS_NEW: readonly VersionNotes[] = [
   {
+    version: '0.1.5',
+    items: [
+      { icon: 'agents', title: 'Hush, for real', text: 'Hush is out, so she’s in as a full agent: her abilities in the game’s own words, her portrait and icons, numbers from her first days in ranked, her best partners and tips.', page: 'agents/hush' },
+      { icon: 'sparkle', title: 'Ability text you can scan', text: 'Ability names stand out, and what an ability does to enemies or for your side is colored, as in the game.', page: 'agents' },
+      { icon: 'grid', title: 'Tidier pages', text: 'The role counts in the Planner line up, dialogs keep their buttons in view, and Settings and Rankings fit better when the window is narrow.' },
+    ],
+  },
+  {
     version: '0.1.0',
     items: [
       { icon: 'planner', title: 'The Planner', text: 'Pick a map, rank, side and sites, add your party and rules, and get the comps that fit best, with pros, cons, tips and plays.', page: 'planner' },

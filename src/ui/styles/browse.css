@@ -107,8 +107,8 @@
 .agent-strengths { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
 .agent-strengths th, .agent-strengths td { padding: 6px 10px 6px 0; border-top: 1px solid var(--line); text-align: left; vertical-align: middle; }
 .agent-strengths tr:first-child th, .agent-strengths tr:first-child td { border-top: 0; }
-.agent-strengths th { width: 32%; font-weight: 650; white-space: nowrap; }
-.agent-strengths td:nth-child(2) { width: 34%; }
+.agent-strengths th { width: 1%; padding-right: 20px; font-weight: 650; white-space: nowrap; }
+.agent-strengths td:nth-child(2) { width: 32%; }
 .pairs { gap: 2px; }
 .pair-row { display: flex; align-items: flex-start; gap: 10px; width: 100%; padding: 6px 8px 6px 4px; border: 0; border-radius: var(--r); background: none; color: var(--text); text-align: left; cursor: pointer; }
 .pair-row:hover { background: var(--surface-2); }
