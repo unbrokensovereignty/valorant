@@ -351,7 +351,7 @@ play('fracture', 'attack', 'A', 'hit', 'A hit from Dish', 'Drops onto A from A D
   'flank: Attacker Side Spawn > A Main | Push A Main late to catch defenders sliding round.',
 ]);
 play('fracture', 'attack', 'B', 'split', 'B pincer from both ends', 'Hits B from B Tree and through B Arcade at the same moment.', [
-  'smoke: Attacker Side Spawn > B Main | Smoke B Canteen and B Tunnel.',
+  'smoke: Attacker Side Spawn > B Main | Smoke B Canteen and B Generator.',
   'entry flash: Attacker Side Spawn > B Main > B Tree > B Site | Hit B Tree with flashes as the other side arrives.',
   'lurk: Attacker Side Bridge > B Bench > B Arcade | Go round through B Arcade to hit from the top at the same time.',
   'flank: B Tunnel | Take B Tunnel and cut off the rotation from the middle.',
@@ -543,7 +543,7 @@ play('lotus', 'attack', 'C', 'hit', 'C hit through Main', 'Smokes on C Hall and 
   'entry flash: C Mound > C Main > C Site | Take the site with flashes; check C Bend.',
 ]);
 play('lotus', 'attack', 'C', 'split', 'C split through the door', 'Pinches C from C Waterfall through C Door while the rest hit C Main.', [
-  'smoke: Attacker Side Spawn > C Lobby | Smoke C Hall and C Waterfall.',
+  'smoke: Attacker Side Spawn > C Lobby | Smoke C Hall and C Link, and leave C Waterfall open for the pinch.',
   'entry flash: C Lobby > C Mound > C Main > C Site | Hit C Main with flashes.',
   'recon lurk: B Main > C Door > C Waterfall | Push through C Door and pinch from C Waterfall as the hit lands.',
 ]);
