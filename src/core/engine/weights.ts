@@ -23,7 +23,7 @@ export const BASE: Record<Side, Record<Dim, number>> = {
  * most out of coordinated utility such as lineups and walls.
  */
 export const BY_RANK: Record<Dim, readonly [number, number]> = {
-  smoke: [0.85, 1.1], wall: [0.6, 1.15], flash: [0.8, 1.05], recon: [0.7, 1.1], entry: [1, 1], clear: [0.9, 1],
+  smoke: [0.85, 1.1], wall: [0.75, 1.15], flash: [0.8, 1.05], recon: [0.7, 1.1], entry: [1, 1], clear: [0.9, 1],
   disrupt: [0.8, 1.1], stall: [0.8, 1.05], anchor: [1.05, 0.95], flank: [1, 0.9], retake: [0.8, 1.05],
   postplant: [0.6, 1.15], sustain: [1.2, 0.8], duel: [1.5, 1], angles: [1, 1], mobility: [0.9, 1.05],
 };

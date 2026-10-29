@@ -88,6 +88,14 @@ export const KIT_RULES: readonly KitRule[] = [
     why: 'Iso’s Contingency covers only a short crossing, too short for {map}’s open ground.',
   },
   {
+    agent: 'iso', space: 'tight', caps: 'duel +.05; entry +.05',
+    why: 'Iso’s Double Tap and Undercut win the one-at-a-time fights that {map}’s tight angles make.',
+  },
+  {
+    agent: 'clove', space: 'open', caps: 'entry -.1; duel -.05',
+    why: 'Clove plays close to the fight to make the most of Pick-me-up and Not Dead Yet, which {map}’s long sightlines punish.',
+  },
+  {
     agent: 'skye', space: 'tight', caps: 'clear +.1',
     why: 'Skye’s Trailblazer clears {map}’s close corners before anyone has to peek them.',
   },

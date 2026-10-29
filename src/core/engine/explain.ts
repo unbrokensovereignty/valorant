@@ -198,7 +198,12 @@ export function explainTeam(m: Model, ids: readonly string[]): Explanation {
   if (winners.length) pros.push(`${listJoin(winners.map(nameOf))} ${winners.length === 1 ? 'wins' : 'win'} more ranked games than most agents (${rates(winners)}).`);
   // agents the line before already says to pick only if someone plays them often just add their rate
   if (losers.length && losers.every((a) => hard.includes(a))) cons.push(`${listJoin(losers.map(nameOf))} also ${losers.length === 1 ? 'wins' : 'win'} fewer ranked games than most agents (${rates(losers)}).`);
-  else if (losers.length) cons.push(`${listJoin(losers.map(nameOf))} ${losers.length === 1 ? 'wins' : 'win'} fewer ranked games than most agents (${rates(losers)}): best played by someone who knows ${losers.length === 1 ? 'that agent' : 'them'} well.`);
+  else if (losers.length) {
+    // the advice to know the agent well is for agents who take practice; an easy agent's rate is just said
+    const hardOnes = losers.filter((a) => a.skill >= 0.55);
+    const advice = hardOnes.length === losers.length ? `: best played by someone who knows ${losers.length === 1 ? 'that agent' : 'them'} well` : '';
+    cons.push(`${listJoin(losers.map(nameOf))} ${losers.length === 1 ? 'wins' : 'win'} fewer ranked games than most agents (${rates(losers)})${advice}.`);
+  }
   if (rankName && t >= 0.75) {
     const selfish = team.filter((a) => a.solo >= 0.85 && a.role === 'duelist' && a.caps.flash + a.caps.disrupt + a.caps.smoke < 0.5);
     if (selfish.length) cons.push(`${listJoin(selfish.map(nameOf))} ${selfish.length === 1 ? 'brings' : 'bring'} little utility, and teams at ${rankName} punish that.`);

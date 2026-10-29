@@ -38,8 +38,10 @@ test('utility that needs walls is rated higher on tight maps than on open ones',
   const problems: string[] = [];
   // Displacement only concusses on impact, Paint Shells and Boom Bot clear corners, Breach stuns
   // through walls, Phoenix's flash and molly are short range, Trapwires and Barrier Mesh need chokes
+  // (Phoenix only below Diamond: near the top, pro teams pick him on the in-between maps instead,
+  // and pro play counts most there)
   for (const agent of ['hush', 'raze', 'breach', 'phoenix', 'cypher', 'deadlock']) {
-    for (const rank of ['gold', 'immortal'] as const) {
+    for (const rank of agent === 'phoenix' ? ['silver', 'gold', 'platinum'] as const : ['gold', 'immortal'] as const) {
       const tight = spaceFit(agent, 'tight', rank), open = spaceFit(agent, 'open', rank);
       if (tight <= open) problems.push(`${name(agent)} at ${rank}: ${tight.toFixed(0)} on tight maps, ${open.toFixed(0)} on open ones`);
     }
