@@ -102,6 +102,16 @@ describe('filling plays', () => {
     const list = playsFor(['omen', 'sova', 'jett', 'killjoy', 'breach'], 'haven', 'defense');
     for (let i = 1; i < list.length; i++) ok(list[i - 1]!.fit >= list[i]!.fit);
   });
+  spec('with sites chosen, their plays come first, then the whole map’s, each best fit first', () => {
+    const team = ['yoru', 'neon', 'fade', 'astra', 'killjoy'];
+    for (const side of ['attack', 'defense'] as const) {
+      const list = playsFor(team, 'pearl', side, ['B']);
+      const first = list.findIndex((p) => !p.play.site);
+      ok(list[0]!.play.site === 'B', `${side}: a B play first`);
+      ok(first < 0 || list.slice(first).every((p) => !p.play.site), `${side}: then the whole map’s`);
+      for (let i = 1; i < list.length; i++) if (!list[i - 1]!.play.site === !list[i]!.play.site) ok(list[i - 1]!.fit >= list[i]!.fit, `${side}: best fit first`);
+    }
+  });
 });
 
 describe('tips', () => {
@@ -159,12 +169,13 @@ describe('tips', () => {
 });
 
 describe('copying a plan', () => {
-  spec('a party’s plan names the role to ask random teammates for', () => {
+  spec('a party’s plan says what its fit means, what to expect, and the role to ask random teammates for', () => {
     const team = ['sova', 'clove', 'jett', 'reyna', 'chamber'];
     const s = { map: 'haven', side: 'attack', sites: [], rank: 'gold' } as const;
     const parts = { title: 'Haven, attack · Gold · duo', team, party: ['sova', 'clove'], fit: 100, tier: 'S', why: explainTeam(modelFor(s), team), tips: tipsFor(team, s, 2, ['sova', 'clove']) };
-    const text = summaryText({ ...parts, ask: 'sentinel' });
-    ok(text.includes('Comp: Sova, Clove, Jett, Reyna, Chamber (your party: Sova and Clove). Fit 100, tier S.\nAsk your random teammates for a sentinel first.'), text);
+    const text = summaryText({ ...parts, ask: 'sentinel', expected: 77.4 });
+    ok(text.includes('Comp: Sova, Clove, Jett, Reyna, Chamber (your party: Sova and Clove). Fit 100 among duos, tier S.\nWith random teammates, expect a team that fits about 77 out of 100.\nAsk your random teammates for a sentinel first.'), text);
+    ok(summaryText({ ...parts, party: [] }).includes('. Fit 100, tier S.'), 'a five-stack’s fit is just its fit');
     ok(!summaryText(parts).includes('teammates for a sentinel first'), 'nothing to ask, no line');
   });
 });

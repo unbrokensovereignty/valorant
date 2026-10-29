@@ -98,7 +98,7 @@ export function CompDetail({ c, i, ans, q, saveable = true }: { c: CompAnswer; i
     const side = s.side === 'both' ? 'attack' : s.side;
     const best = map ? playsFor(c.team, map.id, side, s.sites)[0] : undefined;
     const ask = asksFor(c, i, ans)[0];
-    void copyWithToast(summaryText({ title: `${askedTitle(s)} · ${askedLine({ ...q, rank: s.rank })}`, team: c.team, party: c.party, ask: ask && roleWord(ask.role), fit: c.fit, tier: c.tier, why, play: best, tips }), 'Copied the plan.');
+    void copyWithToast(summaryText({ title: `${askedTitle(s)} · ${askedLine({ ...q, rank: s.rank })}`, team: c.team, party: c.party, ask: ask && roleWord(ask.role), fit: c.fit, expected: c.expected, tier: c.tier, why, play: best, tips }), 'Copied the plan.');
   };
   return (
     <>
