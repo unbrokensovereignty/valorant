@@ -6,7 +6,7 @@ import { agentById } from '../kb/agents.ts';
 import { mapById, SIDES, type Side } from '../kb/maps.ts';
 import { rankOf } from '../kb/ranks.ts';
 import { ROLES, ROLE_IDS } from '../kb/roles.ts';
-import { AGENT_TIPS, DOUBLE_TIPS, MAP_TIPS, PARTY_TIPS, RANK_TIPS, rankBand } from '../kb/tips.ts';
+import { AGENT_TIPS, DEFENSE_TIPS, DOUBLE_TIPS, MAP_TIPS, PARTY_TIPS, RANK_TIPS, rankBand } from '../kb/tips.ts';
 import type { Situation } from './model.ts';
 import type { PartySize } from './query.ts';
 
@@ -28,12 +28,13 @@ export function tipsFor(team: readonly string[], s: Situation, party: PartySize 
   }
   const agents = team.map((id) => agentById(id)).filter((a) => !!a);
   for (const r of ROLE_IDS) {
-    if (agents.filter((a) => a.role === r).length === 2) out.push({ about: `Two ${ROLES.find((x) => x.id === r)!.plural.toLowerCase()}`, text: DOUBLE_TIPS[r] });
+    if (agents.filter((a) => a.role === r).length === 2) out.push({ about: `Two ${ROLES.find((x) => x.id === r)!.plural.toLowerCase()}`, text: DOUBLE_TIPS[r][s.side] });
   }
   const yours = party < 5 && partyAgents.length ? agents.filter((a) => partyAgents.includes(a.id)) : agents;
   for (const a of yours) {
     const tips = AGENT_TIPS[a.id];
-    if (tips) out.push({ about: a.name, text: tips[0] });
+    const text = s.side === 'defense' ? DEFENSE_TIPS[a.id] ?? tips?.[0] : tips?.[0];
+    if (text) out.push({ about: a.name, text });
   }
   if (s.rank !== 'any') {
     const r = rankOf(s.rank);
@@ -43,5 +44,9 @@ export function tipsFor(team: readonly string[], s: Situation, party: PartySize 
   return out;
 }
 
-/** Both of an agent's tips, for their own page. */
-export const agentTips = (id: string): readonly string[] => AGENT_TIPS[id] ?? [];
+/** An agent's tips for their own page: both of them, and the one for defense when it's another. */
+export function agentTips(id: string): readonly string[] {
+  const tips: readonly string[] = AGENT_TIPS[id] ?? [];
+  const defense = DEFENSE_TIPS[id];
+  return defense && !tips.includes(defense) ? [...tips, defense] : tips;
+}

@@ -40,6 +40,24 @@ export const AGENT_TIPS: Record<string, readonly [string, string]> = {
   veto: ['Interceptor destroys thrown utility; place it where the enemy throws theirs.', 'Chokehold holds a push in place; Crosscut lets you get back to the fight fast.'],
 };
 
+/**
+ * The tip a comp shows for an agent on defense, for the agents whose first tip above is about
+ * attacking: their second tip when it fits defense, or one of its own (shown on their page too).
+ */
+export const DEFENSE_TIPS: Record<string, string> = {
+  jett: 'With the Operator, take one shot and dash out instead of holding the same angle twice.',
+  raze: 'Boom Bot and Paint Shells punish a push through a choke; throw them at the first sound of a rush.',
+  yoru: 'Place Gatecrash early on defense, so you can rotate or come in behind the push the moment the hit comes.',
+  neon: 'Relay Bolt concusses a group coming through a choke; peek as it goes off.',
+  sova: 'A Recon Bolt early in the round finds a fast push; keep the drone for the retake.',
+  kayo: 'NULL/cmd makes a hit or a retake much safer; use it when the whole team commits.',
+  fade: 'Hold Seize until enemies commit, then use it to stop the entry or the defuse.',
+  tejo: 'Guided Salvo stops a push at a choke from safety; fire it as the enemies commit.',
+  brimstone: 'Smoke the choke the enemies push through, and save Orbital Strike to stop the defuse.',
+  viper: 'Toxic Screen cuts off a choke, and Viper’s Pit lets two or three players hold a site against many.',
+  harbor: 'Cove lets a teammate defuse behind a shield bullets can’t get through.',
+};
+
 /** Two tips for each map and side. */
 export const MAP_TIPS: Record<string, Record<Side, readonly [string, string]>> = {
   abyss: {
@@ -129,10 +147,29 @@ export const PARTY_TIPS: Record<2 | 3, readonly string[]> = {
   ],
 };
 
-/** Tips for a team with two of a role (what doubling up asks of the team), shown under "Two duelists" and so on. */
-export const DOUBLE_TIPS: Record<Role, string> = {
-  duelist: 'Go in one right after the other, so the second can trade the first.',
-  initiator: 'One finds the enemies and the other flashes them; don’t spend both on the same angle.',
-  controller: 'One smokes the hit and the other plays mid or saves smokes for after the plant.',
-  sentinel: 'One holds a site and the other watches the flank or plays mid.',
+/**
+ * Tips for a team with two of a role (what doubling up asks of the team), shown under "Two duelists"
+ * and so on: one for each side, and one for a question about both.
+ */
+export const DOUBLE_TIPS: Record<Role, Record<Side | 'both', string>> = {
+  duelist: {
+    attack: 'Go in one right after the other, so the second can trade the first.',
+    defense: 'Split them up: one takes early fights for information, and the other stays back to trade or retake.',
+    both: 'On attack, go in one right after the other so the second can trade the first; on defense, one takes early fights and the other stays back.',
+  },
+  initiator: {
+    attack: 'One finds the enemies and the other flashes them; don’t spend both on the same angle.',
+    defense: 'One finds the enemies and the other flashes them; don’t spend both on the same angle.',
+    both: 'One finds the enemies and the other flashes them; don’t spend both on the same angle.',
+  },
+  controller: {
+    attack: 'One smokes the hit and the other plays mid or saves smokes for after the plant.',
+    defense: 'One slows the hit with smokes, and the other keeps some back for the retake.',
+    both: 'One smokes the fight that’s on and the other keeps some back: for after the plant on attack, for the retake on defense.',
+  },
+  sentinel: {
+    attack: 'One watches the flank, and the other locks down the site after the plant.',
+    defense: 'One holds each site with a setup, so neither site falls without a fight.',
+    both: 'On defense, one holds each site with a setup; on attack, one watches the flank and the other locks down the plant.',
+  },
 };
