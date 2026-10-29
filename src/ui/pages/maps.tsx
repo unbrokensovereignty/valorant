@@ -29,8 +29,8 @@ function MapGrid() {
   const groups: [string, MapInfo[]][] = [['In the pool', MAPS.filter((m) => m.pool)], ['Out of the pool', MAPS.filter((m) => !m.pool)]];
   return (
     <div class="stack">
-      {groups.map(([title, maps]) => (
-        <section key={title} class="stack">
+      {groups.map(([title, maps], i) => (
+        <section key={title} class="stack" data-tour={i === 0 ? 'map-group' : undefined}>
           <h2>{title}</h2>
           <div class="map-grid map-cards">
             {maps.map((m) => (
@@ -116,13 +116,13 @@ function MapPage({ m }: { m: MapInfo }) {
       </PageHead>
       <div class="map-detail">
         <div class="stack">
-          <div class="map-big">
+          <div class="map-big" data-tour="map-minimap">
             <Minimap map={m.id} labels={names === 'yes' ? 'all' : 'none'} label={`Minimap of ${m.name}${names === 'yes' ? ' with callouts' : ''}`} />
           </div>
           <Toggle checked={names === 'yes'} onChange={(v) => setNames(v ? 'yes' : 'no')} label="Show callouts" />
         </div>
         <div class="stack">
-          <section class="panel stack">
+          <section class="panel stack" data-tour="map-wins">
             <h2>What wins here</h2>
             <p>{m.keys}</p>
             <dl class="facts">
@@ -149,7 +149,7 @@ function MapPage({ m }: { m: MapInfo }) {
         </div>
       </div>
 
-      <div class="row-between wrap map-side">
+      <div class="row-between wrap map-side" data-tour="map-best">
         <h2>Best comps at {rank === 'any' ? 'all ranks' : rankWord(rank)}</h2>
         <Segmented<Side> label="Side" value={side} onChange={setSide} options={[['attack', 'Attack'], ['defense', 'Defense']]} />
       </div>

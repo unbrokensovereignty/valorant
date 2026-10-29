@@ -190,7 +190,7 @@ export function SettingsPage({ arg }: PageProps) {
         </nav>
         <div class="settings-body">
           {ALL_SECTIONS.map((sec) => (
-            <section key={sec.id} class="panel settings-section" id={`s-${sec.id}`}>
+            <section key={sec.id} class="panel settings-section" id={`s-${sec.id}`} data-tour={`settings-section-${sec.id}`}>
               <h2>{sec.title}</h2>
               <p class="muted">{sec.blurb}</p>
               {sec.id !== 'data' && keysIn(sec.id).map((k) => (

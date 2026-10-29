@@ -22,9 +22,9 @@ import { mapWord } from './words.ts';
 
 const COUNTS = ['0', '1', '2', '3'] as const;
 
-function Part({ title, help, children }: { title: string; help?: ComponentChildren; children: ComponentChildren }) {
+function Part({ title, help, tour, children }: { title: string; help?: ComponentChildren; tour?: string; children: ComponentChildren }) {
   return (
-    <div class="q-part">
+    <div class="q-part" data-tour={tour}>
       <div class="q-label">{title}</div>
       {children}
       {help && <div class="q-help">{help}</div>}
@@ -90,7 +90,7 @@ export function Question({ q }: { q: Query }) {
         <Button kind="quiet" size="sm" icon="refresh" disabled={!changed} onClick={() => ask({ ...newQuery(s.defaultRank as RankId, s.includeNew) }, true)}>Start over</Button>
       </div>
 
-      <Part title="Map">
+      <Part title="Map" tour="q-map">
         <button type="button" class="map-choice" onClick={() => void chooseMap()} aria-label={`Map: ${mapWord(q.map)}. Change`}>
           {map ? <MapThumb id={map.id} /> : <span class="map-thumb open"><Icon name={q.map === 'best' ? 'trophy' : 'grid'} size={22} /></span>}
           <span class="map-choice-text"><b>{mapWord(q.map)}</b><small>{map ? (map.pool ? 'In the pool' : 'Out of the pool') : q.map === 'best' ? 'Every map ranked for you' : 'Across the map pool'}</small></span>
@@ -112,17 +112,17 @@ export function Question({ q }: { q: Query }) {
         </Part>
       )}
 
-      <Part title="Side">
+      <Part title="Side" tour="q-side">
         <Segmented label="Side" value={q.side} onChange={(side) => ask({ side }, true)}
           options={[['attack', 'Attack'], ['defense', 'Defense'], ['both', 'Both'], ['best', 'Best']]} />
       </Part>
 
-      <Part title="Rank">
+      <Part title="Rank" tour="q-rank">
         <Select label="Rank" value={q.rank} onChange={(rank) => ask({ rank: rank as Query['rank'] }, true)}
           options={[['any', 'All ranks'], ...RANKS.map((x) => [x.id, x.name] as const), ['best', 'Find the best rank']]} />
       </Part>
 
-      <Part title="Party" help={q.party === 5 ? 'All five of you pick together.' : `The other ${5 - q.party} are random teammates; the plan counts on what they usually pick.`}>
+      <Part title="Party" tour="q-party" help={q.party === 5 ? 'All five of you pick together.' : `The other ${5 - q.party} are random teammates; the plan counts on what they usually pick.`}>
         <div class="row wrap">
           <Segmented label="Party size" value={String(q.party)} onChange={(x) => ask({ party: Number(x) as PartySize, pools: [] }, true)}
             options={[['5', 'Five-stack'], ['3', 'Trio'], ['2', 'Duo']]} />
@@ -137,7 +137,7 @@ export function Question({ q }: { q: Query }) {
         )}
       </Part>
 
-      <Part title={q.party === 5 ? 'Must play' : 'Your party plays'}>
+      <Part title={q.party === 5 ? 'Must play' : 'Your party plays'} tour="q-include">
         <AgentChips ids={q.include} empty="Choose agents" onChange={(include) => ask({ include }, true)}
           o={{ title: q.party === 5 ? 'Agents the team must play' : 'Agents your party will play', max: q.party, taken: taken(q, 'include'), line: q.party === 5 ? 'The comps will all have these agents.' : 'Leave room and the Planner picks the rest of your party.' }} />
       </Part>
@@ -154,16 +154,18 @@ export function Question({ q }: { q: Query }) {
           o={{ title: 'Agents to leave out', max: 25, taken: taken(q, 'exclude') }} />
       </Part>
 
-      <Part title={q.party === 5 ? 'Roles in the team' : 'Roles in your party'} help="Set how many of a role you want, like two controllers.">
+      <Part title={q.party === 5 ? 'Roles in the team' : 'Roles in your party'} tour="q-roles" help="Set how many of a role you want, like two controllers.">
         <div class="q-roles"><div class="q-roles-grid">{ROLES.map((x) => rolePick(x.id))}</div></div>
       </Part>
 
-      <Part title="Options">
-        <div class="stack q-options">
-          {NEW_AGENTS.length > 0 && <Toggle checked={q.newAgents} onChange={(newAgents) => ask({ newAgents }, true)} label={`Include ${listJoin(NEW_AGENTS.map((a) => a.name))} (early estimates)`} />}
-          {(q.map === 'any' || q.map === 'best') && <Toggle checked={q.allMaps} onChange={(allMaps) => ask({ allMaps }, true)} label={`All ${MAPS.length} maps, not only the pool`} />}
-        </div>
-      </Part>
+      {(NEW_AGENTS.length > 0 || !map) && (
+        <Part title="Options">
+          <div class="stack q-options">
+            {NEW_AGENTS.length > 0 && <Toggle checked={q.newAgents} onChange={(newAgents) => ask({ newAgents }, true)} label={`Include ${listJoin(NEW_AGENTS.map((a) => a.name))} (early estimates)`} />}
+            {!map && <Toggle checked={q.allMaps} onChange={(allMaps) => ask({ allMaps }, true)} label={`All ${MAPS.length} maps, not only the pool`} />}
+          </div>
+        </Part>
+      )}
     </section>
   );
 }

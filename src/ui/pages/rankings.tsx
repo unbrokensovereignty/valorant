@@ -9,6 +9,7 @@ import { AgentIcon, MapThumb, RoleIcon } from '../art.tsx';
 import { go, useSettings, useView } from '../state.ts';
 import { play } from '../sound.ts';
 import { answerFor, answerNow } from '../solved.ts';
+import { tourHook } from '../tours/now.ts';
 import { CompRow } from '../planner/comp.tsx';
 import { mapWord, rankWord, sideWord } from '../planner/words.ts';
 import { agentById, AGENTS_BY_NAME } from '../../core/kb/agents.ts';
@@ -35,10 +36,10 @@ function TierList({ agents }: { agents: readonly AgentAnswer[] }) {
   const numbers = useSettings().showNumbers;
   return (
     <div class="tier-list">
-      {TIERS.map((t) => {
+      {TIERS.map((t, i) => {
         const here = agents.filter((a) => a.tier === t.id);
         return (
-          <div key={t.id} class="tier-row">
+          <div key={t.id} class="tier-row" data-tour={i === 0 ? 'tier-top' : undefined}>
             <span class={`tier tier-${t.id.toLowerCase()} tier-big`} aria-label={`Tier ${t.id}`}>{t.id}</span>
             <ul class="tier-agents" aria-label={`Tier ${t.id}: ${here.length ? listJoin(here.map((a) => nameOf(a.id))) : 'nobody'}`}>
               {here.map((a) => (
@@ -111,7 +112,9 @@ function ByMap({ side, rank, newAgents, all, role }: { side: SidePick; rank: Ran
 
 export function RankingsPage(_p: PageProps) {
   const s = useSettings();
-  const [tab, setTab] = useView<Tab>('rankings.tab', 'agents', (v) => v === 'agents' || v === 'comps' || v === 'maps');
+  const [chosen, setTab] = useView<Tab>('rankings.tab', 'agents', (v) => v === 'agents' || v === 'comps' || v === 'maps');
+  // the tour's step about tiers shows them
+  const tab = tourHook.value === 'tier-top' ? 'agents' : chosen;
   const [map, setMap] = useView<string>('rankings.map', 'any', (v) => v === 'any' || isMap(v));
   const [side, setSide] = useView<SidePick>('rankings.side', 'both', isSide);
   const [rank, setRank] = useView<string>('rankings.rank', s.defaultRank, (v) => v === 'any' || isRank(v));
@@ -129,7 +132,7 @@ export function RankingsPage(_p: PageProps) {
   return (
     <>
       <PageHead title="Rankings">Tier lists for a five-stack. Change the map, side or rank to see how they move.</PageHead>
-      <div class="rank-controls panel">
+      <div class="rank-controls panel" data-tour="rank-controls">
         {tab !== 'maps' && (
           <Select label="Map" value={map} onChange={(v) => { setMap(v); setOpen(0); }}
             options={[['any', 'Any map in the pool'], ...POOL.map((m) => [m.id, m.name] as const), ...MAPS.filter((m) => !m.pool).map((m) => [m.id, `${m.name} (out of the pool)`] as const)]} />
@@ -139,7 +142,7 @@ export function RankingsPage(_p: PageProps) {
         {NEW_AGENTS.length > 0 && <Toggle checked={newAgents} onChange={(v) => setFresh(v ? 'yes' : 'no')} label={`Include ${listJoin(NEW_AGENTS.map((a) => a.name))}`} />}
         {tab === 'maps' && <Toggle checked={allMaps === 'yes'} onChange={(v) => setAllMaps(v ? 'yes' : 'no')} label={`All ${MAPS.length} maps`} />}
       </div>
-      <div class="row-between wrap rank-tabs">
+      <div class="row-between wrap rank-tabs" data-tour="rank-tabs">
         <Tabs<Tab> label="Rankings" value={tab} onChange={setTab} tabs={[['agents', 'Agents'], ['comps', 'Comps'], ['maps', 'Agents by map']]} />
         {tab !== 'comps' && <Segmented<RoleFilter> label="Role" value={role} onChange={setRole} options={[['all', 'All'], ...ROLES.map((r) => [r.id, r.plural] as const)]} />}
       </div>

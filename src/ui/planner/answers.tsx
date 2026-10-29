@@ -14,6 +14,7 @@ import { Button, Empty, Segmented, Tabs } from '../components/controls.tsx';
 import { Icon } from '../icons.tsx';
 import { go, useView } from '../state.ts';
 import { play } from '../sound.ts';
+import { tourOnComp } from '../tours/now.ts';
 import { CompRow, Fit, TeamIcons } from './comp.tsx';
 import { ask, bestOf, run } from './store.ts';
 import { askedLine, askedTitle, partyWord, situationWord } from './words.ts';
@@ -24,7 +25,10 @@ export function Answers() {
   const r = run.value;
   const [pick, setPick] = useState(0);
   const [open, setOpen] = useState(0);
-  const [tab, setTab] = useView<Tab>('planner.tab', 'comps', (v) => v === 'comps' || v === 'agents');
+  const [chosen, setTab] = useView<Tab>('planner.tab', 'comps', (v) => v === 'comps' || v === 'agents');
+  // a tour step about the comps shows them, with the best one open
+  const onComp = tourOnComp.value;
+  const tab = onComp ? 'comps' : chosen;
   const key = r ? JSON.stringify(r.query) : '';
   // a new question starts on its best situation with the best comp open
   useEffect(() => { setPick(0); setOpen(0); }, [key]);
@@ -40,7 +44,7 @@ export function Answers() {
   const none = !ans.comps.length;
   return (
     <div class={`answers${r.status === 'working' ? ' stale' : ''}`} aria-busy={r.status === 'working'}>
-      <header class="answers-head">
+      <header class="answers-head" data-tour="answers-head">
         <div class="grow">
           <h2>{vary.length ? `Best ${listJoin(vary.map((v) => (v === 'map' ? 'maps' : v === 'side' ? 'sides' : 'ranks')))} for you` : askedTitle(r.query)}</h2>
           <p class="muted small">{askedLine(r.query)} · {ans.count.toLocaleString('en-US')} {r.query.party === 5 ? 'possible comps' : `possible ${partyWord(r.query.party).toLowerCase()}s`} checked</p>
@@ -51,14 +55,14 @@ export function Answers() {
       {vary.length > 0 && <Situations answers={answers} vary={vary} pick={pick} setPick={(i) => { setPick(i); setOpen(0); }} same={nothingFixed(r.query)} />}
 
       {vary.length > 0 && <h2 class="answers-sub">{situationWord(ans.situation, vary)}</h2>}
-      <Tabs<Tab> label="Answers" value={tab} onChange={setTab} tabs={[['comps', r.query.party === 5 ? 'Comps' : `${partyWord(r.query.party)} picks`], ['agents', 'Agents']]} />
+      <Tabs<Tab> label="Answers" tour="answers-tabs" value={tab} onChange={setTab} tabs={[['comps', r.query.party === 5 ? 'Comps' : `${partyWord(r.query.party)} picks`], ['agents', 'Agents']]} />
       {none ? (
         <Empty title="No comp fits all of these choices" actions={<Button onClick={() => ask({ include: [], exclude: [], roles: {}, locked: [] }, true)}>Clear the agent and role choices</Button>}>
           {whyNone(r.query)}
         </Empty>
       ) : tab === 'comps' ? (
         <ol class="comps">
-          {ans.comps.map((c, i) => <CompRow key={c.team.join()} c={c} i={i} ans={ans} q={r.query} open={open === i} onToggle={() => setOpen(open === i ? -1 : i)} />)}
+          {ans.comps.map((c, i) => <CompRow key={c.team.join()} c={c} i={i} ans={ans} q={r.query} open={open === i || (onComp && i === 0)} onToggle={() => setOpen(open === i ? -1 : i)} />)}
         </ol>
       ) : (
         <AgentList agents={ans.agents} plan={(id) => ask({ include: [...new Set([...r.query.include, id])].slice(0, r.query.party) }, true)} />

@@ -1,6 +1,6 @@
 /**
- * Home: a map to plan for, the questions you asked lately, your saved plans and parties, and a
- * word about agents that are new or on their way.
+ * Home: a map to plan for, the questions you asked lately, your saved plans and parties, a word
+ * about agents that are new or on their way, and (until it's taken or put off) the offer of a tour.
  */
 import { PageHead } from '../shell.tsx';
 import { Button } from '../components/controls.tsx';
@@ -11,6 +11,7 @@ import { play } from '../sound.ts';
 import { openPlanner, planWith } from '../planner/store.ts';
 import { askedLine, askedTitle, partyWord } from '../planner/words.ts';
 import { TeamIcons } from '../planner/comp.tsx';
+import { TourOffer } from '../tours/engine.tsx';
 import { AGENTS, isNew } from '../../core/kb/agents.ts';
 import { PATCH, POOL, POOL_SINCE } from '../../core/kb/maps.ts';
 import { poolsOf, type Party } from '../../core/saved.ts';
@@ -53,7 +54,7 @@ function NewAgents() {
 
 function Maps() {
   return (
-    <section class="panel home-maps">
+    <section class="panel home-maps" data-tour="home-maps">
       <div class="row-between wrap">
         <h2>Plan for a map</h2>
         <span class="muted small">The pool since {fmtLongDay(POOL_SINCE)}, patch {PATCH}</span>
@@ -173,9 +174,10 @@ export function HomePage(_p: PageProps) {
         Where are you playing next? Pick a map, or ask the Planner anything.
       </PageHead>
       <div class="home">
+        <TourOffer />
         <NewAgents />
         <Maps />
-        <div class="grid-2">
+        <div class="grid-2" data-tour="home-lists">
           <Recent />
           <SavedPlans />
         </div>

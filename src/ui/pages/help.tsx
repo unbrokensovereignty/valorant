@@ -1,9 +1,12 @@
 /**
- * Help: a guide to how the Planner thinks and where its numbers come from, every keyboard
- * shortcut, and About (version, storage, problems, licenses and the notice for the game's art).
+ * Help: a guide to how the Planner thinks and where its numbers come from, the guided tours, every
+ * keyboard shortcut, and About (version, storage, problems, licenses and the notice for the game's art).
  */
 import { PageHead } from '../shell.tsx';
 import { Button, Kbd, Tabs } from '../components/controls.tsx';
+import { Icon } from '../icons.tsx';
+import { startTour, tourDone } from '../tours/engine.tsx';
+import { TOURS, type TourGroup } from '../tours/list.ts';
 import { backendKind, errors, go, tabRole, watch } from '../state.ts';
 import { copyWithToast, download, datedName } from '../files.ts';
 import { openWhatsNew } from '../components/whatsnew.tsx';
@@ -14,13 +17,14 @@ import { PRO, PRO_MAPS_COUNTED, proKnown } from '../../core/kb/pro.ts';
 import { PLAYS } from '../../core/kb/plays.ts';
 import { RANKS, rankOf } from '../../core/kb/ranks.ts';
 import { kitShare, proLean } from '../../core/engine/model.ts';
-import { FIT_MID, PRO_GAMES, TIERS, WIN_CAP, WIN_RANKS } from '../../core/engine/weights.ts';
+import { FIT_MID, PRO_GAMES, WIN_CAP, WIN_RANKS } from '../../core/engine/weights.ts';
+import { tierWords } from '../planner/words.ts';
 import { fmtLongDay } from '../../core/dates.ts';
 import { listJoin } from '../../core/text.ts';
 import { plural } from '../../core/util.ts';
 import type { PageProps } from './index.ts';
 
-type Tab = 'guide' | 'keys' | 'about';
+type Tab = 'guide' | 'tours' | 'keys' | 'about';
 
 const GLOBAL_KEYS: readonly [string, string][] = [
   ['ctrl+k', 'Search pages, agents, maps, saved plans, settings and actions'],
@@ -39,6 +43,38 @@ const LIST_KEYS: readonly [string, string][] = [
   ['home', 'The first item of a menu; End the last'],
   ['arrowright', 'The next tab or choice in a row of them; the left arrow goes back'],
 ];
+
+const TOUR_GROUPS: readonly [TourGroup, string][] = [['basics', 'Start here'], ['pages', 'The pages']];
+
+function Tours() {
+  watch('meta');
+  return (
+    <div class="stack">
+      <p class="muted tours-intro">Each tour lights up one thing at a time on the real screens. Press <Kbd k=" " /> for the next step, <Kbd k="arrowleft" /> to go back and <Kbd k="escape" /> to stop.</p>
+      {TOUR_GROUPS.map(([g, title]) => (
+        <section class="panel" key={g} data-tour={g === 'pages' ? 'tours-list' : undefined}>
+          <h2>{title}</h2>
+          <ul class="tour-list">
+            {TOURS.filter((t) => t.group === g).map((t) => {
+              const done = tourDone(t.id);
+              return (
+                <li key={t.id} class="tour-row">
+                  <span class={`tour-done${done ? ' on' : ''}`} aria-hidden="true">{done && <Icon name="check" size={14} />}</span>
+                  <div class="grow">
+                    <b>{t.name}</b>{done && <span class="visually-hidden"> (taken)</span>}
+                    <small class="muted">{t.blurb}</small>
+                  </div>
+                  <Button id={`start-tour-${t.id}`} size="sm" kind={done ? 'secondary' : 'primary'} icon="play" onClick={() => startTour(t.id)}
+                    label={`${done ? 'Replay' : 'Start'} the ${t.name} tour`}>{done ? 'Replay' : 'Start'}</Button>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ))}
+    </div>
+  );
+}
 
 function KeyCombo({ k }: { k: string }) {
   return <span class="row" style={{ gap: '4px' }}>{k.split('+').map((p, i) => <Kbd key={i} k={p} />)}</span>;
@@ -64,9 +100,6 @@ function Keys() {
     </div>
   );
 }
-
-/** "S from 95, A from 88, …": the tiers as the engine sets them. */
-const tierWords = (): string => listJoin(TIERS.map((t, i) => (t.min > 0 ? `${t.id} from ${t.min}` : `${t.id} below ${TIERS[i - 1]?.min ?? 0}`)));
 
 const pct = (x: number) => `${Math.round(x * 100)}%`;
 /** To the nearest 5%, as the comps' cons say it. */
@@ -105,6 +138,7 @@ function Guide() {
           <li><b>Look things up</b> on Rankings (tier lists of agents and comps), Agents (kits, strengths and partners) and Maps (sites, callouts and plays).</li>
           <li><b>Save</b> a plan you like, and your usual party with the agents each of you plays, so they’re a click away next time.</li>
         </ol>
+        <p class="muted">Rather be shown? <a href="#/help/tours">Tours</a> walk you through each page on the real screens.</p>
       </section>
       <div class="guide-cols">
         <section class="panel stack">
@@ -207,13 +241,14 @@ function About() {
 }
 
 export function HelpPage({ arg }: PageProps) {
-  const tab: Tab = arg === 'keys' || arg === 'about' ? arg : 'guide';
+  const tab: Tab = arg === 'tours' || arg === 'keys' || arg === 'about' ? arg : 'guide';
   return (
     <>
       <PageHead title="Help" />
-      <Tabs value={tab} label="Help" onChange={(t) => go('help', t === 'guide' ? '' : t)} tabs={[['guide', 'Guide'], ['keys', 'Keyboard'], ['about', 'About']]} />
+      <Tabs value={tab} label="Help" onChange={(t) => go('help', t === 'guide' ? '' : t)} tabs={[['guide', 'Guide'], ['tours', 'Tours'], ['keys', 'Keyboard'], ['about', 'About']]} />
       <div class="tab-body" key={tab}>
         {tab === 'guide' && <Guide />}
+        {tab === 'tours' && <Tours />}
         {tab === 'keys' && <Keys />}
         {tab === 'about' && <About />}
       </div>

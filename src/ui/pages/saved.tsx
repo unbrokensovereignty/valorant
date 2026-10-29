@@ -169,7 +169,7 @@ function Parties() {
   };
   return (
     <div class="stack">
-      <div><Button kind="primary" icon="plus" onClick={() => void editParty(null)}>Make a party</Button></div>
+      <div><Button kind="primary" icon="plus" tour="party-make" onClick={() => void editParty(null)}>Make a party</Button></div>
       {parties.length ? (
         <ul class="plain-list party-list">
           {parties.map((p) => (
@@ -208,7 +208,7 @@ export function SavedPage({ arg }: PageProps) {
   return (
     <>
       <PageHead title="Saved">Your saved plans and the parties you play with.</PageHead>
-      <Tabs<Tab> label="Saved" value={tab} onChange={(t) => go('saved', t === 'parties' ? 'parties' : '')} tabs={[['plans', 'Plans'], ['parties', 'Parties']]} />
+      <Tabs<Tab> label="Saved" tour="saved-tabs" value={tab} onChange={(t) => go('saved', t === 'parties' ? 'parties' : '')} tabs={[['plans', 'Plans'], ['parties', 'Parties']]} />
       <div class="tab-body" key={tab}>
         {tab === 'plans' ? <Plans open={arg} /> : <Parties />}
       </div>

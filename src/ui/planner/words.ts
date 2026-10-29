@@ -5,7 +5,11 @@ import { rankOf } from '../../core/kb/ranks.ts';
 import { ROLES } from '../../core/kb/roles.ts';
 import type { Query } from '../../core/engine/query.ts';
 import type { Situation } from '../../core/engine/model.ts';
+import { TIERS } from '../../core/engine/weights.ts';
 import { listJoin } from '../../core/text.ts';
+
+/** "S from 95, A from 88, …": the tiers as the engine sets them. */
+export const tierWords = (): string => listJoin(TIERS.map((t, i) => (t.min > 0 ? `${t.id} from ${t.min}` : `${t.id} below ${TIERS[i - 1]?.min ?? 0}`)));
 
 const COUNT = ['no', 'one', 'two', 'three', 'four', 'five'];
 

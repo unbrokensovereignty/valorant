@@ -31,6 +31,8 @@ export interface ButtonProps {
   id?: string;
   /** A fuller name for screen readers; it should start with the words on the button. */
   label?: string;
+  /** A hook a guided tour can point at. */
+  tour?: string;
 }
 
 export function Button(p: ButtonProps) {
@@ -44,6 +46,7 @@ export function Button(p: ButtonProps) {
       disabled={p.disabled}
       title={p.title}
       autoFocus={p.autoFocus}
+      data-tour={p.tour}
       onClick={(e) => {
         if (p.sound !== false) play(p.sound ?? 'tap');
         p.onClick?.(e);
@@ -277,9 +280,9 @@ export function CountUp({ value, format = fmt, ms = 600, from0 }: { value: numbe
   return <span class="num">{format(shown)}</span>;
 }
 
-export function Tabs<T extends string>({ value, tabs, onChange, label }: { value: T; tabs: readonly (readonly [T, string])[]; onChange: (v: T) => void; label: string }) {
+export function Tabs<T extends string>({ value, tabs, onChange, label, tour }: { value: T; tabs: readonly (readonly [T, string])[]; onChange: (v: T) => void; label: string; tour?: string }) {
   return (
-    <div class="tabs" role="tablist" aria-label={label}>
+    <div class="tabs" role="tablist" aria-label={label} data-tour={tour}>
       {tabs.map(([v, text]) => (
         <button type="button" role="tab" key={v} aria-selected={v === value} onClick={() => { if (v !== value) { play('tick'); onChange(v); } }}>{text}</button>
       ))}

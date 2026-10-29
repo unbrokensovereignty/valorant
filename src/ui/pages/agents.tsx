@@ -35,8 +35,8 @@ function AgentGrid() {
   return (
     <>
       <Segmented<RoleFilter> label="Role" value={role} onChange={setRole} options={[['all', 'All'], ...ROLES.map((r) => [r.id, r.plural] as const)]} />
-      {groups.map((r) => (
-        <section key={r.id} class="agent-role-group">
+      {groups.map((r, i) => (
+        <section key={r.id} class="agent-role-group" data-tour={i === 0 ? 'agent-group' : undefined}>
           <h2 class="row"><RoleIcon role={r.id} size={20} />{r.plural}<span class="muted small">{r.blurb}</span></h2>
           <ul class="agent-cards">
             {AGENTS_BY_NAME.filter((a) => a.role === r.id).map((a) => (
@@ -61,7 +61,7 @@ function Kit({ a }: { a: Agent }) {
   const kit = kitOf(a.id);
   if (!kit) return null;
   return (
-    <section class="panel stack">
+    <section class="panel stack" data-tour="agent-kit">
       <h2>Abilities</h2>
       <ul class="kit">
         {kit.abilities.map((k) => (
@@ -81,7 +81,7 @@ function Kit({ a }: { a: Agent }) {
 function Strengths({ a }: { a: Agent }) {
   const rows = DIMS.map((d) => ({ d, v: a.caps[d] })).filter((x) => x.v >= 0.15).sort((x, y) => y.v - x.v);
   return (
-    <section class="panel stack">
+    <section class="panel stack" data-tour="agent-strengths">
       <h2>Strengths</h2>
       <table class="agent-strengths">
         <tbody>
@@ -110,7 +110,7 @@ function BestMaps({ a, rank, newAgents }: { a: Agent; rank: RankPick; newAgents:
   const ready = rows.every((r) => r.fit !== undefined);
   const sorted = ready ? [...rows].sort((x, y) => y.fit! - x.fit!) : rows;
   return (
-    <section class="panel stack">
+    <section class="panel stack" data-tour="agent-best-maps">
       <div class="row-between"><h2>Best maps</h2>{!ready && <span class="spinner" aria-label="Working it out" />}</div>
       <ul class="plain-list best-maps">
         {sorted.map(({ m, fit }) => (
@@ -132,7 +132,7 @@ function ByRank({ a, rank, newAgents }: { a: Agent; rank: RankPick; newAgents: b
   const rows = RANKS.map((r) => ({ r, fit: answerFor({ map: 'any', side: 'both', rank: r.id, sites: [] }, newAgents)?.agents.find((x) => x.id === a.id)?.fit }));
   const ready = rows.every((x) => x.fit !== undefined);
   return (
-    <section class="panel stack">
+    <section class="panel stack" data-tour="agent-by-rank">
       <div class="row-between"><h2>By rank</h2>{!ready && <span class="spinner" aria-label="Working it out" />}</div>
       <ul class="plain-list by-rank">
         {rows.map(({ r, fit }) => (
@@ -168,7 +168,7 @@ function Partners({ a }: { a: Agent }) {
   };
   if (!mine.length) return null;
   return (
-    <section class="panel stack">
+    <section class="panel stack" data-tour="agent-partners">
       <h2>Partners</h2>
       {good.length > 0 && <><h3 class="row good-text"><Icon name="check" size={16} />Works well with</h3><ul class="plain-list pairs">{good.map(row)}</ul></>}
       {bad.length > 0 && <><h3 class="row bad-text"><Icon name="warning" size={16} />Gets in the way of</h3><ul class="plain-list pairs">{bad.map(row)}</ul></>}

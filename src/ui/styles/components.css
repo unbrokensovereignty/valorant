@@ -340,3 +340,52 @@ html.theme-switching body, html.theme-switching body * { transition: background-
 .whats-new-list .muted { font-size: 0.92rem; }
 .whats-new-list a { font-size: 0.88rem; justify-self: start; }
 .whats-new-icon { flex: none; width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent-text); }
+
+/* ---------------------------------------------------------------- guided tours (see ui/tours/engine.tsx) */
+
+[data-tour] { scroll-margin: 24px; }
+.tour { position: fixed; inset: 0; z-index: 76; pointer-events: none; }
+/* the page can't be clicked while a tour is on, except while a dialog or the search is over it */
+.tour-block { position: fixed; inset: 0; pointer-events: auto; }
+.tour.paused .tour-block { pointer-events: none; }
+.tour-spot {
+  --dim: color-mix(in oklab, var(--bg) 40%, rgba(0, 0, 0, 0.45));
+  position: fixed; border-radius: var(--r-lg); pointer-events: none; opacity: 0;
+  box-shadow: 0 0 0 2px var(--accent), 0 0 0 200vmax var(--dim);
+  transition: opacity var(--dur-base) var(--ease), left var(--dur-base) var(--ease), top var(--dur-base) var(--ease), width var(--dur-base) var(--ease), height var(--dur-base) var(--ease);
+}
+.tour-spot.none { left: 50% !important; top: 50% !important; width: 0 !important; height: 0 !important; box-shadow: 0 0 0 200vmax var(--dim); }
+.tour-spot.jump { transition: opacity var(--dur-base) var(--ease); }
+.tour.on .tour-spot { opacity: 1; }
+.tour-card {
+  position: fixed; left: 50%; top: 50%; width: min(360px, calc(100vw - 24px)); max-height: calc(100vh - 24px); overflow: auto;
+  display: grid; gap: 10px; padding: 16px 18px 14px; border-radius: var(--r-lg); outline: none;
+  background: var(--card); color: var(--text); border: 1px solid var(--line-strong); box-shadow: var(--shadow-3);
+  opacity: 0; transform: translateY(6px); pointer-events: none;
+  transition: opacity var(--dur-base) var(--ease), transform var(--dur-base) var(--ease);
+}
+.tour.on .tour-card { opacity: 1; transform: none; pointer-events: auto; }
+.tour-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: -4px -6px -4px 0; }
+.tour-count { font-size: 0.78rem; font-weight: 700; color: var(--text2); letter-spacing: 0.02em; }
+.tour-card h2 { margin: 0; font-size: 1.15rem; }
+.tour-card p { margin: 0; line-height: 1.5; }
+.tour-look { display: flex; gap: 6px; align-items: baseline; font-size: 0.9rem; padding: 8px 10px; border-radius: var(--r); background: var(--surface-2); color: var(--text2); }
+.tour-look svg { flex: none; align-self: center; }
+.tour-bar { height: 4px; border-radius: 99px; background: var(--surface-3); overflow: hidden; }
+.tour-bar i { display: block; height: 100%; background: var(--accent); border-radius: inherit; transition: width var(--dur-base) var(--ease); }
+.tour-actions { display: flex; justify-content: space-between; gap: 8px; }
+html[data-motion='reduced'] .tour-card { transform: none; }
+
+.tours-intro { margin: 0; }
+.tour-list { list-style: none; margin: 8px 0 0; padding: 0; display: grid; }
+.tour-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); }
+.tour-row:first-child { border-top: 0; }
+.tour-row b, .tour-row small { display: block; }
+.tour-row small { margin-top: 2px; }
+.tour-done { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--line-strong); color: var(--good-text); }
+.tour-done.on { border-color: transparent; background: var(--good-soft); }
+
+.tour-offer { display: flex; align-items: center; gap: 14px; padding: 14px 18px; border-color: var(--accent); animation: rise-in var(--dur-page) var(--ease) both; }
+.tour-offer p { margin: 2px 0 0; }
+.tour-offer .row { flex: none; gap: 8px; }
+.tour-offer-icon { flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--accent-soft); color: var(--accent-text); }

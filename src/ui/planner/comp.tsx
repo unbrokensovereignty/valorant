@@ -22,6 +22,7 @@ import { copyWithToast } from '../files.ts';
 import { Icon } from '../icons.tsx';
 import { data, go, safely, toast, useSettings } from '../state.ts';
 import { play } from '../sound.ts';
+import { tourHook } from '../tours/now.ts';
 import { PlaysPanel } from './plays.tsx';
 import { askedLine, askedTitle } from './words.ts';
 
@@ -61,7 +62,7 @@ export function CompRow({ c, i, ans, q, open, onToggle }: { c: CompAnswer; i: nu
   const id = `comp-${i}`;
   return (
     <li class={`comp${open ? ' open' : ''}`}>
-      <button type="button" class="comp-head" aria-expanded={open} aria-controls={id} onClick={() => { play(open ? 'close' : 'open'); onToggle(); }}>
+      <button type="button" class="comp-head" data-tour={i === 0 ? 'comp-first' : undefined} aria-expanded={open} aria-controls={id} onClick={() => { play(open ? 'close' : 'open'); onToggle(); }}>
         <span class="comp-rank num">{i + 1}</span>
         <TeamIcons team={c.team} party={party} />
         <span class="comp-names">{names}</span>
@@ -77,7 +78,9 @@ type Tab = 'why' | 'plays' | 'tips';
 
 /** A comp opened up: pros and cons, plays and tips, with Copy and (unless it's saved already) Save plan. */
 export function CompDetail({ c, i, ans, q, saveable = true }: { c: CompAnswer; i: number; ans: SituationAnswer; q: Query; saveable?: boolean }) {
-  const [tab, setTab] = useState<Tab>('why');
+  const [chosen, setTab] = useState<Tab>('why');
+  // a tour step about the pros and cons or the strengths shows them
+  const tab = tourHook.value === 'comp-reasons' || tourHook.value === 'comp-strengths' ? 'why' : chosen;
   const s = ans.situation;
   const why = explainTeam(modelFor(s), c.team);
   const tips = tipsFor(c.team, s, q.party, c.party);
@@ -97,7 +100,7 @@ export function CompDetail({ c, i, ans, q, saveable = true }: { c: CompAnswer; i
   };
   return (
     <>
-      <div class="row-between comp-tools">
+      <div class="row-between comp-tools" data-tour="comp-tools">
         <Tabs<Tab> label="About this comp" value={tab} onChange={setTab} tabs={[['why', 'Pros and cons'], ['plays', 'Plays'], ['tips', 'Tips']]} />
         <div class="row">
           <Button size="sm" icon="copy" onClick={copy}>Copy</Button>
@@ -106,7 +109,7 @@ export function CompDetail({ c, i, ans, q, saveable = true }: { c: CompAnswer; i
       </div>
       {tab === 'why' && <>
         {c.party.length > 0 && <PartyBox c={c} i={i} ans={ans} />}
-        <div class="pros-cons">
+        <div class="pros-cons" data-tour="comp-reasons">
           <div>
             <h3 class="row good-text"><Icon name="check" size={18} />Pros</h3>
             {why.pros.length ? <ul class="reasons">{why.pros.map((x) => <li key={x}>{x}</li>)}</ul> : <p class="muted">Nothing stands out; it’s a steady, all-round comp.</p>}
@@ -161,7 +164,7 @@ function PartyBox({ c, i, ans }: { c: CompAnswer; i: number; ans: SituationAnswe
 function Strengths({ rows }: { rows: readonly StrengthRow[] }) {
   const top = [...rows].sort((a, b) => b.need - a.need).slice(0, 8);
   return (
-    <div class="strengths">
+    <div class="strengths" data-tour="comp-strengths">
       <h3>What this situation needs</h3>
       <table class="strength-table">
         <thead><tr><th scope="col">Need</th><th scope="col">How much</th><th scope="col">Covered</th><th scope="col">By</th></tr></thead>

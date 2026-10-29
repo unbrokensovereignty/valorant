@@ -3,7 +3,7 @@ import type { Page } from '@playwright/test';
 import { expect, go, open, test } from './app.ts';
 
 const PAGES = ['home', 'planner', 'rankings', 'agents', 'agents/sova', 'agents/hush', 'maps', 'maps/haven', 'saved', 'saved/parties',
-  'settings', 'themes', 'help', 'help/keys', 'help/about', 'gallery'];
+  'settings', 'themes', 'help', 'help/tours', 'help/keys', 'help/about', 'gallery'];
 
 /** Text that is cut off without an ellipsis, or anything pushed past the window's sides. */
 function layoutProblems() {

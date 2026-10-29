@@ -26,6 +26,8 @@ import { askedLine, askedTitle } from './planner/words.ts';
 import { openPlanner, planWith, question } from './planner/store.ts';
 import { backUpNow } from './backup.tsx';
 import { MapThumb } from './art.tsx';
+import { startTour, TourHost } from './tours/engine.tsx';
+import { TOURS } from './tours/list.ts';
 
 // ---------------------------------------------------------------- sidebar
 
@@ -70,7 +72,7 @@ function PlanSwitch() {
   };
   const title = q ? askedTitle(q) : 'No question yet';
   return (
-    <button type="button" class="plan-switch" onClick={open} aria-haspopup="menu" data-tip={sidebarNarrow.value ? title : undefined} data-tip-side="right">
+    <button type="button" class="plan-switch" data-tour="plan-switch" onClick={open} aria-haspopup="menu" data-tip={sidebarNarrow.value ? title : undefined} data-tip-side="right">
       <span class="plan-dot map-dot">{q && q.map !== 'any' && q.map !== 'best' ? <MapThumb id={q.map} /> : <Icon name="planner" size={16} />}</span>
       <span class="plan-text">
         <b>{title}</b>
@@ -115,7 +117,7 @@ function Sidebar() {
         <span class="brand-name">Playbook</span>
         <IconButton icon="sidebar" size="sm" label={narrow ? 'Widen the sidebar' : 'Narrow the sidebar'} tipSide={narrow ? 'right' : 'below'} onClick={toggleSidebar} />
       </div>
-      <button type="button" class="search-btn" onClick={() => { paletteOpen.value = true; }} data-tip={narrow ? 'Search (Ctrl K)' : undefined} data-tip-side="right">
+      <button type="button" class="search-btn" data-tour="search" onClick={() => { paletteOpen.value = true; }} data-tip={narrow ? 'Search (Ctrl K)' : undefined} data-tip-side="right">
         <Icon name="search" size={17} /><span>Search</span><Kbd k="ctrl+k" />
       </button>
       <PlanSwitch />
@@ -208,6 +210,7 @@ function commands(): Command[] {
     { id: 'sidebar', label: sidebarNarrow.value ? 'Widen the sidebar' : 'Narrow the sidebar', icon: 'sidebar', run: toggleSidebar },
   ];
   for (const a of acts) out.push({ ...a, group: 'Actions' });
+  for (const t of TOURS) out.push({ id: `tour-${t.id}`, group: 'Tours', label: `Tour: ${t.name}`, icon: 'compass', keywords: `guide help show me around ${t.blurb}`, run: () => startTour(t.id) });
   for (const k of SETTING_KEYS.filter(inUse)) {
     const def = SETTINGS[k];
     const section = SECTIONS.find((x) => x.id === def.section)?.title ?? '';
@@ -266,6 +269,7 @@ export function App() {
         </div>
       </main>
       {paletteOpen.value && <Palette commands={commands} />}
+      <TourHost />
       <MenuHost />
       <DialogHost />
       <ToastHost />
