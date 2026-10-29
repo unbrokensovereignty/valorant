@@ -20,7 +20,7 @@ import { mapById, MAPS, type MapInfo, type Side } from '../../core/kb/maps.ts';
 import { PRO } from '../../core/kb/pro.ts';
 import { DIM_INFO, DIMS, type Dim } from '../../core/kb/roles.ts';
 import { MAP_TIPS } from '../../core/kb/tips.ts';
-import { needsFor, type RankPick } from '../../core/engine/model.ts';
+import { needsFor, proMixOf, type RankPick } from '../../core/engine/model.ts';
 import { newQuery } from '../../core/engine/query.ts';
 import { listJoin } from '../../core/text.ts';
 import type { PageProps } from './index.ts';
@@ -130,7 +130,7 @@ function MapPage({ m }: { m: MapInfo }) {
                 const extra = extraNeeds(m, sd);
                 return [<dt key={sd + 't'}>{sd === 'attack' ? 'Attack' : 'Defense'} needs</dt>, <dd key={sd + 'd'}>{extra.length ? listJoin(extra.map((d) => DIM_INFO[d].name.toLowerCase())) : 'The usual mix'}</dd>];
               })}
-              <dt>Controllers</dt><dd>{m.twoControllers ? 'Pros usually run two' : 'One is usually enough'}</dd>
+              <dt>Controllers</dt><dd>{Math.round(proMixOf(m.id)?.controller ?? 1) >= 2 ? 'Pros usually run two' : 'Pros usually run one'}</dd>
             </dl>
           </section>
           <section class="panel stack">

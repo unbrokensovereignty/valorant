@@ -5,7 +5,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { solve, type SituationAnswer } from '../../src/core/engine/plan.ts';
 import { newQuery } from '../../src/core/engine/query.ts';
-import type { RankPick, SidePick } from '../../src/core/engine/model.ts';
+import { proMixOf, type RankPick, type SidePick } from '../../src/core/engine/model.ts';
 import { agentById } from '../../src/core/kb/agents.ts';
 import { MAPS, POOL, type Side } from '../../src/core/kb/maps.ts';
 import { PRO } from '../../src/core/kb/pro.ts';
@@ -30,7 +30,9 @@ test('the best comp on every map, side and rank has a sound mix of roles', () =>
   for (const rank of ['iron', 'gold', 'diamond', 'radiant'] as const) for (const m of MAPS) for (const side of SIDES) {
     const t = top(m.id, side, rank);
     const n = (r: Role) => t.filter((id) => roleOf(id) === r).length;
-    const sound = n('controller') >= 1 && n('controller') <= 2 && n('duelist') <= 2 && n('initiator') >= 1 && (side === 'attack' || n('sentinel') >= 1);
+    // a defense needs a sentinel, except at Radiant on a map where pro teams mostly play without one
+    const noSentinel = side === 'attack' || (rank === 'radiant' && (proMixOf(m.id)?.sentinel ?? 1) < 0.5);
+    const sound = n('controller') >= 1 && n('controller') <= 2 && n('duelist') <= 2 && n('initiator') >= 1 && (noSentinel || n('sentinel') >= 1);
     if (!sound) problems.push(`${m.name} ${side} at ${rank}: ${t.map(name).join(', ')}`);
   }
   none(problems);
@@ -48,17 +50,12 @@ test('at Immortal and Radiant, one of the top three comps shares four agents wit
   none(problems);
 });
 
-test('each map’s signature agents show up in its top five comps at Immortal or Radiant', () => {
-  const signature: [map: string, agent: string][] = [
-    ['abyss', 'sova'], ['abyss', 'harbor'], ['ascent', 'sova'], ['ascent', 'omen'], ['ascent', 'killjoy'], ['bind', 'viper'], ['bind', 'fade'],
-    ['bind', 'brimstone'], ['breeze', 'sova'], ['breeze', 'viper'], ['breeze', 'yoru'], ['corrode', 'viper'], ['corrode', 'fade'],
-    ['fracture', 'breach'], ['fracture', 'brimstone'], ['haven', 'sova'], ['icebox', 'sova'], ['icebox', 'viper'], ['icebox', 'killjoy'],
-    ['lotus', 'viper'], ['lotus', 'omen'], ['lotus', 'fade'], ['lotus', 'raze'], ['split', 'raze'],
-  ];
+test('the agents pro teams pick on at least half of a map’s games show up in its top five comps at Immortal or Radiant', () => {
   const problems: string[] = [];
-  for (const [map, id] of signature) {
+  for (const [map, pro] of Object.entries(PRO)) for (const [id, pct] of Object.entries(pro.picks)) {
+    if (pct < 50) continue;
     const seen = ['immortal', 'radiant'].some((rank) => SIDES.some((side) => answer(map, side, rank as RankPick, 5).comps.some((c) => c.team.includes(id))));
-    if (!seen) problems.push(`${map}: no ${name(id)}`);
+    if (!seen) problems.push(`${map}: no ${name(id)} (picked on ${pct}%)`);
   }
   none(problems);
 });
@@ -82,8 +79,9 @@ test('at Iron, easy agents who work alone fit better than most, and hard team-pl
 test('at Radiant, the pro staples fit better than most, and selfish agents worse', () => {
   const { fit, mid, place } = fitsAt('radiant');
   const problems: string[] = [];
-  for (const id of ['sova', 'viper', 'omen', 'fade', 'neon', 'yoru']) if (fit(id) < mid) problems.push(`${name(id)} ${Math.round(fit(id))} is under the middle ${Math.round(mid)} (#${place(id)})`);
-  for (const id of ['reyna', 'iso', 'phoenix']) if (fit(id) > mid) problems.push(`${name(id)} ${Math.round(fit(id))} is over the middle ${Math.round(mid)} (#${place(id)})`);
+  for (const id of ['sova', 'viper', 'omen', 'fade', 'neon', 'yoru', 'chamber']) if (fit(id) < mid) problems.push(`${name(id)} ${Math.round(fit(id))} is under the middle ${Math.round(mid)} (#${place(id)})`);
+  // (not Phoenix: pro teams picked him on 45% of Haven's games and 38% of Ascent's at Champions 2026)
+  for (const id of ['reyna', 'iso']) if (fit(id) > mid) problems.push(`${name(id)} ${Math.round(fit(id))} is over the middle ${Math.round(mid)} (#${place(id)})`);
   none(problems);
 });
 

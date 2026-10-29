@@ -2,6 +2,14 @@
 
 Every version of Playbook By Sovereign and what it changed.
 
+## 0.2.0 (in progress)
+
+- **Answers that fit your rank.** A comp now counts each agent for what a team at your rank gets out of them: a hard or team-dependent kit counts for less at low ranks and in full at Radiant, while gun play counts the same everywhere. Ranked win rates (metabot.gg and winio.ai, October 2026) count too, most in the middle ranks where most games are played, and the pull toward what pro teams play grows mostly from Diamond up. When a comp's agents take practice at your rank, its cons say how much of their kit a team there usually gets.
+- **This year's pro play.** Pro picks and comps come from Champions 2026 for the seven maps it played and from Masters Santiago 2026 for Bind, Breeze, Corrode and Pearl, and a map with fewer games behind it pulls less. Each map's pro role mix counts at high ranks: two controllers on Lotus, one on Sunset, and no sentinel on Abyss, Bind, Breeze and Split, where pro teams mostly play without one. A comp far from the mix says so in its cons, and a comp without a sentinel where pros play that way says that too. The Maps page says how many controllers pro teams run on each map.
+- **Long angles.** A new strength, Operator play, for agents who hold long sightlines with the Operator and have a way out after the shot (Chamber and Jett most of all), and how much each map rewards it. Chamber now shows up in the best comps on the maps where pros pick him.
+- **Agent numbers reviewed.** KAY/O brings less information (ZERO/point now only suppresses), Sova's kit pays off with less practice, Brimstone works better alone, and Hush's strengths are reviewed against her released kit. A Clove and Reyna clash with nothing behind it is gone.
+- **Clearer cons.** A comp missing a role says so once, with how to play around the gaps it leaves, instead of in three separate lines.
+
 ## 0.1.5 (2026-10-29)
 
 - **Hush, for real.** Hush is in as a full agent now that she's out: her abilities in the game's own words, her portrait and ability icons, numbers from her first days in ranked and from hands-on reviews of her kit, her best partners and two new tips. She's no longer marked as an estimate, and the Home page and the New tag on her portrait say she's new for her first two months. Pro teams haven't had the chance to pick her yet, so pro play doesn't count for or against her, and her page says her ranked pick rate is from her first days.

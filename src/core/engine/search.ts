@@ -9,7 +9,7 @@
  * five-agent teams when nothing is fixed), building each team's numbers as it adds one agent at a
  * time so no work is repeated.
  */
-import { D, MISS, N, ROLE_OF, ROLES_N, type Model } from './model.ts';
+import { D, N, ROLE_OF, ROLES_N, type Model } from './model.ts';
 
 /** What a team must be. Agents are indices into AGENTS. */
 export interface Rules {
@@ -45,7 +45,7 @@ export function scoreTeam(m: Model, team: readonly number[]): number {
   const counts = new Array(ROLES_N).fill(0);
   for (let j = 0; j < D; j++) {
     let p = 1;
-    for (const a of team) p *= MISS[a * D + j]!;
+    for (const a of team) p *= m.miss[a * D + j]!;
     miss += m.weight[j]! * p;
   }
   team.forEach((a, i) => {
@@ -163,7 +163,7 @@ export function walkTeams(
     counts[ROLE_OF[a]!]!++;
     base0 += m.base[a]!;
     for (let q = 0; q < k; q++) pair0 += m.pair[a * N + include[q]!]!;
-    for (let j = 0; j < D; j++) miss[(k + 1) * D + j] = miss[k * D + j]! * MISS[a * D + j]!;
+    for (let j = 0; j < D; j++) miss[(k + 1) * D + j] = miss[k * D + j]! * m.miss[a * D + j]!;
   }
   // the included agents alone may already break a role count
   for (let r = 0; r < ROLES_N; r++) if (target[r]! >= 0 && counts[r]! > target[r]!) return 0;
@@ -194,7 +194,7 @@ export function walkTeams(
         for (let k = 0; k < depth; k++) add += m.pair[a * N + team[k]!]!;
         team[depth] = a;
         const from = depth * D, to = from + D;
-        for (let j = 0; j < D; j++) miss[to + j] = miss[from + j]! * MISS[a * D + j]!;
+        for (let j = 0; j < D; j++) miss[to + j] = miss[from + j]! * m.miss[a * D + j]!;
         rec(depth + 1, i + 1, baseSum + m.base[a]!, pairSum + add);
       }
       counts[r]!--;

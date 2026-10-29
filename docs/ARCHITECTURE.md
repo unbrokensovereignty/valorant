@@ -20,7 +20,7 @@ Everything the app knows about the game, as data with a comment at the top of ea
 
 - `agents.ts`: every agent's role, strengths (`caps`, from 0 to 1 per strength, with the abilities behind each), how well they work alone (`solo`), how hard they are (`skill`), ranked pick rate (`pop`) and pro pick rate (`pro`). `new-agents.ts` holds agents revealed but too new for real numbers (none right now), marked `estimate`, with the steps to update them.
 - `roles.ts`: the four roles and the fifteen strengths ("dims") everything is measured by: smokes, walls, flashes, information, entry, clearing, crowd control, delay, site hold, flank watch, retake, post-plant, healing, firepower and speed. Each has its name and its words for pros and cons in `DIM_INFO`.
-- `maps.ts`: the maps, the competitive pool, sites, and what each map, side and site needs on top of a side's usual needs (`wall +.5`). `twoControllers` marks maps where pro teams run two controllers.
+- `maps.ts`: the maps, the competitive pool, sites, and what each map, side and site needs on top of a side's usual needs (`wall +.5`). How many of each role pro teams run on a map comes from its pro picks (`proRoleMix` in `pro.ts`).
 - `ranks.ts`: the nine ranks, each placed between Iron (0) and Radiant (1).
 - `pro.ts`: what pro teams pick on each map, and typical pro comps. `PRO_CUTOFF` is when the last of those events began: an agent released after it (Hush, for now) isn't pulled either way by pro play, since pros haven't had the chance to pick them (`proKnown`).
 - `synergy.ts`: pairs that work well together or clash, from −3 to 3, with the reason in words.

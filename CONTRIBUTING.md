@@ -82,7 +82,7 @@ npm run art -- ~/playbook-content         # → assets/ and src/core/kb/content.
 
 **Change the map pool.** Set `pool: true` or `false` on the maps in `src/core/kb/maps.ts`, and update `PATCH` and `POOL_SINCE` (with the date of the next change in the comment). Pick rates in `agents.ts` and `pro.ts` name the patch and events they came from; update those comments when you update the numbers.
 
-**Add a map.** Add it to `DEFS` in `src/core/kb/maps.ts` with its sites, needs (as bumps over a side's usual needs), `aka` for callouts players call something else, and `twoControllers` if pro teams run two controllers there. Refresh the game's content for its minimap, banner and callouts. Add its plays to `src/core/kb/plays.ts` (both sides, every site), its tips to `tips.ts` and its pro picks to `pro.ts`. The specs check each of these.
+**Add a map.** Add it to `DEFS` in `src/core/kb/maps.ts` with its sites, needs (as bumps over a side's usual needs), and `aka` for callouts players call something else. Refresh the game's content for its minimap, banner and callouts. Add its plays to `src/core/kb/plays.ts` (both sides, every site), its tips to `tips.ts` and its pro picks to `pro.ts` (the engine reads the map's pro role mix from them). The specs check each of these.
 
 **Add or change a play.** Plays are in `src/core/kb/plays.ts`, written as `jobs: route | what to do`, five steps a play (one per player), over the map's own callouts. The comment at the top of the file explains the format. A typo in a job or callout throws, so `npm test` catches it. Look at the play on the map's page in both themes: its routes are drawn on the minimap.
 

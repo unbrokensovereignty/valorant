@@ -6,7 +6,7 @@
  */
 import { AGENTS } from '../kb/agents.ts';
 import { ROLE_IDS } from '../kb/roles.ts';
-import { D, MISS, N, ROLE_OF, ROLES_N, type Model } from './model.ts';
+import { D, N, ROLE_OF, ROLES_N, type Model } from './model.ts';
 import { roleCostOf, scoreTeam, TopK, walkTeams, type Rules, type Team } from './search.ts';
 import { FILL_MISSING, FILL_TOO_MANY_DUELISTS } from './weights.ts';
 import { ALL_RANKS_T } from '../kb/ranks.ts';
@@ -99,7 +99,7 @@ function allFills(m: Model, pool: readonly number[], size: number, rankT: number
       f.base[i]! += m.base[a]!;
       f.counts[i * ROLES_N + ROLE_OF[a]!]!++;
       for (let q = 0; q < k; q++) f.pair[i]! += m.pair[a * N + c[q]!]!;
-      for (let j = 0; j < D; j++) f.miss[i * D + j]! *= MISS[a * D + j]!;
+      for (let j = 0; j < D; j++) f.miss[i * D + j]! *= m.miss[a * D + j]!;
       w *= pickWeight(a, rankT);
     });
     f.weight[i] = w;
@@ -133,7 +133,7 @@ export function searchParties(m: Model, rules: PartyRules, size: number, rankT =
     lockBase += m.base[a]!;
     lockCounts[ROLE_OF[a]!]!++;
     for (let q = 0; q < k; q++) lockPair += m.pair[a * N + locked[q]!]!;
-    for (let j = 0; j < D; j++) lockMiss[j]! *= MISS[a * D + j]!;
+    for (let j = 0; j < D; j++) lockMiss[j]! *= m.miss[a * D + j]!;
   });
   const partyRules: Rules = { include: rules.include, roles: rules.roles, allowed: (i) => !lockedSet.has(i) && rules.allowed(i), fits: rules.fits };
   // what each mix of roles costs, and how likely random teammates are to leave the team with it

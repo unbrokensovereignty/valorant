@@ -77,7 +77,6 @@ export const PAIRS: readonly Pair[] = [
   P('sage', 'skye', -1, 'both', 'Two healers duplicate each other’s job.'),
   P('cypher', 'killjoy', -1, 'attack', 'Two setup sentinels add little on attack.'),
   P('deadlock', 'vyse', -1, 'attack', 'Two wall-based sentinels add little on attack.'),
-  P('clove', 'reyna', -1, 'both', 'Two players who want to fight first and use utility second.'),
 ];
 
 const key = (a: string, b: string) => (a < b ? `${a}|${b}` : `${b}|${a}`);

@@ -8,10 +8,11 @@ import { abilityNames } from '../kb/kits.ts';
 import { mapById, type Side } from '../kb/maps.ts';
 import { PRO } from '../kb/pro.ts';
 import { ALL_RANKS_T, rankOf } from '../kb/ranks.ts';
-import { DIMS, DIM_INFO, ROLE_IDS, type Dim, type Role } from '../kb/roles.ts';
+import { DIMS, DIM_INFO, ROLE_IDS, roleOf, type Dim, type Role } from '../kb/roles.ts';
 import { pairOf } from '../kb/synergy.ts';
 import { listJoin } from '../text.ts';
-import { D, MISS, needsFor, type Model } from './model.ts';
+import { D, kitShare, needsFor, type Model } from './model.ts';
+import { MIX_NOTE, WIN_NOTE } from './weights.ts';
 
 export interface StrengthRow {
   dim: Dim;
@@ -47,23 +48,47 @@ const MAKE_UP: Record<Dim, string> = {
   postplant: 'play crossfires on the Spike after planting',
   sustain: 'play for trades so no one is left low on health',
   duel: 'play together and trade every fight',
+  angles: 'take long fights with a rifle from cover, or smoke the long sightlines off',
   mobility: 'commit to sites early instead of late rotations',
 };
 
-const ROLE_GAP: Record<Role, { none: string; many: string }> = {
-  controller: { none: 'No controller: nobody can smoke off sightlines, so every push walks into open angles.', many: 'Three or more controllers leave little firepower or information.' },
-  duelist: { none: 'No duelist: someone has to take the first fight without the tools for it.', many: 'Three or more duelists bring plenty of firepower but little utility.' },
-  initiator: { none: 'No initiator: there are no flashes or information to set up fights.', many: 'Three or more initiators overlap: the utility outweighs the firepower.' },
-  sentinel: { none: 'No sentinel: nobody watches the flank or holds a site alone.', many: 'Three or more sentinels play too passively to take space.' },
+/**
+ * What having none of a role costs a team (`none`, and `so`, what follows when there's no advice to
+ * give instead), the strengths whose gaps that already covers, and what three or more of it costs.
+ */
+const ROLE_GAP: Record<Role, { none: string; so?: string; dims: readonly Dim[]; many: string }> = {
+  controller: {
+    none: 'nobody can smoke off sightlines', so: 'every push walks into open angles', dims: ['smoke', 'wall'],
+    many: 'Three or more controllers leave little firepower or information.',
+  },
+  duelist: { none: 'someone has to take the first fight without the tools for it', dims: ['entry'], many: 'Three or more duelists bring plenty of firepower but little utility.' },
+  initiator: { none: 'there are no flashes or information to set up fights', dims: ['flash', 'recon'], many: 'Three or more initiators overlap: the utility outweighs the firepower.' },
+  sentinel: { none: 'nobody watches the flank or holds a site alone', dims: ['anchor', 'flank'], many: 'Three or more sentinels play too passively to take space.' },
 };
 
 const nameOf = (a: Agent) => a.name;
 const sideWord = (s: Side) => (s === 'attack' ? 'attack' : 'defense');
 
 function agentWithAbility(a: Agent, dim: Dim): string {
-  const names = abilityNames(a.id, a.via[dim] ?? '');
+  const keys = a.via[dim] ?? '';
+  const names = [...abilityNames(a.id, keys), ...(keys.includes('G') ? ['gun play'] : [])];
   return names.length ? `${a.name} (${listJoin(names)})` : a.name;
 }
+
+const NUMBER_WORDS = ['no', 'one', 'two', 'three', 'four', 'five'];
+const numberWord = (n: number) => NUMBER_WORDS[n] ?? String(n);
+const capital = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+/** What fewer or more of a role than pros run on a map costs a team. */
+const MIX_GAP: Record<Role, { fewer: string; more: string }> = {
+  controller: { fewer: 'there are fewer smokes to go around', more: 'the extra smokes cost firepower or information' },
+  duelist: { fewer: 'there’s less firepower to take space', more: 'the extra duelist costs utility' },
+  initiator: { fewer: 'there’s less information and fewer flashes to set up fights', more: 'the extra initiator costs firepower' },
+  sentinel: { fewer: 'nobody is free to watch the flank or hold a site alone', more: 'the extra sentinel makes the team slower to take space' },
+};
+
+/** A kit counts for less than this share at a low rank before a comp's cons say it takes practice. */
+const HARD_KIT = 0.75;
 
 /** Explains a team (agent ids) in a situation's model. */
 export function explainTeam(m: Model, ids: readonly string[]): Explanation {
@@ -78,29 +103,52 @@ export function explainTeam(m: Model, ids: readonly string[]): Explanation {
 
   const strengths: StrengthRow[] = DIMS.map((dim, j) => {
     let miss = 1;
-    for (const a of team) miss *= MISS[a.index * D + j]!;
-    const by = team.filter((a) => a.caps[dim] >= 0.3).sort((x, y) => y.caps[dim] - x.caps[dim])
-      .map((a) => ({ id: a.id, value: a.caps[dim], abilities: abilityNames(a.id, a.via[dim] ?? '') }));
+    for (const a of team) miss *= m.miss[a.index * D + j]!;
+    // what each agent brings to it at this rank, as the score counts it
+    const by = team.map((a) => ({ a, value: 1 - m.miss[a.index * D + j]! })).filter((x) => x.value >= 0.3).sort((x, y) => y.value - x.value)
+      .map(({ a, value }) => ({ id: a.id, value, abilities: abilityNames(a.id, a.via[dim] ?? '') }));
     return { dim, need: m.weight[j]! * D, cover: 1 - miss, by };
   });
 
   const pros: string[] = [], cons: string[] = [], notes: string[] = [];
   const where = map ? map.name : 'most maps';
+  // gaps the situation would punish, biggest first
+  const gaps = strengths.filter((r) => r.need >= 0.9 && r.cover < 0.55).sort((a, b) => b.need * (1 - b.cover) - a.need * (1 - a.cover));
   // role counts first: missing a controller matters more than anything else
   const counts = Object.fromEntries(ROLE_IDS.map((r) => [r, team.filter((a) => a.role === r).length])) as Record<Role, number>;
-  for (const r of ROLE_IDS) {
-    if (counts[r] === 0 && (r !== 'sentinel' || s.side !== 'attack') && (r !== 'duelist' || s.side !== 'defense')) cons.push(ROLE_GAP[r].none);
-    else if (counts[r] >= 3) cons.push(ROLE_GAP[r].many);
+  ROLE_IDS.forEach((r, ri) => {
+    const gap = ROLE_GAP[r];
+    if (counts[r] === 0 && (r !== 'sentinel' || s.side !== 'attack') && (r !== 'duelist' || s.side !== 'defense')) {
+      // where pro teams on the map mostly play without the role, say so (see the relaxed cost in model.ts)
+      const asPros = map && m.mix.relax[ri]! >= MIX_NOTE.relax ? `, as most pro teams play ${map.name}` : '';
+      // the gaps this leaves are said here once, with how to play around them
+      const left = gaps.filter((g) => gap.dims.includes(g.dim));
+      for (const g of left) gaps.splice(gaps.indexOf(g), 1);
+      const so = left.length ? left.map((g) => MAKE_UP[g.dim]).join(', and ') : gap.so;
+      cons.push(`No ${roleOf(r).name.toLowerCase()}${asPros}: ${gap.none}${so ? `, so ${so}` : ''}.`);
+    } else if (counts[r] >= 3) cons.push(gap.many);
+  });
+  // straying from the map's pro role mix, where it costs enough to matter (see ROLE_MIX)
+  if (map) {
+    ROLE_IDS.forEach((r, ri) => {
+      const want = m.mix.want[ri]!, c = counts[r];
+      if (Number.isNaN(want) || c === 0 || Math.abs(c - want) < MIX_NOTE.off) return;
+      const costs = Array.from(m.mix.cost.subarray(ri * 5, ri * 5 + 5));
+      if (Math.max(...costs) - costs[Math.min(c, 4)]! < MIX_NOTE.cost) return;
+      const role = roleOf(r);
+      const what = `${capital(numberWord(c))} ${(c === 1 ? role.name : role.plural).toLowerCase()}`;
+      const pros = want < 0.5 ? `pro teams on ${map.name} rarely run one` : `pro teams on ${map.name} usually run ${numberWord(Math.round(want))}`;
+      cons.push(`${what}, where ${pros}: ${c < want ? MIX_GAP[r].fewer : MIX_GAP[r].more}.`);
+    });
   }
-  if (map?.twoControllers && counts.controller === 1 && t >= 0.5) cons.push(`Only one controller, where pro teams on ${map.name} usually run two: there are fewer smokes to go around.`);
   // strengths the situation needs and the team has
   for (const row of strengths.filter((r) => r.need >= 1 && r.cover >= 0.8).sort((a, b) => b.need * b.cover - a.need * a.cover).slice(0, 3)) {
     const who = row.by.filter((b) => b.value >= 0.45).slice(0, 2).map((b) => agentWithAbility(agentById(b.id)!, row.dim));
     const rewarded = bump(row.dim) >= 0.15 ? `, which ${where} rewards` : '';
     pros.push(`Strong ${DIM_INFO[row.dim].has}${rewarded}${who.length ? `: ${listJoin(who)}` : ''}.`);
   }
-  // gaps the situation would punish
-  for (const row of strengths.filter((r) => r.need >= 0.9 && r.cover < 0.55).sort((a, b) => b.need * (1 - b.cover) - a.need * (1 - a.cover)).slice(0, 3)) {
+  // the other gaps
+  for (const row of gaps.slice(0, 3)) {
     const info = DIM_INFO[row.dim];
     const lead = row.cover < 0.25 ? 'No' : info.few ? 'Few' : 'Little';
     cons.push(`${lead} ${info.lacks}${bump(row.dim) >= 0.15 ? `, which ${where} needs` : ''}: ${MAKE_UP[row.dim]}.`);
@@ -123,12 +171,22 @@ export function explainTeam(m: Model, ids: readonly string[]): Explanation {
   for (const p of pairs.filter((x) => x.strength < 0).sort((a, b) => a.strength - b.strength).slice(0, 1)) cons.push(p.why);
   // rank
   const rankName = s.rank === 'any' ? '' : rankOf(s.rank).name;
-  if (rankName && t <= 0.4) {
-    const hard = team.filter((a) => a.skill >= 0.75 && !a.estimate);
-    if (hard.length) cons.push(`${listJoin(hard.map(nameOf))} ${hard.length === 1 ? 'takes' : 'take'} practice to play well at ${rankName}: worth it only if someone plays ${hard.length === 1 ? 'that agent' : 'those agents'} often.`);
+  if (rankName && t <= 0.5) {
+    // how much of each kit's utility a team at this rank gets (gun play aside), as the score counts it
+    const kit = (a: Agent) => kitShare(a, t);
+    const hard = team.filter((a) => kit(a) < HARD_KIT && !a.estimate).sort((x, y) => kit(x) - kit(y));
+    const share = (a: Agent) => `about ${Math.round(kit(a) * 20) * 5}% of ${a.name}’s`;
+    if (hard.length === 1) cons.push(`${hard[0]!.name} takes practice to play well: a team at ${rankName} gets ${share(hard[0]!)} kit, so the pick is worth it only if someone plays that agent often.`);
+    else if (hard.length) cons.push(`${listJoin(hard.map(nameOf))} take practice to play well: a team at ${rankName} gets ${listJoin(hard.map(share))} kits, so they’re worth it only if someone plays them often.`);
     const easy = team.filter((a) => a.solo >= 0.8 && !a.estimate);
     if (easy.length) pros.push(`${listJoin(easy.map(nameOf))} ${easy.length === 1 ? 'works' : 'work'} well without much teamwork, which suits ${rankName}.`);
   }
+  // ranked win rates, where they count (see WIN_RANKS)
+  const winOf = (a: Agent) => m.fitParts.win[a.index]!;
+  const winners = team.filter((a) => winOf(a) >= WIN_NOTE.more), losers = team.filter((a) => winOf(a) <= -WIN_NOTE.fewer);
+  const rates = (list: Agent[]) => (list.length === 1 ? `${Math.round(list[0]!.win)}% of games` : listJoin(list.map((a) => `${a.name} ${Math.round(a.win)}%`)));
+  if (winners.length) pros.push(`${listJoin(winners.map(nameOf))} ${winners.length === 1 ? 'wins' : 'win'} more ranked games than most agents (${rates(winners)}).`);
+  if (losers.length) cons.push(`${listJoin(losers.map(nameOf))} ${losers.length === 1 ? 'wins' : 'win'} fewer ranked games than most agents (${rates(losers)}): best played by someone who knows ${losers.length === 1 ? 'that agent' : 'them'} well.`);
   if (rankName && t >= 0.75) {
     const selfish = team.filter((a) => a.solo >= 0.85 && a.role === 'duelist' && a.caps.flash + a.caps.disrupt + a.caps.smoke < 0.5);
     if (selfish.length) cons.push(`${listJoin(selfish.map(nameOf))} ${selfish.length === 1 ? 'brings' : 'bring'} little utility, and teams at ${rankName} punish that.`);
@@ -139,7 +197,7 @@ export function explainTeam(m: Model, ids: readonly string[]): Explanation {
     const set = new Set(team.map((a) => a.id));
     const overlap = Math.max(0, ...pro.comps.map((c) => c.filter((x) => set.has(x)).length));
     if (overlap === 5) pros.push(`Pro teams play this comp on ${map!.name}.`);
-    else if (overlap === 4) pros.push(`Four of these five are a comp pro teams play on ${map!.name}.`);
+    else if (overlap === 4) pros.push(`Four of these five are in a comp pro teams play on ${map!.name}.`);
   }
   for (const a of team.filter((x) => x.estimate)) notes.push(`${a.name} is new, so this comp’s fit is an early estimate and will change once there’s more play to go on.`);
   return { strengths, pros, cons, notes };
