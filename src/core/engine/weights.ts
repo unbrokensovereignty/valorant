@@ -93,6 +93,14 @@ export const WIN_NOTE = { more: 0.005, fewer: 0.006 };
  */
 export const MIX_NOTE = { off: 0.7, cost: 0.03, relax: 0.3 };
 
+/**
+ * A comp's cons say an agent takes practice to play well when a team at Iron would get less than
+ * `hard` of the kit (engine/model.ts, kitShare): the agents notably harder than most, not every
+ * agent who isn't the easiest. They say so at ranks up to `upTo` on the climb from Iron (0) to
+ * Radiant (1), with the share a team at that rank gets.
+ */
+export const KIT_NOTE = { hard: 0.6, upTo: 0.5 };
+
 /** Points per step of a pair's strength (−3 to 3, see kb/synergy.ts). */
 export const PAIR_STEP = 0.006;
 

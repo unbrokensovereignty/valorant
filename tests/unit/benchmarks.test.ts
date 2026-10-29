@@ -11,7 +11,7 @@ import { solve, teamFit } from '../../src/core/engine/plan.ts';
 import { newQuery } from '../../src/core/engine/query.ts';
 import { kitShare, modelFor, type RankPick, type Situation } from '../../src/core/engine/model.ts';
 import { explainTeam } from '../../src/core/engine/explain.ts';
-import { tierOf, TIERS } from '../../src/core/engine/weights.ts';
+import { KIT_NOTE, tierOf, TIERS } from '../../src/core/engine/weights.ts';
 import { AGENTS, agentById } from '../../src/core/kb/agents.ts';
 import { MAPS, POOL } from '../../src/core/kb/maps.ts';
 import { PRO, RECORDED } from '../../src/core/kb/pro.ts';
@@ -163,8 +163,8 @@ function untrue(s: Situation, team: readonly string[]): string[] {
     if (/takes? practice to play well/.test(line)) {
       for (const a of agents.filter((x) => line.split(' take')[0]!.includes(x.name))) {
         const k = kitShare(a, t);
-        if (k >= 0.75) no(`${a.name} keeps ${pct(100 * k)} of the kit`);
-        if (!line.includes(`about ${Math.round(k * 20) * 5}% of ${a.name}’s`)) no(`${a.name} keeps about ${Math.round(k * 20) * 5}%`);
+        if (kitShare(a, 0) >= KIT_NOTE.hard || t > KIT_NOTE.upTo) no(`${a.name} isn’t one of the hard kits, keeping ${pct(100 * k)} of it`);
+        if (!line.includes(`about ${Math.round(k * 20) * 5}% of ${line.includes('of each kit') ? 'each kit' : `${a.name}’s`}`)) no(`${a.name} keeps about ${Math.round(k * 20) * 5}%`);
       }
     }
     if (/work(?:s)? well without much teamwork/.test(line)) for (const a of agents.filter((x) => line.split(' work')[0]!.includes(x.name))) if (a.solo < 0.8) no(`${a.name} needs the team`);

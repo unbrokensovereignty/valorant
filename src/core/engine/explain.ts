@@ -12,7 +12,7 @@ import { DIMS, DIM_INFO, ROLE_IDS, roleOf, type Dim, type Role } from '../kb/rol
 import { pairOf } from '../kb/synergy.ts';
 import { listJoin } from '../text.ts';
 import { D, kitShare, needsFor, type Model } from './model.ts';
-import { MIX_NOTE, WIN_NOTE } from './weights.ts';
+import { KIT_NOTE, MIX_NOTE, WIN_NOTE } from './weights.ts';
 
 export interface StrengthRow {
   dim: Dim;
@@ -86,9 +86,6 @@ const MIX_GAP: Record<Role, { fewer: string; more: string }> = {
   initiator: { fewer: 'there’s less information and fewer flashes to set up fights', more: 'the extra initiator costs firepower' },
   sentinel: { fewer: 'nobody is free to watch the flank or hold a site alone', more: 'the extra sentinel makes the team slower to take space' },
 };
-
-/** A kit counts for less than this share at a low rank before a comp's cons say it takes practice. */
-const HARD_KIT = 0.75;
 
 /** Explains a team (agent ids) in a situation's model. */
 export function explainTeam(m: Model, ids: readonly string[]): Explanation {
@@ -172,13 +169,15 @@ export function explainTeam(m: Model, ids: readonly string[]): Explanation {
   for (const p of pairs.filter((x) => x.strength < 0).sort((a, b) => a.strength - b.strength).slice(0, 1)) cons.push(p.why);
   // rank
   const rankName = s.rank === 'any' ? '' : rankOf(s.rank).name;
-  if (rankName && t <= 0.5) {
+  let hard: Agent[] = [];
+  if (rankName && t <= KIT_NOTE.upTo) {
     // how much of each kit's utility a team at this rank gets (gun play aside), as the score counts it
     const kit = (a: Agent) => kitShare(a, t);
-    const hard = team.filter((a) => kit(a) < HARD_KIT && !a.estimate).sort((x, y) => kit(x) - kit(y));
-    const share = (a: Agent) => `about ${Math.round(kit(a) * 20) * 5}% of ${a.name}’s`;
-    if (hard.length === 1) cons.push(`${hard[0]!.name} takes practice to play well: a team at ${rankName} gets ${share(hard[0]!)} kit, so the pick is worth it only if someone plays that agent often.`);
-    else if (hard.length) cons.push(`${listJoin(hard.map(nameOf))} take practice to play well: a team at ${rankName} gets ${listJoin(hard.map(share))} kits, so they’re worth it only if someone plays them often.`);
+    hard = team.filter((a) => kitShare(a, 0) < KIT_NOTE.hard && !a.estimate).sort((x, y) => kit(x) - kit(y));
+    const pct = (a: Agent) => Math.round(kit(a) * 20) * 5;
+    const shares = new Set(hard.map(pct)).size === 1 ? `about ${pct(hard[0]!)}% of each kit` : `${listJoin(hard.map((a) => `about ${pct(a)}% of ${a.name}’s`))} kits`;
+    if (hard.length === 1) cons.push(`${hard[0]!.name} takes practice to play well: a team at ${rankName} gets about ${pct(hard[0]!)}% of ${hard[0]!.name}’s kit, so the pick is worth it only if someone plays that agent often.`);
+    else if (hard.length) cons.push(`${listJoin(hard.map(nameOf))} take practice to play well: a team at ${rankName} gets ${shares}, so they’re worth it only if someone plays them often.`);
     const easy = team.filter((a) => a.solo >= 0.8 && !a.estimate);
     if (easy.length) pros.push(`${listJoin(easy.map(nameOf))} ${easy.length === 1 ? 'works' : 'work'} well without much teamwork, which suits ${rankName}.`);
   }
@@ -187,7 +186,9 @@ export function explainTeam(m: Model, ids: readonly string[]): Explanation {
   const winners = team.filter((a) => winOf(a) >= WIN_NOTE.more), losers = team.filter((a) => winOf(a) <= -WIN_NOTE.fewer);
   const rates = (list: Agent[]) => (list.length === 1 ? `${Math.round(list[0]!.win)}% of games` : listJoin(list.map((a) => `${a.name} ${Math.round(a.win)}%`)));
   if (winners.length) pros.push(`${listJoin(winners.map(nameOf))} ${winners.length === 1 ? 'wins' : 'win'} more ranked games than most agents (${rates(winners)}).`);
-  if (losers.length) cons.push(`${listJoin(losers.map(nameOf))} ${losers.length === 1 ? 'wins' : 'win'} fewer ranked games than most agents (${rates(losers)}): best played by someone who knows ${losers.length === 1 ? 'that agent' : 'them'} well.`);
+  // agents the line before already says to pick only if someone plays them often just add their rate
+  if (losers.length && losers.every((a) => hard.includes(a))) cons.push(`${listJoin(losers.map(nameOf))} also ${losers.length === 1 ? 'wins' : 'win'} fewer ranked games than most agents (${rates(losers)}).`);
+  else if (losers.length) cons.push(`${listJoin(losers.map(nameOf))} ${losers.length === 1 ? 'wins' : 'win'} fewer ranked games than most agents (${rates(losers)}): best played by someone who knows ${losers.length === 1 ? 'that agent' : 'them'} well.`);
   if (rankName && t >= 0.75) {
     const selfish = team.filter((a) => a.solo >= 0.85 && a.role === 'duelist' && a.caps.flash + a.caps.disrupt + a.caps.smoke < 0.5);
     if (selfish.length) cons.push(`${listJoin(selfish.map(nameOf))} ${selfish.length === 1 ? 'brings' : 'bring'} little utility, and teams at ${rankName} punish that.`);
