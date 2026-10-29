@@ -1,0 +1,236 @@
+/**
+ * Picks for a duo or trio: the agents your party should play so the team stays strong whatever
+ * random teammates lock in. Each party is scored by its expected score over every way the rest
+ * of the team could fill, each fill weighted by how likely random players at your rank are to
+ * pick it (they pick popular agents more, and usually fill a missing controller).
+ */
+import { AGENTS } from '../kb/agents.ts';
+import { ROLE_IDS } from '../kb/roles.ts';
+import { D, MISS, N, ROLE_OF, ROLES_N, type Model } from './model.ts';
+import { roleCostOf, scoreTeam, TopK, walkTeams, type Rules, type Team } from './search.ts';
+import { FILL_MISSING, FILL_TOO_MANY_DUELISTS } from './weights.ts';
+import { ALL_RANKS_T } from '../kb/ranks.ts';
+
+/** How often random players at rank `t` (0 Iron to 1 Radiant) lock an agent in, relative to others. */
+export function pickWeight(agent: number, t: number): number {
+  const a = AGENTS[agent]!;
+  // low ranks lean further toward agents who play alone, high ranks toward what pros play
+  const w = a.pop * (1 + (0.5 - t) * (a.solo - 0.6) * 2) * (1 + (t - 0.5) * (a.pro / 100) * 1.5);
+  return Math.max(0.05, w);
+}
+
+const DUELIST = ROLE_IDS.indexOf('duelist');
+/** How likely random players are to leave the team like this, as a factor. */
+export function fillLikelihood(counts: ArrayLike<number>): number {
+  let f = 1;
+  ROLE_IDS.forEach((r, i) => { if (!counts[i]) f *= FILL_MISSING[r]; });
+  if (counts[DUELIST]! >= 3) f *= FILL_TOO_MANY_DUELISTS;
+  return f;
+}
+
+export interface PartyPick {
+  /** Your party's agents. */
+  party: number[];
+  /** The expected score of the whole team. */
+  expected: number;
+  /** How much the score swings with the fill (standard deviation). */
+  spread: number;
+  /** The most likely full team, and the best one. */
+  likely: Team;
+  best: Team;
+}
+
+export interface PartyResult {
+  top: PartyPick[];
+  /** The best party with each agent in it. */
+  bestWith: (PartyPick | null)[];
+  count: number;
+}
+
+/** Agents as bits of two numbers (31 to each, so up to 62 agents), to tell fast whether two groups share one. */
+const lo = (a: number) => (a < 31 ? 1 << a : 0);
+const hi = (a: number) => (a < 31 ? 0 : 1 << (a - 31));
+
+interface Fills {
+  size: number;
+  n: number;
+  maskLo: Int32Array;
+  maskHi: Int32Array;
+  agents: Int32Array;
+  miss: Float64Array;
+  base: Float64Array;
+  pair: Float64Array;
+  counts: Uint8Array;
+  /** Each fill's role counts packed into one number (see `packRoles`). */
+  roles: Int32Array;
+  weight: Float64Array;
+}
+
+/**
+ * Role counts packed as one base-6 digit per role, so a team's packed counts are the sum of its
+ * parts' and a table can hold what each mix of roles costs.
+ */
+const packRoles = (counts: ArrayLike<number>): number => {
+  let c = 0;
+  for (let r = ROLES_N - 1; r >= 0; r--) c = c * 6 + counts[r]!;
+  return c;
+};
+const PACKED = 6 ** ROLES_N;
+
+/** Every way `size` random teammates could fill from `pool`. */
+function allFills(m: Model, pool: readonly number[], size: number, rankT: number): Fills {
+  const combos: number[][] = [];
+  const rec = (start: number, cur: number[]) => {
+    if (cur.length === size) { combos.push(cur.slice()); return; }
+    for (let i = start; i <= pool.length - (size - cur.length); i++) { cur.push(pool[i]!); rec(i + 1, cur); cur.pop(); }
+  };
+  rec(0, []);
+  const n = combos.length;
+  const f: Fills = {
+    size, n, maskLo: new Int32Array(n), maskHi: new Int32Array(n), agents: new Int32Array(n * Math.max(1, size)), miss: new Float64Array(n * D).fill(1),
+    base: new Float64Array(n), pair: new Float64Array(n), counts: new Uint8Array(n * ROLES_N), roles: new Int32Array(n), weight: new Float64Array(n),
+  };
+  combos.forEach((c, i) => {
+    let w = 1;
+    c.forEach((a, k) => {
+      f.maskLo[i]! |= lo(a);
+      f.maskHi[i]! |= hi(a);
+      f.agents[i * size + k] = a;
+      f.base[i]! += m.base[a]!;
+      f.counts[i * ROLES_N + ROLE_OF[a]!]!++;
+      for (let q = 0; q < k; q++) f.pair[i]! += m.pair[a * N + c[q]!]!;
+      for (let j = 0; j < D; j++) f.miss[i * D + j]! *= MISS[a * D + j]!;
+      w *= pickWeight(a, rankT);
+    });
+    f.weight[i] = w;
+    f.roles[i] = packRoles(f.counts.subarray(i * ROLES_N, (i + 1) * ROLES_N));
+  });
+  return f;
+}
+
+export interface PartyRules extends Rules {
+  /** Teammates already locked in (not part of the party). */
+  locked: readonly number[];
+  /** Agents random teammates may pick. */
+  fillable: (i: number) => boolean;
+}
+
+/** Ranks every party of `size` the rules allow by its expected team score. */
+export function searchParties(m: Model, rules: PartyRules, size: number, rankT = ALL_RANKS_T, keep = 40): PartyResult {
+  const locked = [...new Set(rules.locked)];
+  const lockedSet = new Set(locked);
+  const fillSize = 5 - size - locked.length;
+  const fillPool: number[] = [];
+  for (let i = 0; i < N; i++) if (!lockedSet.has(i) && rules.fillable(i)) fillPool.push(i);
+  const fills = allFills(m, fillPool, Math.max(0, fillSize), rankT);
+  // the locked teammates' own numbers
+  const lockMiss = new Float64Array(D).fill(1);
+  const lockCounts = new Int32Array(ROLES_N);
+  let lockBase = 0, lockPair = 0, lockLo = 0, lockHi = 0;
+  locked.forEach((a, k) => {
+    lockLo |= lo(a);
+    lockHi |= hi(a);
+    lockBase += m.base[a]!;
+    lockCounts[ROLE_OF[a]!]!++;
+    for (let q = 0; q < k; q++) lockPair += m.pair[a * N + locked[q]!]!;
+    for (let j = 0; j < D; j++) lockMiss[j]! *= MISS[a * D + j]!;
+  });
+  const partyRules: Rules = { include: rules.include, roles: rules.roles, allowed: (i) => !lockedSet.has(i) && rules.allowed(i), fits: rules.fits };
+  // what each mix of roles costs, and how likely random teammates are to leave the team with it
+  const roleTable = new Float64Array(PACKED), likeTable = new Float64Array(PACKED);
+  const digits = new Int32Array(ROLES_N);
+  for (let c = 0; c < PACKED; c++) {
+    for (let r = 0, x = c; r < ROLES_N; r++, x = Math.floor(x / 6)) digits[r] = x % 6;
+    roleTable[c] = roleCostOf(m, digits);
+    likeTable[c] = fillLikelihood(digits);
+  }
+  const lockRoles = packRoles(lockCounts);
+  const w = m.weight;
+  /** The weight of each strength the party and locked teammates leave uncovered. */
+  const open = new Float64Array(D);
+  /** Each agent's pairs with the party and the locked teammates. */
+  const pairTo = new Float64Array(N);
+  const top = new TopK(keep);
+  const picks = new Map<string, PartyPick>();
+  const bestWith: (PartyPick | null)[] = Array(N).fill(null);
+  const { n: fN, size: fSize, maskLo: fLo, maskHi: fHi, miss: fMiss, agents: fAgents, base: fBase, pair: fPair, roles: fRoles, weight: fWeight } = fills;
+  const count = walkTeams(m, partyRules, size, (team, miss, baseSum, pairSum, partyCounts) => {
+    const party = Array.from(team.subarray(0, size));
+    let maskLo = lockLo, maskHi = lockHi, cross = lockPair;
+    for (const a of party) {
+      maskLo |= lo(a);
+      maskHi |= hi(a);
+      for (const l of locked) cross += m.pair[a * N + l]!;
+    }
+    for (let j = 0; j < D; j++) open[j] = w[j]! * miss[j]! * lockMiss[j]!;
+    const fixed = [...party, ...locked];
+    for (let f = 0; f < N; f++) {
+      let p = 0;
+      for (const a of fixed) p += m.pair[f * N + a]!;
+      pairTo[f] = p;
+    }
+    const roles0 = packRoles(partyCounts) + lockRoles;
+    const s0 = 1 + baseSum + lockBase + pairSum + cross;
+    let sw = 0, sws = 0, sws2 = 0, likelyW = -1, likelyS = 0, likelyI = -1, bestS = -Infinity, bestI = -1;
+    for (let i = 0; i < fN; i++) {
+      if ((fLo[i]! & maskLo) | (fHi[i]! & maskHi)) continue;
+      let missed = 0;
+      for (let j = 0, o = i * D; j < D; j++) missed += open[j]! * fMiss[o + j]!;
+      let pairs = fPair[i]!;
+      for (let k = 0, o = i * fSize; k < fSize; k++) pairs += pairTo[fAgents[o + k]!]!;
+      const roles = roles0 + fRoles[i]!;
+      const s = s0 - missed + fBase[i]! + pairs + roleTable[roles]!;
+      const wt = fWeight[i]! * likeTable[roles]!;
+      sw += wt; sws += wt * s; sws2 += wt * s * s;
+      if (wt > likelyW) { likelyW = wt; likelyS = s; likelyI = i; }
+      if (s > bestS) { bestS = s; bestI = i; }
+    }
+    if (sw <= 0) return;
+    const fillOf = (i: number) => (i < 0 ? [] : Array.from(fills.agents.subarray(i * fills.size, (i + 1) * fills.size)));
+    // with nobody left to fill there's one (empty) fill, and the team is the party and the locked teammates
+    const exp = fills.size ? sws / sw : likelyS;
+    const spread = fills.size ? Math.sqrt(Math.max(0, sws2 / sw - exp * exp)) : 0;
+    const sorted = (xs: number[]) => xs.sort((a, b) => a - b);
+    const pick: PartyPick = {
+      party: sorted(party), expected: exp, spread,
+      likely: { agents: sorted([...fixed, ...fillOf(likelyI)]), score: fills.size ? likelyS : exp },
+      best: { agents: sorted([...fixed, ...fillOf(bestI)]), score: fills.size ? bestS : exp },
+    };
+    for (const a of party) if (!bestWith[a] || exp > bestWith[a]!.expected) bestWith[a] = pick;
+    if (exp > top.floor) {
+      // TopK keeps five slots per entry: the party padded with -1
+      const key = pick.party.join(',');
+      picks.set(key, pick);
+      top.push(exp, [...pick.party, ...Array(5 - size).fill(-1)]);
+    }
+  });
+  const list = top.list().map((t) => picks.get(t.agents.filter((a) => a >= 0).sort((a, b) => a - b).join(','))!).filter(Boolean);
+  return { top: list, bestWith, count };
+}
+
+/**
+ * For one party: which role random teammates should pick. Returns each role with the expected
+ * score when at least one random teammate plays it, best first.
+ */
+export function askFor(m: Model, party: readonly number[], rules: PartyRules, rankT = ALL_RANKS_T): { role: string; expected: number }[] {
+  const fixed = [...party, ...rules.locked];
+  const fixedSet = new Set(fixed);
+  const pool: number[] = [];
+  for (let i = 0; i < N; i++) if (!fixedSet.has(i) && rules.fillable(i)) pool.push(i);
+  const fills = allFills(m, pool, 5 - fixed.length, rankT);
+  const sums = ROLE_IDS.map(() => ({ w: 0, ws: 0 }));
+  const counts = new Int32Array(ROLES_N);
+  for (let i = 0; i < fills.n; i++) {
+    const team = [...fixed, ...fills.agents.subarray(i * fills.size, (i + 1) * fills.size)];
+    counts.fill(0);
+    for (const a of team) counts[ROLE_OF[a]!]!++;
+    const s = scoreTeam(m, team);
+    const wt = fills.weight[i]! * fillLikelihood(counts);
+    for (let r = 0; r < ROLES_N; r++) {
+      if (fills.counts[i * ROLES_N + r]! > 0) { sums[r]!.w += wt; sums[r]!.ws += wt * s; }
+    }
+  }
+  return ROLE_IDS.map((role, r) => ({ role, expected: sums[r]!.w ? sums[r]!.ws / sums[r]!.w : -Infinity }))
+    .filter((x) => x.expected > -Infinity)
+    .sort((a, b) => b.expected - a.expected);
+}

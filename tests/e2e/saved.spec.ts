@@ -1,0 +1,115 @@
+import AxeBuilder from '@axe-core/playwright';
+import type { Page } from '@playwright/test';
+import { expect, go, open, reload, saved, test } from './app.ts';
+
+/** Waits for the Planner's answers to settle. */
+async function answered(page: Page) {
+  await page.waitForTimeout(300);
+  await expect(page.locator('.answers[aria-busy=true], .working')).toHaveCount(0, { timeout: 30_000 });
+}
+
+/** Saves the Planner's open comp under `name`. */
+async function savePlan(page: Page, name: string) {
+  await page.locator('.comp.open').getByRole('button', { name: 'Save plan' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Save this plan' });
+  await dialog.getByRole('textbox').fill(name);
+  await dialog.getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(page.getByRole('status').filter({ hasText: `Saved “${name}”.` })).toBeVisible();
+}
+
+const a11y = async (page: Page, where: string) => {
+  const r = await new AxeBuilder({ page }).include(where).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
+  return r.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`);
+};
+
+test('a saved plan keeps its comp, fit and note, and can be starred, renamed, deleted and brought back', async ({ page, errors }) => {
+  await open(page, 'maps/haven');
+  await page.getByRole('button', { name: 'Plan for Haven' }).click();
+  await answered(page);
+  const team = await page.locator('.comp.open .comp-names').textContent();
+  const fit = await page.locator('.comp.open .comp-head .fit-num').textContent();
+  await savePlan(page, 'Haven default');
+  await expect(page.getByRole('navigation', { name: 'Main' }).getByLabel('1 saved')).toBeVisible();
+  // it opens from the toast's Open, or from the Saved page
+  await go(page, 'saved');
+  const row = page.getByRole('list', { name: 'Saved plans' }).getByRole('button', { name: /Haven default/ });
+  await row.click();
+  const plan = page.getByRole('article', { name: 'Haven default' });
+  await expect(plan).toBeVisible();
+  // the same team and fit the Planner gave it
+  for (const name of (team ?? '').split(', ')) await expect(plan.locator('.plan-team').getByRole('img', { name, exact: true })).toBeVisible();
+  await expect(plan.locator('.plan-team .fit-num')).toHaveText(fit ?? '');
+  await expect(plan.getByRole('heading', { name: 'Pros' })).toBeVisible();
+  await plan.getByRole('tab', { name: 'Plays' }).click();
+  await expect(plan.locator('.minimap').first()).toBeVisible();
+  expect(await a11y(page, '.saved-layout')).toEqual([]);
+  // a note, a star and a new name are kept through a reload
+  await plan.getByRole('textbox', { name: 'Note' }).fill('Jett ops from A Long.');
+  await plan.getByRole('button', { name: 'Star' }).click();
+  await plan.getByRole('button', { name: 'Rename' }).click();
+  await page.getByRole('dialog').getByRole('textbox').fill('Haven attack, default');
+  await page.getByRole('dialog').getByRole('button', { name: 'Rename' }).click();
+  await saved(page);
+  await reload(page);
+  const again = page.getByRole('article', { name: 'Haven attack, default' });
+  await expect(again.getByRole('textbox', { name: 'Note' })).toHaveValue('Jett ops from A Long.');
+  await expect(again.getByRole('button', { name: 'Star' })).toHaveAttribute('aria-pressed', 'true');
+  // Open in the Planner asks the same question again
+  await again.getByRole('button', { name: 'Open in the Planner' }).click();
+  await answered(page);
+  await expect(page.locator('.answers-head h2')).toHaveText('Haven');
+  // deleted, and brought back with Undo
+  await go(page, 'saved');
+  await page.getByRole('list', { name: 'Saved plans' }).getByRole('button', { name: /Haven attack, default/ }).click();
+  await page.getByRole('article').getByRole('button', { name: 'Delete' }).click();
+  await expect(page.getByRole('heading', { name: 'No saved plans yet' })).toBeVisible();
+  await page.getByRole('status').filter({ hasText: 'Deleted' }).getByRole('button', { name: /Undo/ }).click();
+  await expect(page.getByRole('list', { name: 'Saved plans' }).getByRole('button', { name: /Haven attack, default/ })).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test('a party plans with the agents each player plays, and says when they can’t make a comp', async ({ page, errors }) => {
+  await open(page, 'saved/parties');
+  await page.getByRole('button', { name: 'Make a party' }).first().click();
+  const dialog = page.getByRole('dialog', { name: 'Make a party' });
+  await dialog.getByRole('textbox', { name: 'Name', exact: true }).fill('Friday trio');
+  await dialog.getByRole('group', { name: 'Party size' }).getByRole('button', { name: 'Trio' }).click();
+  const pools: string[][] = [['Jett', 'Raze'], ['Omen'], ['Sova', 'Fade']];
+  for (const [i, agents] of pools.entries()) {
+    await dialog.locator('.party-player').nth(i).getByRole('button', { name: /: choose$/ }).click();
+    const picker = page.getByRole('dialog').last();
+    for (const a of agents) await picker.getByRole('button', { name: a, exact: true }).click();
+    await picker.getByRole('button', { name: 'Done' }).click();
+  }
+  expect(await a11y(page, '[role=dialog]')).toEqual([]);
+  await dialog.getByRole('button', { name: 'Make the party' }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  const party = page.locator('.party-row').filter({ hasText: 'Friday trio' });
+  await expect(party).toContainText('Trio');
+  await party.getByRole('button', { name: 'Plan' }).click();
+  await answered(page);
+  await expect(page.getByText('Only agents Friday trio plays')).toBeVisible();
+  // every pick gives each player one of their own agents
+  for (const names of await page.locator('.comps .comp-names b').allTextContents()) {
+    expect(names).toMatch(/Jett|Raze/);
+    expect(names).toContain('Omen');
+    expect(names).toMatch(/Sova|Fade/);
+  }
+  // a party whose players all play only the same agent can't make a comp, and the page says why
+  await go(page, 'saved/parties');
+  await party.getByRole('button', { name: 'Edit Friday trio' }).click();
+  const edit = page.getByRole('dialog', { name: 'Edit the party' });
+  for (let i = 0; i < 3; i++) {
+    await edit.locator('.party-player').nth(i).getByRole('button', { name: /: change$/ }).click();
+    const picker = page.getByRole('dialog').last();
+    await picker.getByRole('button', { name: 'Clear' }).click();
+    await picker.getByRole('button', { name: 'Jett', exact: true }).click();
+    await picker.getByRole('button', { name: 'Done' }).click();
+  }
+  await edit.getByRole('button', { name: 'Save', exact: true }).click();
+  await party.getByRole('button', { name: 'Plan' }).click();
+  await answered(page);
+  await expect(page.getByRole('heading', { name: 'No comp fits all of these choices' })).toBeVisible();
+  await expect(page.getByText('Your party’s agents can’t make a comp with these choices.')).toBeVisible();
+  expect(errors).toEqual([]);
+});

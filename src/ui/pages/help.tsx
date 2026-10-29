@@ -1,0 +1,192 @@
+/**
+ * Help: a guide to how the Planner thinks and where its numbers come from, every keyboard
+ * shortcut, and About (version, storage, problems, licenses and the notice for the game's art).
+ */
+import { PageHead } from '../shell.tsx';
+import { Button, Kbd, Tabs } from '../components/controls.tsx';
+import { backendKind, errors, go, tabRole, watch } from '../state.ts';
+import { copyWithToast, download, datedName } from '../files.ts';
+import { openWhatsNew } from '../components/whatsnew.tsx';
+import { AGENTS } from '../../core/kb/agents.ts';
+import { MAPS, PATCH, POOL, POOL_SINCE } from '../../core/kb/maps.ts';
+import { NEW_AGENTS } from '../../core/kb/new-agents.ts';
+import { PLAYS } from '../../core/kb/plays.ts';
+import { FIT_MID, TIERS } from '../../core/engine/weights.ts';
+import { fmtLongDay } from '../../core/dates.ts';
+import { listJoin } from '../../core/text.ts';
+import { plural } from '../../core/util.ts';
+import type { PageProps } from './index.ts';
+
+type Tab = 'guide' | 'keys' | 'about';
+
+const GLOBAL_KEYS: readonly [string, string][] = [
+  ['ctrl+k', 'Search pages, agents, maps, saved plans, settings and actions'],
+  ['/', 'Search'],
+  ['ctrl+z', 'Undo'],
+  ['ctrl+shift+z', 'Redo (Ctrl Y works too)'],
+  ['ctrl+\\', 'Narrow or widen the sidebar'],
+  ['?', 'This list'],
+  ['escape', 'Close a dialog or menu'],
+];
+
+const LIST_KEYS: readonly [string, string][] = [
+  ['tab', 'Move to the next control; Shift Tab goes back'],
+  ['enter', 'Press the button or open the row that has focus (Space works too)'],
+  ['arrowdown', 'Move through a menu, a set of choices or the search results; the up arrow goes back'],
+  ['home', 'The first item of a menu; End the last'],
+  ['arrowright', 'The next tab or choice in a row of them; the left arrow goes back'],
+];
+
+function KeyCombo({ k }: { k: string }) {
+  return <span class="row" style={{ gap: '4px' }}>{k.split('+').map((p, i) => <Kbd key={i} k={p} />)}</span>;
+}
+
+function Keys() {
+  return (
+    <div class="grid-2">
+      <section class="panel">
+        <h2>Everywhere</h2>
+        <table class="key-table"><tbody>
+          {GLOBAL_KEYS.map(([k, what]) => <tr key={k}><td><KeyCombo k={k} /></td><td>{what}</td></tr>)}
+        </tbody></table>
+        <p class="small muted" style={{ marginTop: '12px' }}>On a Mac, use Command where these say Ctrl. While you type in a box, its letters and Ctrl Z stay with the box.</p>
+      </section>
+      <section class="panel">
+        <h2>Menus, lists and choices</h2>
+        <table class="key-table"><tbody>
+          {LIST_KEYS.map(([k, what]) => <tr key={k}><td><KeyCombo k={k} /></td><td>{what}</td></tr>)}
+        </tbody></table>
+        <p class="small muted" style={{ marginTop: '12px' }}>Everything in Playbook can be reached with the keyboard: the Planner’s choices, the comps and their tabs, and the agent and map pickers.</p>
+      </section>
+    </div>
+  );
+}
+
+/** "S from 95, A from 88, …": the tiers as the engine sets them. */
+const tierWords = (): string => listJoin(TIERS.map((t, i) => (t.min > 0 ? `${t.id} from ${t.min}` : `${t.id} below ${TIERS[i - 1]?.min ?? 0}`)));
+
+function Guide() {
+  const fresh = NEW_AGENTS.map((a) => a.name);
+  return (
+    <div class="stack guide">
+      <section class="panel">
+        <h2>Getting started</h2>
+        <ol>
+          <li><b>Ask a question</b> on the Planner: a map, your side, your rank and who you’re queuing with. Leave any of them open, or ask for the best one.</li>
+          <li><b>Read the answers:</b> the comps that fit best, each with its pros and cons, the plays it can run on the map, and tips.</li>
+          <li><b>Look things up</b> on Rankings (tier lists of agents and comps), Agents (kits, strengths and partners) and Maps (sites, callouts and plays).</li>
+          <li><b>Save</b> a plan you like, and your usual party with the agents each of you plays, so they’re a click away next time.</li>
+        </ol>
+      </section>
+      <div class="guide-cols">
+        <section class="panel stack">
+          <h2>The question</h2>
+          <p><b>Map, side, sites and rank</b> describe the game you’re about to play. Choose “Best” for the side or “Find the best rank” and the Planner compares them all for you; leave the map open to plan across the pool ({plural(POOL.length, 'map')}), or turn on all {MAPS.length}.</p>
+          <p><b>Sites</b> narrow a plan to the sites you’ll play: say B and C on Haven to plan a hit or a hold there. Plays then come from those sites first.</p>
+          <p><b>Must play</b> keeps agents in every comp. <b>Won’t play</b> leaves them out. <b>Roles</b> set how many of a role the team has, like two controllers or no sentinel.</p>
+          <p>Every change answers again straight away. <b>Start over</b> goes back to your usual rank with nothing else chosen, and recent questions are on Home.</p>
+        </section>
+        <section class="panel stack">
+          <h2>Fit and tiers</h2>
+          <p>A comp’s <b>fit</b> compares it with every possible team for the same situation: the best team is 100 and the middle one is {FIT_MID}. So a fit means the same on every map, side and rank.</p>
+          <p>Tiers follow the fit: {tierWords()}. An agent’s fit comes from the best comp they fit into, so a high one means “easy to build around here”, not “strong alone”.</p>
+          <p>Fit weighs what the situation needs (smokes, flashes, information, a strong anchor and so on) against what the team brings, how well the agents work together, and the role counts every team needs. Your rank changes the mix: low down, aim and simple utility win; near the top, coordinated utility and what pros play on the map count for more, such as a second controller on the maps where pros run two.</p>
+        </section>
+        <section class="panel stack">
+          <h2>Duos and trios</h2>
+          <p>With a duo or trio, the others are random teammates. The Planner counts on what players at your rank usually pick, and on teammates filling a role the team is missing, then ranks your party’s picks by the team you’d most likely end up with.</p>
+          <p>A party’s row shows its fit among other parties. Open it to see the fit to expect with random teammates (against the best five-stack), the role worth asking your teammates for, and the best team they could pick.</p>
+          <p>Already know what they locked in? Add it under <b>Teammates locked in</b>. To plan around the agents your party plays, save it on the Saved page and choose it under <b>Saved party</b>.</p>
+        </section>
+        <section class="panel stack">
+          <h2>Plays</h2>
+          <p>Each map has plays for attack and defense ({plural(PLAYS.length, 'play')} in all): hits, splits, fakes, defaults, setups and retakes. A play has a job for each player, like smoking a choke, flashing the entry or watching the flank.</p>
+          <p>The Planner gives each job to the agent on the team who does it best, and names the abilities they’d use. A play <b>fits well</b>, <b>works</b> or is <b>a stretch</b>, from how good the players are at their jobs; a warning sign marks a job nobody on the team is good at.</p>
+          <p>The minimap draws each player’s route in their own color. Point at a step, or Tab to it, to bring its route forward. A dashed start is the walk out of spawn, and a ring is a spot to hold.</p>
+        </section>
+        <section class="panel stack">
+          <h2>Where the numbers come from</h2>
+          <p>Playbook knows {plural(AGENTS.length, 'agent')} and {plural(MAPS.length, 'map')}, as of patch {PATCH}. Each agent’s strengths are judged from their kit and how they’re played. Pick rates in ranked come from metabot.gg, and pro picks from vlr.gg (Champions 2026, Masters Santiago 2026 and the China league of 2026). The map pool is the one since {fmtLongDay(POOL_SINCE)}.</p>
+          {fresh.length > 0 && <p>{listJoin(fresh)} {fresh.length === 1 ? 'is' : 'are'} too new for real numbers, so the scores are early estimates from the kit that was shown. Leave {listJoin(fresh)} out of a question under Options, or out of every new one in <a href="#/settings/includeNew">Settings → Planner</a>.</p>}
+          <p>Playbook works offline, so it doesn’t fetch match stats while you use it; a new version brings new numbers.</p>
+        </section>
+        <section class="panel stack">
+          <h2>Your data</h2>
+          <p>Everything stays on this computer, in this browser. Nothing is sent anywhere. Back up from <a href="#/settings/data">Settings → Your data</a> to move to another computer or keep a copy safe.</p>
+          <p><b>Copy</b> on a comp puts the plan into words you can paste into a chat with your team. Almost anything can be undone with Ctrl Z. With Playbook open in two tabs, only one saves; the other follows it.</p>
+        </section>
+      </div>
+    </div>
+  );
+}
+
+const LICENSES: readonly [string, string][] = [
+  ['Preact and Preact Signals', 'MIT License, © Jason Miller and contributors'],
+  ['Literata', 'SIL Open Font License 1.1, © The Literata Project Authors'],
+  ['Atkinson Hyperlegible Next and Mono', 'SIL Open Font License 1.1, © Braille Institute of America'],
+];
+
+function About() {
+  const r = watch('meta', 'plans', 'parties');
+  const bad = r.quarantine();
+  const storage = { indexeddb: 'Browser database (IndexedDB)', local: 'Basic browser storage (localStorage)', memory: 'Not saving (this tab only)' }[backendKind.value];
+  return (
+    <div class="grid-2">
+      <section class="panel stack">
+        <h2>Playbook By Sovereign</h2>
+        <p class="muted">Designed and directed by Sovereign.</p>
+        <dl class="facts">
+          <dt>Version</dt><dd>{__APP_VERSION__}</dd>
+          <dt>Game data</dt><dd>Patch {PATCH}</dd>
+          <dt>Saving to</dt><dd>{storage}{tabRole.value === 'reader' ? ' (read-only in this tab)' : ''}</dd>
+          <dt>Stored</dt><dd>{plural(r.plans().length, 'saved plan')} · {plural(r.parties().length, 'party', 'parties')} · {plural(r.themes().length, 'theme')} of your own</dd>
+        </dl>
+        <div class="row wrap">
+          <Button icon="sparkle" onClick={() => void openWhatsNew()}>What’s new</Button>
+          <Button icon="check" onClick={() => go('selftest')}>Run the self-test</Button>
+          <Button kind="quiet" icon="grid" onClick={() => go('gallery')}>Component gallery</Button>
+        </div>
+      </section>
+      <section class="panel stack">
+        <h2>Problems</h2>
+        {errors.value.length === 0 && bad.length === 0 && <p class="muted">No problems since Playbook opened.</p>}
+        {bad.length > 0 && (
+          <div class="stack" style={{ gap: '6px' }}>
+            <p>{plural(bad.length, 'damaged record')} {bad.length === 1 ? 'was' : 'were'} set aside when opening. They’re kept here in case they’re needed.</p>
+            <div><Button size="sm" icon="export" onClick={() => download(datedName('Playbook damaged records', 'json'), JSON.stringify(bad, null, 1))}>Download them</Button></div>
+          </div>
+        )}
+        {errors.value.length > 0 && (
+          <>
+            <pre class="error-log">{errors.value.join('\n')}</pre>
+            <div><Button size="sm" icon="copy" onClick={() => void copyWithToast(`Playbook ${__APP_VERSION__}\n${errors.value.join('\n')}`, 'Copied the problems.')}>Copy</Button></div>
+          </>
+        )}
+      </section>
+      <section class="panel stack" style={{ gridColumn: '1 / -1' }}>
+        <h2>Made with</h2>
+        <ul class="licenses">{LICENSES.map(([what, lic]) => <li key={what}><b>{what}</b> <span class="muted">{lic}</span></li>)}</ul>
+        <p class="small muted">
+          Playbook By Sovereign was created under Riot Games’ “Legal Jibber Jabber” policy using assets owned by Riot Games. Riot Games does not endorse or sponsor this project.
+          The agent portraits, ability icons, minimaps and ability text are Riot Games’ own, from valorant-api.com.
+        </p>
+        <p class="small muted">Playbook is © 2026 Sovereign. All rights reserved.</p>
+      </section>
+    </div>
+  );
+}
+
+export function HelpPage({ arg }: PageProps) {
+  const tab: Tab = arg === 'keys' || arg === 'about' ? arg : 'guide';
+  return (
+    <>
+      <PageHead title="Help" />
+      <Tabs value={tab} label="Help" onChange={(t) => go('help', t === 'guide' ? '' : t)} tabs={[['guide', 'Guide'], ['keys', 'Keyboard'], ['about', 'About']]} />
+      <div class="tab-body" key={tab}>
+        {tab === 'guide' && <Guide />}
+        {tab === 'keys' && <Keys />}
+        {tab === 'about' && <About />}
+      </div>
+    </>
+  );
+}
