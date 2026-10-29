@@ -241,6 +241,8 @@ export const isAgent = (v: unknown): v is AgentId => typeof v === 'string' && BY
 export const AGENTS_BY_NAME: readonly Agent[] = [...AGENTS].sort((a, b) => a.name.localeCompare(b.name));
 /** An agent that came out within this many days counts as new. */
 export const NEW_DAYS = 60;
+/** New on `today` (a day key): coming soon, out within NEW_DAYS, or still an estimate. */
+export const isNew = (a: { released: string; estimate?: boolean }, today: string): boolean => !!a.estimate || diffDays(a.released, today) <= NEW_DAYS;
 /** The day the pick rates were taken. */
 export const STATS_ON = '2026-10-29';
 /** The agent's pick rate comes from their first weeks, when players are still learning them. */

@@ -11,7 +11,7 @@ import { play } from '../sound.ts';
 import { openPlanner, planWith } from '../planner/store.ts';
 import { askedLine, askedTitle, partyWord } from '../planner/words.ts';
 import { TeamIcons } from '../planner/comp.tsx';
-import { AGENTS, NEW_DAYS } from '../../core/kb/agents.ts';
+import { AGENTS, isNew } from '../../core/kb/agents.ts';
 import { PATCH, POOL, POOL_SINCE } from '../../core/kb/maps.ts';
 import { poolsOf, type Party } from '../../core/saved.ts';
 import type { PartySize } from '../../core/engine/query.ts';
@@ -27,7 +27,7 @@ function greeting(hour: number): string {
 /** Agents released lately or about to be, with when. */
 function NewAgents() {
   const today = keyOf(new Date());
-  const fresh = AGENTS.filter((a) => diffDays(a.released, today) <= NEW_DAYS);
+  const fresh = AGENTS.filter((a) => isNew(a, today));
   if (!fresh.length) return null;
   return (
     <div class="home-new">

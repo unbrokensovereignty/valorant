@@ -1,5 +1,5 @@
 import { describe, spec, eq, ok, throws } from './harness.ts';
-import { AGENTS, agentById, parseCaps } from '../../src/core/kb/agents.ts';
+import { AGENTS, agentById, isNew, parseCaps } from '../../src/core/kb/agents.ts';
 import { kitOf, abilityOn, abilityNames, plainText, textParts } from '../../src/core/kb/kits.ts';
 import { MAPS, POOL, mapById, parseNeeds, calloutLabel } from '../../src/core/kb/maps.ts';
 import { PRO, proKnown, proPick } from '../../src/core/kb/pro.ts';
@@ -49,6 +49,8 @@ describe('agents', () => {
   spec('Hush is a full agent now that she’s out', () => {
     const hush = agentById('hush')!;
     ok(!hush.estimate, 'not an estimate');
+    ok(isNew(hush, '2026-10-26') && isNew(hush, '2026-10-29') && isNew(hush, '2026-12-26'), 'new from just before her release to two months after');
+    ok(!isNew(hush, '2026-12-27') && !isNew(agentById('jett')!, '2026-10-29'), 'and not after that, nor an agent out for years');
     ok(!proKnown(hush), 'released after the pro events, so pro play doesn’t count for her yet');
     eq(['C', 'Q', 'E', 'X'].map((k) => abilityOn('hush', k)?.name), ['Flow', 'Flashbulb', 'Displacement', 'Suspension']);
   });
