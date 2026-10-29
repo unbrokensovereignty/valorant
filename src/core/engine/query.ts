@@ -38,10 +38,12 @@ export interface Query {
   newAgents: boolean;
   /** "Any map" and "Find the best map" cover all maps, not just the competitive pool. */
   allMaps: boolean;
+  /** The other team's agents, as far as they're known (kb/counters.ts says what they make you play around). */
+  enemy: string[];
 }
 
 export const newQuery = (rank: RankPick = 'gold', newAgents = true): Query => ({
-  map: 'any', side: 'both', sites: [], rank, party: 5, include: [], exclude: [], locked: [], roles: {}, pools: [], newAgents, allMaps: false,
+  map: 'any', side: 'both', sites: [], rank, party: 5, include: [], exclude: [], locked: [], roles: {}, pools: [], newAgents, allMaps: false, enemy: [],
 });
 
 const ids = (v: unknown, ok: (x: unknown) => boolean, max: number): string[] =>
@@ -72,6 +74,8 @@ export function sanitizeQuery(x: unknown): Query {
   // one pool per player, or none at all
   if (Array.isArray(x.pools) && x.pools.length === q.party) q.pools = x.pools.map((p) => ids(p, isAgent, 30));
   if (q.pools.every((p) => !p.length)) q.pools = [];
+  // both teams can play the same agent, so theirs don't limit yours
+  q.enemy = ids(x.enemy, isAgent, 5);
   return fixRoles(q);
 }
 
@@ -109,7 +113,7 @@ export function situationsOf(q: Query): Situation[] {
   const sides: SidePick[] = q.side === 'best' ? ['attack', 'defense'] : [q.side];
   const ranks: RankPick[] = q.rank === 'best' ? [...RANK_IDS] : [q.rank];
   const out: Situation[] = [];
-  for (const map of maps) for (const side of sides) for (const rank of ranks) out.push({ map, side, rank, sites: maps.length === 1 && map !== 'any' ? q.sites : [] });
+  for (const map of maps) for (const side of sides) for (const rank of ranks) out.push({ map, side, rank, sites: maps.length === 1 && map !== 'any' ? q.sites : [], enemy: q.enemy });
   return out;
 }
 

@@ -34,13 +34,14 @@ export function askedTitle(q: { map: string; side: string; sites: readonly strin
   return parts.join(', ');
 }
 
-/** "Gold · trio · with Jett · two controllers". */
+/** "Gold · trio · with Jett · two controllers · against Chamber and Sova". */
 export function askedLine(q: Query): string {
   const parts = [rankWord(q.rank), partyWord(q.party).toLowerCase()];
   if (q.include.length) parts.push(`with ${names(q.include)}`);
   const roles = ROLES.filter((r) => q.roles[r.id] !== undefined).map((r) => `${COUNT[q.roles[r.id]!]} ${(q.roles[r.id] === 1 ? r.name : r.plural).toLowerCase()}`);
   if (roles.length) parts.push(listJoin(roles));
   if (q.pools.length) parts.push('your party’s agents');
+  if (q.enemy.length) parts.push(`against ${names(q.enemy)}`);
   return parts.join(' · ');
 }
 

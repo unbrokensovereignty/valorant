@@ -11,14 +11,18 @@ import { ALL_RANKS_T, rankOf, type RankId } from '../kb/ranks.ts';
 import { DIMS, ROLE_IDS, type Dim, type Role } from '../kb/roles.ts';
 import { PAIRS } from '../kb/synergy.ts';
 import { rulesFor, type ParsedRule } from '../kb/kitfit.ts';
+import { THREATS, type Threat } from '../kb/counters.ts';
 import { BASE, BY_RANK, EXEC, FIT, NEW_WIN_SHARE, PAIR_STEP, PRO_GAMES, PRO_RISE, ROLE_COST, ROLE_MIX, WIN_CAP, WIN_RANKS } from './weights.ts';
 
 export type MapPick = string; // a map id, or 'any'
 export type SidePick = Side | 'both';
 export type RankPick = RankId | 'any';
 
-/** One situation to plan for. `sites` is empty for all of the map's sites. */
-export interface Situation { map: MapPick; side: SidePick; sites: readonly SiteId[]; rank: RankPick }
+/**
+ * One situation to plan for. `sites` is empty for all of the map's sites; `enemy` is the other
+ * team's agents, as far as they're known (none, or left out, when they aren't).
+ */
+export interface Situation { map: MapPick; side: SidePick; sites: readonly SiteId[]; rank: RankPick; enemy?: readonly string[] }
 
 export const N = AGENTS.length;
 export const D = DIMS.length;
@@ -57,7 +61,14 @@ export interface Model {
    * much each adds to (or takes from) a team's score on its own, averaged over the situations covered.
    */
   kit: { rule: ParsedRule; gain: number }[][];
+  /**
+   * What the other team's agents make you play around (kb/counters.ts), most first: how far each
+   * threat goes (0 to 1, averaged over the situations covered) and their agents behind it, most first.
+   */
+  threats: ThreatAt[];
 }
+
+export interface ThreatAt { threat: Threat; level: number; who: string[] }
 
 const t = (rank: RankPick) => (rank === 'any' ? ALL_RANKS_T : rankOf(rank).t);
 
@@ -126,8 +137,33 @@ function agentFit(a: Agent, map: string, rankT: number): { pro: number; rank: nu
   return { pro, rank, win };
 }
 
-function single(map: MapInfo, side: Side, sites: readonly SiteId[], rankT: number) {
+/**
+ * How far each threat of the other team's agents goes on a map, with you on `side`: each agent adds
+ * what their kit brings to the threat's strength there above its `from` (only those after the
+ * strongest, for a `second` threat), and `full` of that is the whole threat. Their kits count at
+ * full strength, whatever the rank: you plan for the other team playing them well.
+ */
+export function threatsOf(enemy: readonly string[], map: MapInfo, side: Side, sites: readonly SiteId[]): ThreatAt[] {
+  const them = enemy.map((id) => agentById(id)).filter((a): a is Agent => !!a);
+  if (!them.length) return [];
+  const theirSide: Side = side === 'attack' ? 'defense' : 'attack';
+  const rules = them.map((a) => rulesFor(a.id, map.id, theirSide, sites));
+  const out: ThreatAt[] = [];
+  for (const t of THREATS) {
+    if (t.side && t.side !== side) continue;
+    const brings = them.map((a, i) => ({ id: a.id, over: capWith(a, t.dim, rules[i]!) - t.from })).filter((x) => x.over > 0).sort((a, b) => b.over - a.over);
+    const counted = t.second ? brings.slice(1) : brings;
+    const level = Math.min(1, counted.reduce((acc, x) => acc + x.over, 0) / t.full);
+    if (level > 0) out.push({ threat: t, level, who: brings.map((x) => x.id) });
+  }
+  return out;
+}
+
+function single(map: MapInfo, side: Side, sites: readonly SiteId[], rankT: number, enemy: readonly string[]) {
   const needs = needsFor(map, side, sites);
+  // what the other team makes you play around, as far as it goes
+  const threats = threatsOf(enemy, map, side, sites);
+  for (const { threat, level } of threats) for (const [d, v] of Object.entries(threat.needs) as [Dim, number][]) needs[d] += v * level;
   const weight = new Float64Array(D);
   let sum = 0;
   DIMS.forEach((d, j) => {
@@ -145,7 +181,7 @@ function single(map: MapInfo, side: Side, sites: readonly SiteId[], rankT: numbe
   }
   // how this map, side and site change each agent's strengths (kb/kitfit.ts)
   const rules = AGENTS.map((a) => rulesFor(a.id, map.id, side, sites));
-  return { weight, pro, rank, win, rules };
+  return { weight, pro, rank, win, rules, threats };
 }
 
 /** An agent's strength once the kit rules that apply have changed it. */
@@ -157,7 +193,7 @@ const roleOfId = (id: string) => agentById(id)?.role;
 export const proMixOf = (map: string) => proRoleMix(map, roleOfId);
 
 const cache = new Map<string, Model>();
-export const situationKey = (s: Situation) => `${s.map}|${s.side}|${[...s.sites].sort().join('')}|${s.rank}`;
+export const situationKey = (s: Situation) => `${s.map}|${s.side}|${[...s.sites].sort().join('')}|${s.rank}|${[...(s.enemy ?? [])].sort().join()}`;
 
 /** The numbers for a situation (kept, since the same ones are asked for again and again). */
 export function modelFor(s: Situation): Model {
@@ -171,9 +207,15 @@ export function modelFor(s: Situation): Model {
   const parts = maps.length * sides.length;
   const miss = new Float64Array(N * D);
   const kit: { rule: ParsedRule; gain: number }[][] = AGENTS.map(() => []);
+  const threats: ThreatAt[] = [];
   for (const m of maps) {
     for (const side of sides) {
-      const one = single(m, side, s.map === 'any' ? [] : s.sites, rankT);
+      const one = single(m, side, s.map === 'any' ? [] : s.sites, rankT, s.enemy ?? []);
+      for (const x of one.threats) {
+        const had = threats.find((y) => y.threat === x.threat);
+        if (had) { had.level += x.level / parts; had.who = [...new Set([...had.who, ...x.who])]; }
+        else threats.push({ ...x, level: x.level / parts });
+      }
       for (let j = 0; j < D; j++) weight[j]! += one.weight[j]! / parts;
       for (let i = 0; i < N; i++) { pro[i]! += one.pro[i]! / parts; rank[i]! += one.rank[i]! / parts; win[i]! += one.win[i]! / parts; }
       for (const a of AGENTS) {
@@ -224,7 +266,8 @@ export function modelFor(s: Situation): Model {
   for (let ri = 0; ri < ROLES_N; ri++) want[ri] = mixed ? want[ri]! / mixed : Number.NaN;
   for (let i = 0; i < roleCost.length; i++) roleCost[i]! += mixCost[i]!;
   const model: Model = {
-    situation: { ...s, sites: [...s.sites] }, weight, miss, base, pair, roleCost, fitParts: { pro, rank, win }, mix: { want, cost: mixCost, relax: relaxed }, kit,
+    situation: { ...s, sites: [...s.sites], enemy: [...(s.enemy ?? [])] }, weight, miss, base, pair, roleCost, fitParts: { pro, rank, win }, mix: { want, cost: mixCost, relax: relaxed }, kit,
+    threats: threats.sort((a, b) => b.level - a.level),
   };
   if (cache.size > 200) cache.clear();
   cache.set(key, model);

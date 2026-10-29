@@ -172,6 +172,14 @@ html[data-motion='off'] .spinner { animation: none; border-color: var(--accent);
 .party-box { display: grid; gap: 8px; padding: 12px 14px; border-radius: var(--r); background: var(--accent-soft); font-size: 0.94rem; }
 .party-best { gap: 8px; }
 
+.against h3 { margin-bottom: 6px; }
+.against-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; font-size: 0.94rem; }
+.against-row { display: flex; gap: 8px; align-items: flex-start; }
+.against-row > .icon { flex: none; margin-top: 2px; }
+.against-row.answered > .icon { color: var(--good-text); }
+.against-row.partly > .icon { color: var(--text3); }
+.against-row.little > .icon { color: var(--bad-text); }
+
 .strengths h3 { margin-bottom: 6px; }
 .strength-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
 .strength-table th, .strength-table td { padding: 6px 8px 6px 0; border-top: 1px solid var(--line); text-align: left; vertical-align: middle; }

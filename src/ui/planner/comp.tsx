@@ -7,7 +7,7 @@ import { useState } from 'preact/hooks';
 import { agentById } from '../../core/kb/agents.ts';
 import { mapById } from '../../core/kb/maps.ts';
 import { DIM_INFO, ROLES } from '../../core/kb/roles.ts';
-import { explainTeam, type StrengthRow } from '../../core/engine/explain.ts';
+import { againstWords, explainTeam, type AgainstRow, type StrengthRow } from '../../core/engine/explain.ts';
 import { modelFor } from '../../core/engine/model.ts';
 import type { CompAnswer, SituationAnswer } from '../../core/engine/plan.ts';
 import { playsFor } from '../../core/engine/plays.ts';
@@ -111,6 +111,7 @@ export function CompDetail({ c, i, ans, q, saveable = true }: { c: CompAnswer; i
       </div>
       {tab === 'why' && <>
         {c.party.length > 0 && <PartyBox c={c} i={i} ans={ans} />}
+        {why.against.length > 0 && <Against rows={why.against} />}
         <div class="pros-cons" data-tour="comp-reasons">
           <div>
             <h3 class="row good-text"><Icon name="check" size={18} />Pros</h3>
@@ -161,6 +162,25 @@ function PartyBox({ c, i, ans }: { c: CompAnswer; i: number; ans: SituationAnswe
           <span class="muted num">fit {Math.round(c.bestFit ?? 0)}</span>
         </div>
       )}
+    </div>
+  );
+}
+
+const AGAINST_ICON = { answered: 'check', partly: 'minus', little: 'warning' } as const;
+
+/** How the comp stands against what the other team makes you play around, the biggest threat first. */
+function Against({ rows }: { rows: readonly AgainstRow[] }) {
+  return (
+    <div class="against" data-tour="comp-against">
+      <h3>Against their team</h3>
+      <ul class="against-list">
+        {rows.map((r) => (
+          <li key={r.id} class={`against-row ${r.verdict}`}>
+            <Icon name={AGAINST_ICON[r.verdict]} size={18} />
+            <span><b>{r.threat}.</b> {againstWords(r)}</span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

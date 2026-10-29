@@ -1,12 +1,13 @@
 /**
- * A plan as plain text, for copying into a chat: the situation, the comp and its fit, pros and
- * cons, the best play with who does what, and tips.
+ * A plan as plain text, for copying into a chat: the situation, the comp and its fit, how it
+ * answers the other team (when their agents are known), pros and cons, the best play with who
+ * does what, and tips.
  */
 import { agentById } from '../kb/agents.ts';
 import { spotName } from '../kb/maps.ts';
 import { listJoin } from '../text.ts';
 import { aWord } from '../util.ts';
-import type { Explanation } from './explain.ts';
+import { againstWords, type Explanation } from './explain.ts';
 import { JOB_NAMES, playFitLabel, type FilledPlay } from './plays.ts';
 import type { Tip } from './tips.ts';
 
@@ -41,6 +42,7 @@ export function summaryText(p: SummaryParts): string {
     if (!items.length) return;
     lines.push('', head, ...items.map((x) => `- ${x}`));
   };
+  list('Against their team', p.why.against.map((r) => `${r.threat}. ${againstWords(r)}`));
   list('Pros', p.why.pros);
   list('Cons', p.why.cons);
   list('Notes', p.why.notes);

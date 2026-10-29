@@ -1,6 +1,6 @@
 /**
- * The Planner's question: map and sites, side, rank, party, the agents you must or won't play, and
- * role counts. Every change asks again straight away; any field can be left open or asked for.
+ * The Planner's question: map and sites, side, rank, party, the agents you must or won't play, the
+ * other team's agents and role counts. Every change asks again straight away; any field can be left open or asked for.
  */
 import type { ComponentChildren } from 'preact';
 import { MAPS, mapById } from '../../core/kb/maps.ts';
@@ -152,6 +152,11 @@ export function Question({ q }: { q: Query }) {
       <Part title="Won’t play">
         <AgentChips ids={q.exclude} empty="Leave agents out" onChange={(exclude) => ask({ exclude }, true)}
           o={{ title: 'Agents to leave out', max: 25, taken: taken(q, 'exclude') }} />
+      </Part>
+
+      <Part title="Their team" tour="q-enemy" help={q.enemy.length ? 'Comps that answer them rank higher, and each comp says how it stands against them.' : 'Know who you’re playing against? Add their agents.'}>
+        <AgentChips ids={q.enemy} empty="Add their agents" onChange={(enemy) => ask({ enemy }, true)}
+          o={{ title: 'Agents the other team plays', max: 5, line: 'Both teams can play the same agent, so these don’t limit your picks.' }} />
       </Part>
 
       <Part title={q.party === 5 ? 'Roles in the team' : 'Roles in your party'} tour="q-roles" help="Set how many of a role you want, like two controllers.">

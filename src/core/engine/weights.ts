@@ -107,6 +107,14 @@ export const KIT_NOTE = { hard: 0.6, upTo: 0.5 };
  */
 export const KIT_RULE_NOTE = { gain: 0.006, most: 2 };
 
+/**
+ * How a comp's answers to the other team are told (kb/counters.ts, explain.ts): threats that go at
+ * least `level` of the way are listed; a comp covering at least `answered` of what answers one has
+ * the answer, below `little` it has little of it; and it names up to `by` agents who bring at least
+ * `brings` of a strength that answers it.
+ */
+export const THREAT_NOTE = { level: 0.3, answered: 0.75, little: 0.5, by: 2, brings: 0.45 };
+
 /** Points per step of a pair's strength (−3 to 3, see kb/synergy.ts). */
 export const PAIR_STEP = 0.006;
 

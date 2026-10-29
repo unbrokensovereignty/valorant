@@ -29,7 +29,7 @@ type Tab = 'plans' | 'parties';
 /** The one situation a saved plan is about (a plan saved from "the best map" keeps the map it picked). */
 function situationOf(p: SavedPlan): Situation {
   const q = p.query;
-  return { map: q.map === 'best' ? 'any' : q.map, side: q.side === 'best' ? 'both' : q.side, rank: q.rank === 'best' ? 'any' : q.rank, sites: q.sites };
+  return { map: q.map === 'best' ? 'any' : q.map, side: q.side === 'best' ? 'both' : q.side, rank: q.rank === 'best' ? 'any' : q.rank, sites: q.sites, enemy: q.enemy };
 }
 
 // ---------------------------------------------------------------- plans

@@ -12,8 +12,9 @@ import { DIMS, DIM_INFO, ROLE_IDS, roleOf, type Dim, type Role } from '../kb/rol
 import { pairOf } from '../kb/synergy.ts';
 import { listJoin } from '../text.ts';
 import { D, kitShare, needsFor, type Model } from './model.ts';
-import { KIT_NOTE, KIT_RULE_NOTE, MIX_NOTE, WIN_NOTE } from './weights.ts';
+import { KIT_NOTE, KIT_RULE_NOTE, MIX_NOTE, THREAT_NOTE, WIN_NOTE } from './weights.ts';
 import { ruleWhy } from '../kb/kitfit.ts';
+import { threatLine } from '../kb/counters.ts';
 
 export interface StrengthRow {
   dim: Dim;
@@ -25,12 +26,31 @@ export interface StrengthRow {
   by: { id: string; value: number; abilities: string[] }[];
 }
 
+/** One thing the other team makes you play around, and how much of the answer a comp has. */
+export interface AgainstRow {
+  id: string;
+  /** "Their Chamber holds long angles with the Operator". */
+  threat: string;
+  /** How far the threat goes, 0 to 1. */
+  level: number;
+  /** How much of what answers it the comp covers, 0 to 1, as much as each strength counts. */
+  answered: number;
+  /** answered, as a word: the comp has the answer, part of it or little of it (see THREAT_NOTE). */
+  verdict: 'answered' | 'partly' | 'little';
+  /** Who in the comp answers it, by the ability that does: "Omen’s Dark Cover", strongest first. */
+  by: string[];
+  /** How to play around it. */
+  advice: string;
+}
+
 export interface Explanation {
   strengths: StrengthRow[];
   pros: string[];
   cons: string[];
   /** Things worth knowing that aren't good or bad (a new agent's numbers, say). */
   notes: string[];
+  /** What the other team makes you play around, most first (empty when their agents aren't known). */
+  against: AgainstRow[];
 }
 
 /** How to play around a gap, by strength. */
@@ -217,7 +237,41 @@ export function explainTeam(m: Model, ids: readonly string[]): Explanation {
     else if (overlap === 4) pros.push(`Four of these five are in a comp pro teams play on ${map!.name}.`);
   }
   for (const a of team.filter((x) => x.estimate)) notes.push(`${a.name} is new, so this comp’s fit is an early estimate and will change once there’s more play to go on.`);
-  return { strengths, pros, cons, notes };
+  return { strengths, pros, cons, notes, against: againstOf(m, strengths) };
+}
+
+/** How a comp stands against one threat, after the threat itself: "This comp has the answer: …". */
+export function againstWords(r: AgainstRow): string {
+  if (r.verdict === 'answered') return `This comp has the answer${r.by.length ? `: ${listJoin(r.by)}` : ''}.`;
+  if (r.verdict === 'partly') return r.by.length ? `Part of the answer: ${listJoin(r.by)}. Beyond that, ${r.advice}.` : `Only part of the answer, so ${r.advice}.`;
+  return `Little to answer it, so ${r.advice}.`;
+}
+
+/**
+ * What the other team makes you play around (kb/counters.ts), for a comp with these strengths:
+ * for each threat that goes far enough, how much the comp covers of the strengths that answer it,
+ * as much as each counts, and who brings them.
+ */
+function againstOf(m: Model, strengths: readonly StrengthRow[]): AgainstRow[] {
+  const row = (d: Dim) => strengths.find((r) => r.dim === d)!;
+  return m.threats.filter((x) => x.level >= THREAT_NOTE.level).map((x): AgainstRow => {
+    const asks = (Object.entries(x.threat.needs) as [Dim, number][]).sort((a, b) => b[1] - a[1]);
+    const answered = asks.reduce((acc, [d, v]) => acc + v * row(d).cover, 0) / asks.reduce((acc, [, v]) => acc + v, 0);
+    // who answers it most: each agent by the ability of theirs that answers it most, as much as the
+    // threat asks for it, named as the game names it (an agent's "flashes" could be one blind)
+    const best = new Map<string, { d: Dim; v: number; ability?: string }>();
+    for (const [d, ask] of asks) {
+      for (const b of row(d).by) {
+        if (b.value < THREAT_NOTE.brings || (best.get(b.id)?.v ?? 0) >= ask * b.value) continue;
+        best.set(b.id, { d, v: ask * b.value, ability: b.abilities[0] });
+      }
+    }
+    const by = [...best].sort((a, b) => b[1].v - a[1].v).slice(0, THREAT_NOTE.by).map(([id, x]) => `${agentById(id)!.name}’s ${x.ability ?? DIM_INFO[x.d].has}`);
+    return {
+      id: x.threat.id, threat: threatLine(x.threat, x.who.slice(0, 2).map((id) => agentById(id)!.name), listJoin), level: x.level, answered,
+      verdict: answered >= THREAT_NOTE.answered ? 'answered' : answered >= THREAT_NOTE.little ? 'partly' : 'little', by, advice: x.threat.advice,
+    };
+  });
 }
 
 /** The agents in a team: indices to ids. */

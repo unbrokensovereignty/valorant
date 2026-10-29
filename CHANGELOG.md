@@ -8,6 +8,7 @@ Every version of Playbook By Sovereign and what it changed.
 - **How each map plays.** Each map's page says whether it's tight, open or in between, what its doors, teleporters, ropes, ziplines and breakable walls do, and which kits make the most of them. Below the best comps, tips for the agents pros pick there, like where Viper walls on Icebox or how Hush uses Lotus's doors.
 - **Map by map, for each agent.** An agent's page lists their tips for each map and where their kit does more or less.
 - **Fairer to sentinels.** A sentinel on a map where pros mostly play without one no longer drops to the bottom on defense: Chamber holds Breeze's long angles as a fair pick again.
+- **Against their team.** The Planner has a new Their team choice: add the other team's agents, as many as you know, and the comps that answer them rank higher. Each comp then says how it stands against what they bring, like an Operator Chamber, a Killjoy and Cypher setup, a fast Raze and Neon hit or Viper and Brimstone lineups: who in the comp answers it, or how to play around it when the comp has little to answer it. Both teams can still play the same agent. Copy includes it in the plan's text.
 - **Hush, reviewed.** Her numbers are a little lower everywhere, with her kit adding back where it works best, so she no longer rates near the top on open maps like Breeze.
 
 ## 0.2.0 (2026-10-29)

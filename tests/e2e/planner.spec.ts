@@ -103,6 +103,28 @@ test('must-play agents are in every comp, and role counts are kept', async ({ pa
   expect(errors).toEqual([]);
 });
 
+test('their team: each comp says how it stands against the agents they play, and they can still be picked', async ({ page, errors }) => {
+  await open(page, 'planner');
+  await chooseMap(page, 'Breeze');
+  await question(page).getByRole('group', { name: 'Side' }).getByRole('button', { name: 'Attack' }).click();
+  await question(page).getByRole('combobox', { name: 'Rank' }).selectOption({ label: 'Immortal' });
+  await chooseAgents(page, 'Agents the other team plays', ['Chamber', 'Jett', 'Viper']);
+  await settledAnswers(page, 'against Chamber, Jett and Viper');
+  const first = comps(page).first();
+  await expect(first.getByRole('heading', { name: 'Against their team' })).toBeVisible();
+  await expect(first.locator('.against-row').first()).toContainText('Their Chamber and Jett hold long angles with the Operator.');
+  // both teams can play the same agent: Viper is still in the comps
+  expect((await page.locator('.comps .comp-names').allTextContents()).some((n) => n.includes('Viper'))).toBe(true);
+  const r = await new AxeBuilder({ page }).include('.against').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
+  expect(r.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`)).toEqual([]);
+  // without their agents, the comps don't speak of them
+  for (const name of ['Chamber', 'Jett', 'Viper']) await question(page).getByRole('button', { name: `Remove ${name}` }).click();
+  await settledAnswers(page);
+  await expect(page.locator('.answers-head')).not.toContainText('against');
+  await expect(page.locator('.against')).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
 test('a duo finds its best map: the maps are ranked and each one opens its picks', async ({ page, errors }) => {
   test.setTimeout(90_000);
   await open(page, 'planner');
