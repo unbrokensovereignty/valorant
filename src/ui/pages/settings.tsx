@@ -12,14 +12,15 @@ import { scrollMotion } from '../theme.ts';
 import { play } from '../sound.ts';
 import { backUpNow, restoreFromFile } from '../backup.tsx';
 import { askToKeep, sizeText, storageState, type Kept } from '../storage.ts';
-import { SECTIONS, SETTING_KEYS, SETTINGS, type SectionId, type SettingDef, type SettingKey, type Settings } from '../../core/settings.ts';
+import { inUse, SECTIONS, SETTING_KEYS, SETTINGS, type SectionId, type SettingDef, type SettingKey, type Settings } from '../../core/settings.ts';
 import { ACCENTS, BUILT_IN_THEMES, type ThemePicks } from '../../core/theme.ts';
 import { dayKey, fmtDay, keyOf } from '../../core/dates.ts';
 import { plural } from '../../core/util.ts';
 import type { PageProps } from './index.ts';
 
-/** Settings that only matter while another one is on. */
-const shown = (k: SettingKey, s: Settings): boolean => !(['soundSet', 'volMaster', 'volUi', 'volResults'] as SettingKey[]).includes(k) || s.sound;
+/** Settings that only matter while sound is on. */
+const SOUND_KEYS: readonly SettingKey[] = ['soundSet', 'volMaster', 'volUi', 'volResults'];
+const shown = (k: SettingKey, s: Settings): boolean => inUse(k) && (!SOUND_KEYS.includes(k) || s.sound);
 
 function ThemeSetting({ base, value, onSave, own }: { base: 'light' | 'dark'; value: string; onSave: (v: string) => void; own: readonly ThemePicks[] }) {
   const list = [...BUILT_IN_THEMES, ...own].filter((t) => t.base === base);
@@ -160,11 +161,12 @@ export function SettingsPage({ arg }: PageProps) {
   useEffect(() => {
     if (!arg) return;
     const isKey = (SETTING_KEYS as readonly string[]).includes(arg);
-    const key = isKey && !shown(arg as SettingKey, s) ? 'sound' : arg;
+    // a hidden sound setting points at the sound switch; one not in use yet, at its section
+    const key = !isKey || shown(arg as SettingKey, s) ? arg : inUse(arg as SettingKey) ? 'sound' : '';
     requestAnimationFrame(() => {
-      const el = document.getElementById(isKey ? `k-${key}` : `s-${key}`);
-      el?.scrollIntoView({ block: isKey ? 'center' : 'start', behavior: scrollMotion() });
-      if (isKey) { setFlash(key); setTimeout(() => setFlash(''), 1600); }
+      const el = document.getElementById(key ? (isKey ? `k-${key}` : `s-${key}`) : `s-${SETTINGS[arg as SettingKey].section}`);
+      el?.scrollIntoView({ block: isKey && key ? 'center' : 'start', behavior: scrollMotion() });
+      if (isKey && key) { setFlash(key); setTimeout(() => setFlash(''), 1600); }
     });
   }, [arg, revisit.value]);
 

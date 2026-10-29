@@ -2,6 +2,7 @@
  * Every setting in one schema: default, allowed values, and the words the Settings page and the
  * command palette show for it.
  */
+import { NEW_AGENTS } from './kb/new-agents.ts';
 import { RANKS } from './kb/ranks.ts';
 import { clamp, isRecord } from './util.ts';
 
@@ -25,7 +26,7 @@ const S = <T extends SettingDef>(d: T) => d;
 export const SETTINGS = {
   // planner
   defaultRank: S({ section: 'planner', type: 'choice', def: 'gold', options: RANKS.map((r) => [r.id, r.name] as const), label: 'Your usual rank', help: 'The Planner starts on this rank.', keywords: 'elo tier' }),
-  includeNew: S({ section: 'planner', type: 'bool', def: true, label: 'Include new agents', help: 'New agents have little play behind them yet, so their scores are early estimates.', keywords: 'hush unreleased' }),
+  includeNew: S({ section: 'planner', type: 'bool', def: true, label: 'Include new agents', help: 'New agents have little play behind them yet, so their scores are early estimates.', keywords: 'unreleased estimates' }),
   resultCount: S({ section: 'planner', type: 'number', def: 10, min: 3, max: 30, unit: 'comps', label: 'Comps to show', keywords: 'results length' }),
   showNumbers: S({ section: 'planner', type: 'bool', def: true, label: 'Show fit scores as numbers', help: 'Off: only the bars.' }),
   // appearance
@@ -48,6 +49,8 @@ type ValueOf<D> = D extends { type: 'bool' } ? boolean : D extends { type: 'numb
 export type Settings = { -readonly [K in SettingKey]: ValueOf<(typeof SETTINGS)[K]> };
 
 export const SETTING_KEYS = Object.keys(SETTINGS) as SettingKey[];
+/** Whether a setting does anything yet: “Include new agents” waits for an agent too new for real numbers. */
+export const inUse = (k: SettingKey): boolean => k !== 'includeNew' || NEW_AGENTS.length > 0;
 export const defaultSettings = (): Settings => Object.fromEntries(SETTING_KEYS.map((k) => [k, SETTINGS[k].def])) as Settings;
 
 /** A stored value made safe, or undefined (the default applies). */

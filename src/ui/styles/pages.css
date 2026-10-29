@@ -15,6 +15,11 @@
   transition: background-color var(--dur-quick), color var(--dur-quick);
 }
 .settings-nav button:hover, .settings-nav a:hover { background: var(--surface-2); color: var(--text); }
+/* with little room the sections' links go in a row above them, so the settings keep the full width */
+@container page (max-width: 800px) {
+  .settings-layout { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .settings-nav { position: static; display: flex; flex-wrap: wrap; gap: 4px; padding-top: 0; }
+}
 .settings-advanced { margin-top: 12px; padding: 12px; border-top: 1px solid var(--line); font-size: 0.9rem; }
 .settings-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; }
 .settings-section { scroll-margin-top: 24px; }
@@ -33,7 +38,7 @@
 /* Controls that don't fit side by side (two buttons with very large text) wrap rather than push the page wider. */
 .setting-control { flex: 0 1 auto; margin-left: auto; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; max-width: 100%; }
 .setting-control .row { flex-wrap: wrap; justify-content: flex-end; }
-.setting-control .select { max-width: 100%; }
+.setting-control .select { width: auto; min-width: 10em; max-width: 100%; }
 .flash .setting-row { animation: flash 1.5s var(--ease) both; border-radius: var(--r); }
 @keyframes flash { 0%, 40% { background: var(--accent-soft); box-shadow: 0 0 0 8px var(--accent-soft); } 100% { background: transparent; box-shadow: 0 0 0 8px transparent; } }
 

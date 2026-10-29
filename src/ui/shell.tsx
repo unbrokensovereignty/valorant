@@ -13,7 +13,7 @@ import {
   backendKind, canRedo, canUndo, data, dialogs, go, minute, overlayOpen, paletteOpen, quarantinedCount, route, routeDir,
   safely, saveError, saveState, sidebarNarrow, tabRole, takeOverTab, toggleSidebar, editsText, watch, watchClicks, type Page,
 } from './state.ts';
-import { SECTIONS, SETTING_KEYS, SETTINGS } from '../core/settings.ts';
+import { inUse, SECTIONS, SETTING_KEYS, SETTINGS } from '../core/settings.ts';
 import { PAGE_VIEWS } from './pages/index.ts';
 import { play } from './sound.ts';
 import { systemDark } from './theme.ts';
@@ -208,7 +208,7 @@ function commands(): Command[] {
     { id: 'sidebar', label: sidebarNarrow.value ? 'Widen the sidebar' : 'Narrow the sidebar', icon: 'sidebar', run: toggleSidebar },
   ];
   for (const a of acts) out.push({ ...a, group: 'Actions' });
-  for (const k of SETTING_KEYS) {
+  for (const k of SETTING_KEYS.filter(inUse)) {
     const def = SETTINGS[k];
     const section = SECTIONS.find((x) => x.id === def.section)?.title ?? '';
     out.push({ id: `setting-${k}`, group: 'Settings', label: def.label, icon: 'settings', hint: section, keywords: `${'keywords' in def ? def.keywords : ''} ${section}`, run: () => go('settings', k) });

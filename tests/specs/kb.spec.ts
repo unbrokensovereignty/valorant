@@ -7,6 +7,7 @@ import { PAIRS, pairOf } from '../../src/core/kb/synergy.ts';
 import { RANKS } from '../../src/core/kb/ranks.ts';
 import { DIMS, DIM_INFO, ROLE_IDS } from '../../src/core/kb/roles.ts';
 import { NEW_AGENTS } from '../../src/core/kb/new-agents.ts';
+import { inUse } from '../../src/core/settings.ts';
 
 describe('agents', () => {
   spec('every agent has a role, strengths from 0 to 1, and fair numbers', () => {
@@ -43,6 +44,7 @@ describe('agents', () => {
   spec('new agents are in, with their numbers marked as estimates', () => {
     for (const d of NEW_AGENTS) ok(agentById(d.id)?.name === d.name && agentById(d.id)?.estimate, `${d.name} is an agent, marked as an estimate`);
     for (const a of AGENTS) if (a.estimate) ok(NEW_AGENTS.some((d) => d.id === a.id), `${a.name} is kept with the new agents`);
+    eq(inUse('includeNew'), NEW_AGENTS.length > 0, '“Include new agents” is offered only while there are some');
   });
   spec('Hush is a full agent now that she’s out', () => {
     const hush = agentById('hush')!;
