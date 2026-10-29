@@ -15,6 +15,7 @@ import type { Query } from '../../core/engine/query.ts';
 import { summaryText } from '../../core/engine/summary.ts';
 import { tipsFor } from '../../core/engine/tips.ts';
 import { listJoin } from '../../core/text.ts';
+import { articleOf, capitalize } from '../../core/util.ts';
 import { AgentIcon } from '../art.tsx';
 import { Bar, Button, Tabs } from '../components/controls.tsx';
 import { prompt } from '../components/overlays.tsx';
@@ -149,8 +150,8 @@ function PartyBox({ c, i, ans }: { c: CompAnswer; i: number; ans: SituationAnswe
       </p>
       {ask.length > 0 && (
         <p>
-          Ask your teammates for a <b>{role(ask[0]!.role)}</b> first: they pick one on their own {howOften(ask[0]!.chance)}, and with one, expect about <span class="num">{Math.round(ask[0]!.fit)}</span>.
-          {ask[1] && <> A <b>{role(ask[1].role)}</b> helps next (<span class="num">{Math.round(ask[1].fit)}</span>).</>}
+          Ask your teammates for {articleOf(role(ask[0]!.role))} <b>{role(ask[0]!.role)}</b> first: they pick one on their own {howOften(ask[0]!.chance)}, and with one, expect about <span class="num">{Math.round(ask[0]!.fit)}</span>.
+          {ask[1] && <> {capitalize(articleOf(role(ask[1].role)))} <b>{role(ask[1].role)}</b> helps next (<span class="num">{Math.round(ask[1].fit)}</span>).</>}
         </p>
       )}
       {c.bestTeam && (

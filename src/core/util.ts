@@ -96,8 +96,11 @@ export function plural(n: number, one: string, many = one + 's'): string {
 /** A word's plural: "rushes", "catches", "days". */
 export const manyOf = (word: string): string => (/(s|sh|ch|x|z)$/i.test(word) ? `${word}es` : /[^aeiou]y$/i.test(word) ? `${word.slice(0, -1)}ies` : `${word}s`);
 
-/** A word with "a" or "an" before it: "a market day", "an assay day". */
-export const aWord = (word: string): string => `${/^[aeiou]/i.test(word) ? 'an' : 'a'} ${word}`;
+/** "a" or "an", for the word that follows: "a sentinel", "an initiator". */
+export const articleOf = (word: string): string => (/^[aeiou]/i.test(word) ? 'an' : 'a');
+
+/** A word with "a" or "an" before it: "a duelist", "an initiator". */
+export const aWord = (word: string): string => `${articleOf(word)} ${word}`;
 
 /** A unit after a number: "2 days" but "1 day", and "1 card a day". */
 export const unitFor = (n: number, unit: string): string => (n === 1 ? unit.replace(/^(\p{L}+?)s\b/u, '$1') : unit);

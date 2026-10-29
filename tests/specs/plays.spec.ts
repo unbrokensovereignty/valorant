@@ -140,7 +140,7 @@ describe('tips', () => {
     // and every agent's tip on defense is about defending
     for (const a of AGENTS) {
       const tip = tipsFor([a.id], { map: 'haven', side: 'defense', sites: [], rank: 'any' }).find((x) => x.about === a.name)!.text;
-      ok(!/after the plant|before the hit(?! comes)|the team crosses|walk the team|enters alone/.test(tip), `${a.name} on defense: “${tip}”`);
+      ok(!/after the plant|post-plant|before the hit(?! comes)|the team crosses|walk the team|enters alone|(?:stop|or) the defuse|a hit\b/.test(tip), `${a.name} on defense: “${tip}”`);
     }
     ok(t.some((x) => x.about === 'Gold'));
     const duo = tipsFor(team, { map: 'any', side: 'both', sites: [], rank: 'any' }, 2, ['sova', 'jett']);

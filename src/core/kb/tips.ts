@@ -21,7 +21,7 @@ export const AGENT_TIPS: Record<string, readonly [string, string]> = {
   breach: ['Call your Flashpoint before throwing it so the entry swings as it pops.', 'Fault Line and Aftershock clear close spots so the entry doesn’t have to fight them.'],
   skye: ['Guiding Light tells you if it hit; call it so the entry knows when to swing.', 'Trailblazer clears a corner on its own; send it before anyone peeks.'],
   kayo: ['Throw ZERO/point before the hit: it shows who is there and shuts off their utility.', 'NULL/cmd makes a hit or a retake much safer; use it when the whole team commits.'],
-  fade: ['Follow your Prowler in: it finds and blinds the enemy in the corner for you.', 'Hold Seize until enemies commit, then use it to stop the entry or the defuse.'],
+  fade: ['Follow your Prowler in: it finds and blinds the enemy in the corner for you.', 'After the plant, throw Seize onto the Spike: anyone who goes to defuse is held there, deafened and weakened.'],
   gekko: ['Pick Wingman and Dizzy back up after they land; you get them again for free.', 'Let Wingman plant or defuse while you hold the angle that matters.'],
   tejo: ['Send the Stealth Drone ahead and push while the enemies are suppressed.', 'Guided Salvo and Armageddon stop a defuse from far away; save them for after the plant.'],
   brimstone: ['Place Sky Smokes before the hit so the whole team crosses at once.', 'Keep Incendiary and Orbital Strike for the post-plant.'],
@@ -50,12 +50,12 @@ export const DEFENSE_TIPS: Record<string, string> = {
   yoru: 'Place Gatecrash early on defense, so you can rotate or come in behind the push the moment the hit comes.',
   neon: 'Relay Bolt concusses a group coming through a choke; peek as it goes off.',
   sova: 'A Recon Bolt early in the round finds a fast push; keep the drone for the retake.',
-  kayo: 'NULL/cmd makes a hit or a retake much safer; use it when the whole team commits.',
-  fade: 'Hold Seize until enemies commit, then use it to stop the entry or the defuse.',
+  kayo: 'Throw ZERO/point onto a choke as the push comes so the attackers can’t use their utility, and save NULL/cmd for the retake.',
+  fade: 'Hold Seize until the attackers commit and use it to stop the entry, then throw Haunt over the site to start the retake.',
   tejo: 'Guided Salvo stops a push at a choke from safety; fire it as the enemies commit.',
-  brimstone: 'Smoke the choke the enemies push through, and save Orbital Strike to stop the defuse.',
-  viper: 'Toxic Screen cuts off a choke, and Viper’s Pit lets two or three players hold a site against many.',
-  harbor: 'Cove lets a teammate defuse behind a shield bullets can’t get through.',
+  brimstone: 'Smoke the choke the enemies push through, and save Orbital Strike to drive the attackers off the Spike on the retake.',
+  viper: 'Put Toxic Screen across the choke the attackers come through, and save Viper’s Pit to take the site back on a retake.',
+  harbor: 'Storm Surge and High Tide slow a push through a choke; keep Cove to shield the defuse on the retake.',
 };
 
 /** Two tips for each map and side. */
