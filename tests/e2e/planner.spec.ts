@@ -147,7 +147,7 @@ test('the question is kept: a reload brings back the same question and answers',
   await open(page, 'planner');
   await chooseMap(page, 'Lotus');
   await question(page).getByRole('group', { name: 'Side' }).getByRole('button', { name: 'Defense' }).click();
-  await settledAnswers(page);
+  await settledAnswers(page, 'Lotus, defense');
   const best = await comps(page).first().locator('.comp-names').textContent();
   await saved(page);
   await page.reload();
@@ -172,7 +172,7 @@ test('the Planner works from the keyboard alone', async ({ page, errors }) => {
   // focus goes back to the button that opened the dialog
   await expect(mapButton).toBeFocused();
   await expect(mapButton).toHaveAccessibleName('Map: Ascent. Change');
-  await settledAnswers(page);
+  await settledAnswers(page, 'Ascent');
   // a comp opens and closes with Enter
   const head = comps(page).nth(1).locator('.comp-head');
   await head.focus();

@@ -24,7 +24,7 @@ Everything the app knows about the game, as data with a comment at the top of ea
 - `ranks.ts`: the nine ranks, each placed between Iron (0) and Radiant (1).
 - `pro.ts`: what pro teams pick on each map, and typical pro comps.
 - `synergy.ts`: pairs that work well together or clash, from −3 to 3, with the reason in words.
-- `plays.ts`: plays for every map (hits, splits, fakes, setups, retakes), written as jobs and routes over the game's own callouts, so any comp can run them. A typo in a job or callout throws, so a bad edit fails the tests.
+- `plays.ts`: plays for every map (hits, splits, fakes, defaults, setups and retakes), written as jobs and routes over the game's own callouts, so any comp can run them. A typo in a job or callout throws, so a bad edit fails the tests.
 - `tips.ts`: short advice for each agent, map side, rank, party size and doubled-up role.
 - `content.gen.ts`: the game's own ability text, agent colors and map callouts, made by `npm run art` (see `CONTRIBUTING.md`). Don't edit it by hand. `kits.ts` reads it, falling back to a new agent's revealed kit in `new-agents.ts`.
 
