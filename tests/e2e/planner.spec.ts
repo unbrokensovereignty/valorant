@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import type { Page } from '@playwright/test';
-import { expect, open, overlaps, saved, tabTo, test } from './app.ts';
+import { expect, open, overlaps, reload, saved, tabTo, test } from './app.ts';
 
 const answers = (page: Page) => page.locator('.answers:not(.stale)');
 const comps = (page: Page) => page.locator('.comps > li');
@@ -129,6 +129,8 @@ test('a duo finds its best map: the maps are ranked and each one opens its picks
 
 test('teammates already locked in are part of every likely team and never in your party', async ({ page, errors }) => {
   await open(page, 'planner');
+  // the first answers in place, so nothing moves under the click
+  await settledAnswers(page, 'Any map');
   await question(page).getByRole('group', { name: 'Party size' }).getByRole('button', { name: 'Trio' }).click();
   await chooseAgents(page, 'Agents your teammates locked in', ['Jett', 'Omen']);
   await page.waitForTimeout(400);
@@ -150,8 +152,7 @@ test('the question is kept: a reload brings back the same question and answers',
   await settledAnswers(page, 'Lotus, defense');
   const best = await comps(page).first().locator('.comp-names').textContent();
   await saved(page);
-  await page.reload();
-  await page.waitForSelector('.shell');
+  await reload(page);
   await settledAnswers(page);
   await expect(answers(page).locator('h2').first()).toHaveText('Lotus, defense');
   await expect(comps(page).first().locator('.comp-names')).toHaveText(best ?? '');

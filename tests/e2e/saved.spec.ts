@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import type { Page } from '@playwright/test';
-import { expect, go, open, saved, test } from './app.ts';
+import { expect, go, open, reload, saved, test } from './app.ts';
 
 /** Waits for the Planner's answers to settle. */
 async function answered(page: Page) {
@@ -50,8 +50,7 @@ test('a saved plan keeps its comp, fit and note, and can be starred, renamed, de
   await page.getByRole('dialog').getByRole('textbox').fill('Haven attack, default');
   await page.getByRole('dialog').getByRole('button', { name: 'Rename' }).click();
   await saved(page);
-  await page.reload();
-  await page.waitForSelector('.shell');
+  await reload(page);
   const again = page.getByRole('article', { name: 'Haven attack, default' });
   await expect(again.getByRole('textbox', { name: 'Note' })).toHaveValue('Jett ops from A Long.');
   await expect(again.getByRole('button', { name: 'Star' })).toHaveAttribute('aria-pressed', 'true');

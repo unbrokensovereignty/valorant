@@ -24,7 +24,23 @@ export { expect };
 
 export async function open(page: Page, hash = 'home') {
   await page.goto(`${APP_URL}#/${hash}`);
+  await ready(page);
+}
+
+/** Reloads the page, as pressing F5 does, and waits until it's ready again. */
+export async function reload(page: Page) {
+  await page.reload();
+  await ready(page);
+}
+
+/**
+ * Waits until the page is drawn and is the tab that saves. Just after a reload, the page being
+ * replaced can still hold the saving lock for a moment, and this one opens read-only until it lets
+ * go; the banner that says so comes and goes above the page and moves everything on it.
+ */
+async function ready(page: Page) {
   await page.waitForSelector('.shell');
+  await expect(page.locator('.save-state')).not.toHaveText('Read-only', { timeout: 10_000 });
 }
 
 /** Puts focus on a control as if reached with Tab (the keyboard is in use, not the mouse), so Enter and Space go to it. */

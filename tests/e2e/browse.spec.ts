@@ -1,4 +1,4 @@
-import { expect, go, open, test } from './app.ts';
+import { expect, go, open, reload, test } from './app.ts';
 import { AGENTS, agentById } from '../../src/core/kb/agents.ts';
 
 const hush = agentById('hush')!;
@@ -84,8 +84,7 @@ test(`Home tells of ${hush.name} before the release day, and that ${hush.name} i
   await open(page, 'home');
   await expect(page.getByRole('heading', { name: new RegExp(`^${hush.name} arrives on `) })).toBeVisible();
   await page.clock.setFixedTime(day(hush.released, 2));
-  await page.reload();
-  await page.waitForSelector('.shell');
+  await reload(page);
   await expect(page.getByRole('heading', { name: `${hush.name} is new` })).toBeVisible();
   await page.getByRole('button', { name: `About ${hush.name}` }).click();
   await expect(page.getByRole('heading', { level: 1, name: hush.name, exact: true })).toBeVisible();
@@ -99,8 +98,7 @@ test('Settings: light or dark is applied at once and kept, and a theme of your o
   await expect(html).toHaveAttribute('data-base', 'dark');
   await page.getByRole('combobox', { name: 'Light or dark' }).selectOption({ label: 'Always light' });
   await expect(html).toHaveAttribute('data-base', 'light');
-  await page.reload();
-  await page.waitForSelector('.shell');
+  await reload(page);
   await expect(html).toHaveAttribute('data-base', 'light');
   await go(page, 'themes');
   await page.getByRole('button', { name: 'New theme' }).click();
