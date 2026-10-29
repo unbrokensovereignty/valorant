@@ -4,7 +4,7 @@
  *
  * To add one that has been revealed but isn't out yet (or has only just come out):
  * 1. Give it an entry below with `estimate: true` (what each number means is at the top of
- *    agents.ts; `win: 50` until there are games to go on), and its revealed abilities in NEW_KITS. The app then marks it as an estimate
+ *    agents.ts), and its revealed abilities in NEW_KITS. The app then marks it as an estimate
  *    wherever it shows it, and people can leave it out of a question.
  * 2. Once it's out and has been played for a while, change the numbers, take out `estimate: true`
  *    and move the entry into agents.ts.

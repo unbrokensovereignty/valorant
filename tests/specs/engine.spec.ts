@@ -4,13 +4,13 @@ import { NEW_AGENTS } from '../../src/core/kb/new-agents.ts';
 import { POOL, MAPS, mapById } from '../../src/core/kb/maps.ts';
 import { RANK_IDS } from '../../src/core/kb/ranks.ts';
 import { ROLE_IDS } from '../../src/core/kb/roles.ts';
-import { D, N, ROLE_OF, modelFor, roleIndex, winEdge, winShare, type Situation } from '../../src/core/engine/model.ts';
+import { D, N, ROLE_OF, modelFor, roleIndex, type Situation } from '../../src/core/engine/model.ts';
 import { anyRoles, scoreTeam, searchTeams, TopK, walkTeams, type Rules } from '../../src/core/engine/search.ts';
 import { askFor, fillLikelihood, pickWeight, searchParties, type PartyRules } from '../../src/core/engine/party.ts';
 import { newQuery, placesTaken, sanitizeQuery, situationsOf, asksBest, nothingFixed, type Query } from '../../src/core/engine/query.ts';
 import { agentFitOf, fitOf, poolsFit, referenceFor, rulesOf, solve, teamFit } from '../../src/core/engine/plan.ts';
 import { explainTeam } from '../../src/core/engine/explain.ts';
-import { NEW_WIN_SHARE, TIERS, WIN_RANKS, tierOf } from '../../src/core/engine/weights.ts';
+import { TIERS, tierOf } from '../../src/core/engine/weights.ts';
 
 const at = (map: string, side: Situation['side'] = 'both', rank: Situation['rank'] = 'gold', sites: Situation['sites'] = []): Situation => ({ map, side, rank, sites });
 const ix = (id: string) => agentById(id)!.index;
@@ -325,24 +325,6 @@ describe('explanations', () => {
     }
     const e = explainTeam(modelFor(at('pearl')), ['hush', 'omen', 'sova', 'killjoy', 'fade']);
     ok(!e.notes.some((n) => n.includes('estimate')), 'Hush’s numbers aren’t estimates any more');
-  });
-  spec('ranked win rates count most around Gold, not at Iron, and a new agent’s for half', () => {
-    eq(winShare(0), WIN_RANKS.iron);
-    eq(winShare(WIN_RANKS.peak), 1);
-    near(winShare(1), WIN_RANKS.radiant);
-    ok(winShare(0.25) < 1 && winShare(0.5) < 1 && winShare(0.5) > winShare(0.75));
-    const clove = agentById('clove')!, hush = agentById('hush')!;
-    eq(winEdge(clove), clove.win - 50);
-    near(winEdge(hush), (hush.win - 50) * NEW_WIN_SHARE);
-    const m = modelFor(at('haven', 'attack', 'gold'));
-    ok(m.fitParts.win[ix('clove')]! > 0 && m.fitParts.win[ix('harbor')]! < 0, 'the winners gain, the losers lose');
-    eq(modelFor(at('haven', 'attack', 'iron')).fitParts.win[ix('clove')], 0, 'not at Iron');
-  });
-  spec('a comp’s reasons say when an agent wins far fewer ranked games than most', () => {
-    const e = explainTeam(modelFor(at('haven', 'attack', 'gold')), ['jett', 'kayo', 'harbor', 'sova', 'killjoy']);
-    ok(e.cons.some((c) => c.startsWith('KAY/O and Harbor win fewer ranked games than most agents')), e.cons.join(' | '));
-    const iron = explainTeam(modelFor(at('haven', 'attack', 'iron')), ['jett', 'kayo', 'harbor', 'sova', 'killjoy']);
-    ok(!iron.cons.some((c) => c.includes('ranked games')), 'not where win rates don’t count');
   });
   spec('pro play doesn’t pull an agent who came out after the pro events either way', () => {
     for (const rank of ['iron', 'radiant'] as const) {

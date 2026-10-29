@@ -3,13 +3,13 @@
  * how much each strength matters, each agent's own fit, each pair's synergy and each role
  * count's cost. "Any map" and "Both sides" are the average of the situations they cover.
  */
-import { AGENTS, earlyStats, type Agent } from '../kb/agents.ts';
+import { AGENTS, type Agent } from '../kb/agents.ts';
 import { MAPS, POOL, mapById, parseNeeds, type MapInfo, type Side, type SiteId } from '../kb/maps.ts';
 import { PRO, proKnown, proPick } from '../kb/pro.ts';
 import { ALL_RANKS_T, rankOf, type RankId } from '../kb/ranks.ts';
 import { DIMS, ROLE_IDS, type Dim, type Role } from '../kb/roles.ts';
 import { PAIRS } from '../kb/synergy.ts';
-import { BASE, BY_RANK, FIT, NEW_WIN_SHARE, PAIR_STEP, ROLE_COST, SECOND_CONTROLLER, WIN_RANKS } from './weights.ts';
+import { BASE, BY_RANK, FIT, PAIR_STEP, ROLE_COST, SECOND_CONTROLLER } from './weights.ts';
 
 export type MapPick = string; // a map id, or 'any'
 export type SidePick = Side | 'both';
@@ -43,7 +43,7 @@ export interface Model {
   /** The cost of `c` agents of role `r`: roleCost[r * 5 + min(c, 4)]. */
   roleCost: Float64Array;
   /** The parts that make up each agent's own fit, for the explanations. */
-  fitParts: { pro: Float64Array; rank: Float64Array; win: Float64Array };
+  fitParts: { pro: Float64Array; rank: Float64Array };
 }
 
 const t = (rank: RankPick) => (rank === 'any' ? ALL_RANKS_T : rankOf(rank).t);
@@ -69,24 +69,14 @@ const proShare = (map: string) => (PRO[map]?.dated ? 0.7 : 1);
 /** −0.3 for an agent pros don't pick, about 0 at 9%, 0.7 for one picked every time. */
 const proCurve = (pct: number) => Math.sqrt(pct / 100) - 0.3;
 
-/** How much ranked win rates count at a rank (0 Iron to 1 Radiant): fully at WIN_RANKS.peak. */
-export function winShare(rankT: number): number {
-  const { iron, peak, radiant } = WIN_RANKS;
-  return rankT <= peak ? iron + (1 - iron) * (rankT / peak) : 1 - (1 - radiant) * ((rankT - peak) / (1 - peak));
-}
-
-/** How far an agent's ranked win rate is from 50%, in points, as far as it counts. */
-export const winEdge = (a: Agent): number => (a.win - 50) * (earlyStats(a) ? NEW_WIN_SHARE : 1);
-
 /** The agent fit parts for one map and rank. */
-function agentFit(a: Agent, map: string, rankT: number): { pro: number; rank: number; win: number } {
+function agentFit(a: Agent, map: string, rankT: number): { pro: number; rank: number } {
   // a new agent's map and rank fit start neutral: there's no play to go on yet
-  if (a.estimate) return { pro: 0, rank: 0, win: 0 };
+  if (a.estimate) return { pro: 0, rank: 0 };
   // and an agent pros haven't had the chance to pick isn't pulled either way by pro play
   const pro = proKnown(a) ? FIT.pro * (FIT.proLow + (1 - FIT.proLow) * rankT) * proCurve(proPick(map, a.id)) * proShare(map) : 0;
   const rank = (1 - rankT) * (FIT.solo * (a.solo - 0.55) - FIT.skill * (a.skill - 0.5));
-  const win = FIT.win * winShare(rankT) * winEdge(a);
-  return { pro, rank, win };
+  return { pro, rank };
 }
 
 function single(map: MapInfo, side: Side, sites: readonly SiteId[], rankT: number) {
@@ -99,14 +89,13 @@ function single(map: MapInfo, side: Side, sites: readonly SiteId[], rankT: numbe
     sum += weight[j]!;
   });
   for (let j = 0; j < D; j++) weight[j]! /= sum;
-  const pro = new Float64Array(N), rank = new Float64Array(N), win = new Float64Array(N);
+  const pro = new Float64Array(N), rank = new Float64Array(N);
   for (const a of AGENTS) {
     const f = agentFit(a, map.id, rankT);
     pro[a.index] = f.pro;
     rank[a.index] = f.rank;
-    win[a.index] = f.win;
   }
-  return { weight, pro, rank, win };
+  return { weight, pro, rank };
 }
 
 const cache = new Map<string, Model>();
@@ -120,17 +109,17 @@ export function modelFor(s: Situation): Model {
   const maps = s.map === 'any' ? POOL : [mapById(s.map) ?? MAPS[0]!];
   const sides: Side[] = s.side === 'both' ? ['attack', 'defense'] : [s.side];
   const rankT = t(s.rank);
-  const weight = new Float64Array(D), pro = new Float64Array(N), rank = new Float64Array(N), win = new Float64Array(N);
+  const weight = new Float64Array(D), pro = new Float64Array(N), rank = new Float64Array(N);
   const parts = maps.length * sides.length;
   for (const m of maps) {
     for (const side of sides) {
       const one = single(m, side, s.map === 'any' ? [] : s.sites, rankT);
       for (let j = 0; j < D; j++) weight[j]! += one.weight[j]! / parts;
-      for (let i = 0; i < N; i++) { pro[i]! += one.pro[i]! / parts; rank[i]! += one.rank[i]! / parts; win[i]! += one.win[i]! / parts; }
+      for (let i = 0; i < N; i++) { pro[i]! += one.pro[i]! / parts; rank[i]! += one.rank[i]! / parts; }
     }
   }
   const base = new Float64Array(N);
-  for (let i = 0; i < N; i++) base[i] = pro[i]! + rank[i]! + win[i]!;
+  for (let i = 0; i < N; i++) base[i] = pro[i]! + rank[i]!;
   const pair = new Float64Array(N * N);
   const index = new Map(AGENTS.map((a) => [a.id, a.index]));
   for (const p of PAIRS) {
@@ -147,7 +136,7 @@ export function modelFor(s: Situation): Model {
   });
   const two = maps.filter((m) => m.twoControllers).length / maps.length;
   roleCost[roleIndex('controller') * 5 + 1]! -= two * SECOND_CONTROLLER * (FIT.proLow + (1 - FIT.proLow) * rankT);
-  const model: Model = { situation: { ...s, sites: [...s.sites] }, weight, base, pair, roleCost, fitParts: { pro, rank, win } };
+  const model: Model = { situation: { ...s, sites: [...s.sites] }, weight, base, pair, roleCost, fitParts: { pro, rank } };
   if (cache.size > 200) cache.clear();
   cache.set(key, model);
   return model;

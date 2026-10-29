@@ -187,14 +187,13 @@ function AgentPage({ a }: { a: Agent }) {
             </section>
           )}
           <section class="panel stack">
-            <h2>In ranked and pro play</h2>
+            <h2>How often they’re picked</h2>
             <dl class="facts">
               <dt>In ranked</dt><dd>{a.estimate ? 'Not known yet' : `${a.pop}% of all picks`}</dd>
-              <dt>Games won</dt><dd>{a.estimate ? 'Not known yet' : `${a.win}% in ranked`}</dd>
               <dt>By pros</dt><dd>{a.estimate ? 'Not known yet' : proKnown(a) ? `${a.pro}% of maps at the year’s top events` : `None yet: ${a.name} came out after the year’s top events`}</dd>
               <dt>Released</dt><dd>{fmtLongDay(a.released)}</dd>
             </dl>
-            {!a.estimate && earlyStats(a) && <p class="small muted">The ranked numbers are from {a.name}’s first days, while players are still learning the agent.</p>}
+            {!a.estimate && earlyStats(a) && <p class="small muted">The ranked pick rate is from {a.name}’s first days, while players are still learning the agent.</p>}
           </section>
         </div>
       </div>

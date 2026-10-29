@@ -60,7 +60,8 @@ test('Copy puts the whole plan into words: the comp, its reasons, a play and tip
   expect(text).toContain(`Comp: ${team}. Fit `);
   expect(text).toMatch(/\nPros\n- /);
   expect(text).toMatch(/\nPlay: .+\n/);
-  expect(text).toMatch(/\n1\. .+: .+ → .+\./);
+  // each step: who does what, where they go (one spot, or a route with arrows), and what to do
+  expect(text).toMatch(/\n1\. .+ \(.+\): [^.]+\. .+/);
   expect(text).toMatch(/\nTips\n- /);
   expect(errors).toEqual([]);
 });

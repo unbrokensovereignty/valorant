@@ -12,7 +12,6 @@ import { DIMS, DIM_INFO, ROLE_IDS, type Dim, type Role } from '../kb/roles.ts';
 import { pairOf } from '../kb/synergy.ts';
 import { listJoin } from '../text.ts';
 import { D, MISS, needsFor, type Model } from './model.ts';
-import { WIN_NOTE } from './weights.ts';
 
 export interface StrengthRow {
   dim: Dim;
@@ -130,12 +129,6 @@ export function explainTeam(m: Model, ids: readonly string[]): Explanation {
     const easy = team.filter((a) => a.solo >= 0.8 && !a.estimate);
     if (easy.length) pros.push(`${listJoin(easy.map(nameOf))} ${easy.length === 1 ? 'works' : 'work'} well without much teamwork, which suits ${rankName}.`);
   }
-  // ranked win rates, where they count (see WIN_RANKS)
-  const winOf = (a: Agent) => m.fitParts.win[a.index]!;
-  const winners = team.filter((a) => winOf(a) >= WIN_NOTE.more), losers = team.filter((a) => winOf(a) <= -WIN_NOTE.fewer);
-  const rates = (list: Agent[]) => (list.length === 1 ? `${Math.round(list[0]!.win)}% of games` : listJoin(list.map((a) => `${a.name} ${Math.round(a.win)}%`)));
-  if (winners.length) pros.push(`${listJoin(winners.map(nameOf))} ${winners.length === 1 ? 'wins' : 'win'} more ranked games than most agents (${rates(winners)}).`);
-  if (losers.length) cons.push(`${listJoin(losers.map(nameOf))} ${losers.length === 1 ? 'wins' : 'win'} fewer ranked games than most agents (${rates(losers)}): best played by someone who knows ${losers.length === 1 ? 'that agent' : 'them'} well.`);
   if (rankName && t >= 0.75) {
     const selfish = team.filter((a) => a.solo >= 0.85 && a.role === 'duelist' && a.caps.flash + a.caps.disrupt + a.caps.smoke < 0.5);
     if (selfish.length) cons.push(`${listJoin(selfish.map(nameOf))} ${selfish.length === 1 ? 'brings' : 'bring'} little utility, and teams at ${rankName} punish that.`);
