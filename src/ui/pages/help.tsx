@@ -7,12 +7,14 @@ import { Button, Kbd, Tabs } from '../components/controls.tsx';
 import { backendKind, errors, go, tabRole, watch } from '../state.ts';
 import { copyWithToast, download, datedName } from '../files.ts';
 import { openWhatsNew } from '../components/whatsnew.tsx';
-import { AGENTS } from '../../core/kb/agents.ts';
-import { MAPS, PATCH, POOL, POOL_SINCE } from '../../core/kb/maps.ts';
+import { AGENTS, STATS_ON } from '../../core/kb/agents.ts';
+import { MAPS, PATCH, POOL, POOL_SINCE, mapById } from '../../core/kb/maps.ts';
 import { NEW_AGENTS } from '../../core/kb/new-agents.ts';
-import { proKnown } from '../../core/kb/pro.ts';
+import { PRO, PRO_MAPS_COUNTED, proKnown } from '../../core/kb/pro.ts';
 import { PLAYS } from '../../core/kb/plays.ts';
-import { FIT_MID, TIERS } from '../../core/engine/weights.ts';
+import { RANKS, rankOf } from '../../core/kb/ranks.ts';
+import { kitShare, proLean } from '../../core/engine/model.ts';
+import { FIT_MID, PRO_GAMES, TIERS, WIN_CAP, WIN_RANKS } from '../../core/engine/weights.ts';
 import { fmtLongDay } from '../../core/dates.ts';
 import { listJoin } from '../../core/text.ts';
 import { plural } from '../../core/util.ts';
@@ -66,9 +68,33 @@ function Keys() {
 /** "S from 95, A from 88, …": the tiers as the engine sets them. */
 const tierWords = (): string => listJoin(TIERS.map((t, i) => (t.min > 0 ? `${t.id} from ${t.min}` : `${t.id} below ${TIERS[i - 1]?.min ?? 0}`)));
 
+const pct = (x: number) => `${Math.round(x * 100)}%`;
+/** To the nearest 5%, as the comps' cons say it. */
+const about = (x: number) => `${Math.round(x * 20) * 5}%`;
+/** The rank at a place on the climb from Iron (0) to Radiant (1). */
+const rankAt = (t: number) => RANKS.reduce((best, r) => (Math.abs(r.t - t) < Math.abs(best.t - t) ? r : best)).name;
+
+/** How a rank changes the answers, in words built from the engine's own numbers. */
+function RankHelp() {
+  const known = AGENTS.filter((a) => !a.estimate);
+  const atIron = (a: (typeof known)[number]) => kitShare(a, 0);
+  const hardest = known.reduce((x, y) => (atIron(y) < atIron(x) ? y : x));
+  const easiest = known.reduce((x, y) => (atIron(y) > atIron(x) ? y : x));
+  const [iron, radiant] = [RANKS[0]!, RANKS[RANKS.length - 1]!];
+  return (
+    <section class="panel stack">
+      <h2>How your rank changes the answers</h2>
+      <p><b>Kits.</b> A hard kit, or one that needs the team to play around it, is worth less until players have learned it. At {iron.name} a team gets about {about(atIron(hardest))} of {hardest.name}’s kit and {about(atIron(easiest))} of {easiest.name}’s; at {radiant.name} it gets all of every kit. Gun play counts the same at every rank.</p>
+      <p><b>Ranked results.</b> Agents who win more ranked games fit a little better, and those who win fewer a little worse. Most of those games are played between {rankAt(WIN_RANKS.from)} and {rankAt(WIN_RANKS.to)}, so win rates count in full there, {pct(WIN_RANKS.iron)} as much at {iron.name} and {pct(WIN_RANKS.radiant)} at {radiant.name}. Only {WIN_CAP} points either side of 50% count, since a win rate says who plays an agent as well as how strong the agent is.</p>
+      <p><b>Pro play.</b> What pro teams pick on a map, and how many of each role they run there, counts {pct(proLean(0))} as much at {iron.name} as at {radiant.name}, {pct(proLean(rankOf('gold').t))} at {rankOf('gold').name} and {pct(proLean(rankOf('diamond').t))} at {rankOf('diamond').name}, rising fastest near the top. A map with fewer than {PRO_GAMES.full} pro games behind it counts less{PRO_GAMES.dated < 1 ? ', and so does one whose numbers are from an earlier year' : ''}.</p>
+    </section>
+  );
+}
+
 function Guide() {
   const fresh = NEW_AGENTS.map((a) => a.name);
   const latest = AGENTS.filter((a) => !a.estimate && !proKnown(a)).map((a) => a.name);
+  const dated = Object.entries(PRO).filter(([, p]) => p.dated).map(([id]) => mapById(id)?.name ?? id);
   return (
     <div class="stack guide">
       <section class="panel">
@@ -94,6 +120,7 @@ function Guide() {
           <p>Tiers follow the fit: {tierWords()}. An agent’s fit comes from the best comp they fit into, so a high one means “easy to build around here”, not “strong alone”.</p>
           <p>Fit weighs what the situation needs (smokes, flashes, information, a strong anchor and so on) against what the team brings, how well the agents work together, and the role counts every team needs. Your rank changes the mix: low down, aim and simple utility win; near the top, coordinated utility and what pros play on the map count for more, such as a second controller on the maps where pros run two.</p>
         </section>
+        <RankHelp />
         <section class="panel stack">
           <h2>Duos and trios</h2>
           <p>With a duo or trio, the others are random teammates. The Planner counts on what players at your rank usually pick, and on teammates filling a role the team is missing, then ranks your party’s picks by the team you’d most likely end up with.</p>
@@ -108,7 +135,7 @@ function Guide() {
         </section>
         <section class="panel stack">
           <h2>Where the numbers come from</h2>
-          <p>Playbook knows {plural(AGENTS.length, 'agent')} and {plural(MAPS.length, 'map')}, as of patch {PATCH}. Each agent’s strengths are judged from their kit and how they’re played. Pick rates in ranked come from metabot.gg, and pro picks from vlr.gg (Champions 2026, Masters Santiago 2026 and the China league of 2026). The map pool is the one since {fmtLongDay(POOL_SINCE)}.</p>
+          <p>Playbook knows {plural(AGENTS.length, 'agent')} and {plural(MAPS.length, 'map')}, as of patch {PATCH}. Each agent’s strengths are judged from their kit and how they’re played. Pick rates in ranked come from metabot.gg, and win rates from metabot.gg and winio.ai, across all ranks as of {fmtLongDay(STATS_ON)}. Pro picks come from vlr.gg: Champions 2026 for the maps it played and Masters Santiago 2026 for the rest, {PRO_MAPS_COUNTED} maps in all{dated.length ? `; ${listJoin(dated)} weren’t played at this year’s events, so their numbers are from the year before` : ''}. The map pool is the one since {fmtLongDay(POOL_SINCE)}.</p>
           {latest.length > 0 && <p>{listJoin(latest)} came out after those events, so pro play doesn’t count for or against {listJoin(latest)} yet, and the pick rate in ranked is from the first days of play (op.gg).</p>}
           {fresh.length > 0 && <p>{listJoin(fresh)} {fresh.length === 1 ? 'is' : 'are'} too new for real numbers, so the scores are early estimates from the kit that was shown. Leave {listJoin(fresh)} out of a question under Options, or out of every new one in <a href="#/settings/includeNew">Settings → Planner</a>.</p>}
           <p>Playbook works offline, so it doesn’t fetch match stats while you use it; a new version brings new numbers.</p>

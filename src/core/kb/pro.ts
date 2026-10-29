@@ -121,6 +121,16 @@ export const PRO_CUTOFF = '2026-09-24';
 /** Pro teams have had the chance to pick the agent (it isn't new since the events above). */
 export const proKnown = (a: { released: string; estimate?: boolean }): boolean => !a.estimate && a.released < PRO_CUTOFF;
 
+/** How many maps of pro play the picks above come from (an earlier year's numbers aside). */
+export const PRO_MAPS_COUNTED = Object.values(PRO).reduce((sum, p) => sum + (p.dated ? 0 : p.games ?? 0), 0);
+
+/** How often pro teams picked an agent across those maps, in percent (rounded). */
+export function proOverall(agent: string): number {
+  let picked = 0;
+  for (const p of Object.values(PRO)) if (!p.dated) picked += ((p.picks[agent] ?? 0) / 100) * (p.games ?? 0);
+  return PRO_MAPS_COUNTED ? Math.round((100 * picked) / PRO_MAPS_COUNTED) : 0;
+}
+
 /** How often pro teams pick an agent on a map, in percent (0 when rarely). */
 export const proPick = (map: string, agent: string): number => PRO[map]?.picks[agent] ?? 0;
 

@@ -132,7 +132,8 @@ export function explainTeam(m: Model, ids: readonly string[]): Explanation {
   if (map) {
     ROLE_IDS.forEach((r, ri) => {
       const want = m.mix.want[ri]!, c = counts[r];
-      if (Number.isNaN(want) || c === 0 || Math.abs(c - want) < MIX_NOTE.off) return;
+      // (none, or three or more, has its own con above)
+      if (Number.isNaN(want) || c === 0 || c >= 3 || Math.abs(c - want) < MIX_NOTE.off) return;
       const costs = Array.from(m.mix.cost.subarray(ri * 5, ri * 5 + 5));
       if (Math.max(...costs) - costs[Math.min(c, 4)]! < MIX_NOTE.cost) return;
       const role = roleOf(r);

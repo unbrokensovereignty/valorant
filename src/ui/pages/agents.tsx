@@ -1,6 +1,7 @@
 /**
- * Agents: every agent by role, and for each one their kit, what they're strong at, the maps they
- * fit best, who they pair well with (and clash with), tips, and how often they're picked.
+ * Agents: every agent by role, and for each one their kit, what they're strong at, the maps and
+ * ranks they fit best, who they pair well with (and clash with), tips, and how often they're
+ * picked and win.
  */
 import { PageHead } from '../shell.tsx';
 import { Badge, Bar, Button, Segmented, Empty } from '../components/controls.tsx';
@@ -12,10 +13,11 @@ import { answerFor } from '../solved.ts';
 import { planWith } from '../planner/store.ts';
 import { Fit } from '../planner/comp.tsx';
 import { rankWord } from '../planner/words.ts';
-import { agentById, AGENTS_BY_NAME, earlyStats, type Agent } from '../../core/kb/agents.ts';
+import { agentById, AGENTS_BY_NAME, earlyStats, STATS_ON, type Agent } from '../../core/kb/agents.ts';
 import { kitOf, abilityNames, textParts } from '../../core/kb/kits.ts';
 import { POOL } from '../../core/kb/maps.ts';
-import { PRO, proKnown } from '../../core/kb/pro.ts';
+import { PRO, PRO_MAPS_COUNTED, proKnown } from '../../core/kb/pro.ts';
+import { RANKS } from '../../core/kb/ranks.ts';
 import { DIM_INFO, DIMS, ROLES, roleOf, type Role } from '../../core/kb/roles.ts';
 import { PAIRS, type Pair } from '../../core/kb/synergy.ts';
 import { agentTips } from '../../core/engine/tips.ts';
@@ -126,6 +128,27 @@ function BestMaps({ a, rank, newAgents }: { a: Agent; rank: RankPick; newAgents:
   );
 }
 
+function ByRank({ a, rank, newAgents }: { a: Agent; rank: RankPick; newAgents: boolean }) {
+  const rows = RANKS.map((r) => ({ r, fit: answerFor({ map: 'any', side: 'both', rank: r.id, sites: [] }, newAgents)?.agents.find((x) => x.id === a.id)?.fit }));
+  const ready = rows.every((x) => x.fit !== undefined);
+  return (
+    <section class="panel stack">
+      <div class="row-between"><h2>By rank</h2>{!ready && <span class="spinner" aria-label="Working it out" />}</div>
+      <ul class="plain-list by-rank">
+        {rows.map(({ r, fit }) => (
+          <li key={r.id}>
+            <button type="button" class={`by-rank-cell${r.id === rank ? ' current' : ''}`} aria-current={r.id === rank ? 'true' : undefined} onClick={() => planWith({ rank: r.id, include: [a.id], newAgents })}>
+              <span class="small">{r.name}</span>
+              {fit !== undefined ? <Fit fit={fit} tier={tierOf(fit)} label={`${a.name} at ${r.name}`} compact /> : <span class="faint small">…</span>}
+            </button>
+          </li>
+        ))}
+      </ul>
+      <p class="small muted">For a five-stack on any map in the pool, both sides{rank !== 'any' ? `; your usual rank is marked` : ''}. Pick a rank to plan with {a.name} there.</p>
+    </section>
+  );
+}
+
 function Partners({ a }: { a: Agent }) {
   const mine = PAIRS.filter((p) => p.a === a.id || p.b === a.id);
   const other = (p: Pair) => (p.a === a.id ? p.b : p.a);
@@ -179,6 +202,7 @@ function AgentPage({ a }: { a: Agent }) {
         </div>
         <div class="stack">
           <BestMaps a={a} rank={rank} newAgents={newAgents} />
+          <ByRank a={a} rank={rank} newAgents={newAgents} />
           <Partners a={a} />
           {tips.length > 0 && (
             <section class="panel stack">
@@ -187,13 +211,19 @@ function AgentPage({ a }: { a: Agent }) {
             </section>
           )}
           <section class="panel stack">
-            <h2>How often they’re picked</h2>
+            <h2>Picks and wins</h2>
             <dl class="facts">
               <dt>In ranked</dt><dd>{a.estimate ? 'Not known yet' : `${a.pop}% of all picks`}</dd>
-              <dt>By pros</dt><dd>{a.estimate ? 'Not known yet' : proKnown(a) ? `${a.pro}% of maps at the year’s top events` : `None yet: ${a.name} came out after the year’s top events`}</dd>
+              <dt>Ranked wins</dt><dd>{a.estimate ? 'Not known yet' : `${a.win.toFixed(1)}% of games`}</dd>
+              <dt>By pros</dt><dd>{a.estimate ? 'Not known yet' : proKnown(a) ? `${a.pro ? `${a.pro}% of` : 'Hardly ever, in'} the ${PRO_MAPS_COUNTED} maps counted from the year’s top events` : `None yet: ${a.name} came out after the year’s top events`}</dd>
               <dt>Released</dt><dd>{fmtLongDay(a.released)}</dd>
             </dl>
-            {!a.estimate && earlyStats(a) && <p class="small muted">The ranked pick rate is from {a.name}’s first days, while players are still learning the agent.</p>}
+            {!a.estimate && (
+              <p class="small muted">
+                Ranked numbers are across all ranks, as of {fmtLongDay(STATS_ON)}, and win rates are evened out so the average agent wins half its games.
+                {earlyStats(a) && ` They’re from ${a.name}’s first days, while players are still learning the agent.`}
+              </p>
+            )}
           </section>
         </div>
       </div>

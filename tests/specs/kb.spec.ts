@@ -2,7 +2,7 @@ import { describe, spec, eq, ok, throws } from './harness.ts';
 import { AGENTS, agentById, isNew, parseCaps } from '../../src/core/kb/agents.ts';
 import { kitOf, abilityOn, abilityNames, plainText, textParts } from '../../src/core/kb/kits.ts';
 import { MAPS, POOL, mapById, parseNeeds, calloutLabel } from '../../src/core/kb/maps.ts';
-import { PRO, proKnown, proPick } from '../../src/core/kb/pro.ts';
+import { PRO, PRO_MAPS_COUNTED, RECORDED, proKnown, proOverall, proPick, proRoleMix } from '../../src/core/kb/pro.ts';
 import { PAIRS, pairOf } from '../../src/core/kb/synergy.ts';
 import { RANKS } from '../../src/core/kb/ranks.ts';
 import { DIMS, DIM_INFO, ROLE_IDS } from '../../src/core/kb/roles.ts';
@@ -141,6 +141,35 @@ describe('pro play', () => {
       }
     }
     eq(proPick('nowhere', 'jett'), 0);
+  });
+  spec('each map’s picks add up to about five agents a team, from a count of maps or marked as an earlier year’s', () => {
+    for (const [id, p] of Object.entries(PRO)) {
+      const sum = Object.values(p.picks).reduce((a, b) => a + b, 0);
+      ok(sum >= 440 && sum <= 530, `${id}: picks add to ${sum}%`);
+      if (p.dated) eq(p.games, undefined, `${id}: an earlier year’s numbers have no count of maps`);
+      else ok(Number.isInteger(p.games) && p.games! >= 1, `${id}: picks from a number of maps`);
+      for (const c of p.comps) for (const a of c) ok(proPick(id, a) > 0, `${id}: ${a} is in a typical comp, so pros picked them there`);
+      const mix = proRoleMix(id, (x) => agentById(x)?.role)!;
+      ok(Math.abs(Object.values(mix).reduce((a, b) => a + b, 0) - 5) < 1e-9, `${id}: the role mix is five agents`);
+    }
+  });
+  spec('an agent’s pro share is their picks over every map counted', () => {
+    eq(PRO_MAPS_COUNTED, Object.values(PRO).reduce((sum, p) => sum + (p.games ?? 0), 0));
+    const games = (a: string) => Object.values(PRO).reduce((sum, p) => sum + ((p.picks[a] ?? 0) / 100) * (p.games ?? 0), 0);
+    for (const a of AGENTS) {
+      eq(a.pro, proOverall(a.id));
+      ok(Math.abs(a.pro - (100 * games(a.id)) / PRO_MAPS_COUNTED) <= 0.5, `${a.name}: ${a.pro}%`);
+    }
+    eq(agentById('hush')!.pro, 0, 'none yet for an agent released after the events');
+  });
+  spec('the recorded comps are five real agents, won no more often than played', () => {
+    ok(RECORDED.length >= 3);
+    for (const r of RECORDED) {
+      eq(new Set(r.agents).size, 5, r.agents.join(', '));
+      for (const id of r.agents) ok(agentById(id) && proKnown(agentById(id)!), `${id} is an agent pros could pick`);
+      ok(Number.isInteger(r.maps) && Number.isInteger(r.won) && r.won >= 0 && r.won <= r.maps && r.maps >= 1, `${r.agents.join(', ')}: ${r.won} of ${r.maps}`);
+      ok(r.event.length > 0);
+    }
   });
 });
 
