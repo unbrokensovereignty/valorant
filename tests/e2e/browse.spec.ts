@@ -73,7 +73,7 @@ test('Maps: the minimap’s callouts can be hidden, and each side has its tips, 
   await expect(page.locator('.comps > li')).toHaveCount(5, { timeout: 20_000 });
   await page.locator('.map-side').getByRole('button', { name: 'Defense' }).click();
   await expect(page.getByRole('list', { name: 'Tips for defense' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Plays' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Plays', exact: true })).toBeVisible();
   // a site's Plan button asks about that site
   await page.getByRole('button', { name: 'Plan for B site' }).click();
   await expect(page.locator('.answers-head h2')).toHaveText('Ascent, B site');
