@@ -3,10 +3,10 @@ import { AGENTS } from '../../src/core/kb/agents.ts';
 import { abilityOn } from '../../src/core/kb/kits.ts';
 import { MAPS, mapById } from '../../src/core/kb/maps.ts';
 import { JOBS, PLAYS, playsOn } from '../../src/core/kb/plays.ts';
-import { AGENT_TIPS, DEFENSE_TIPS, MAP_TIPS, RANK_TIPS, PARTY_TIPS, DOUBLE_TIPS } from '../../src/core/kb/tips.ts';
+import { AGENT_TIPS, ATTACK_TIPS, DEFENSE_TIPS, MAP_TIPS, RANK_TIPS, PARTY_TIPS, DOUBLE_TIPS } from '../../src/core/kb/tips.ts';
 import { ROLE_IDS } from '../../src/core/kb/roles.ts';
 import { JOB_SKILLS, fillPlay, jobSkill, playsFor, WEAK_JOB } from '../../src/core/engine/plays.ts';
-import { tipsFor } from '../../src/core/engine/tips.ts';
+import { agentTips, tipsFor } from '../../src/core/engine/tips.ts';
 import { summaryText } from '../../src/core/engine/summary.ts';
 import { explainTeam } from '../../src/core/engine/explain.ts';
 import { modelFor } from '../../src/core/engine/model.ts';
@@ -114,8 +114,8 @@ describe('tips', () => {
     for (const m of MAPS) for (const side of ['attack', 'defense'] as const) {
       for (const s of MAP_TIPS[m.id]![side]) ok(plain(s), `${m.name}: “${s}”`);
     }
-    for (const [id, s] of Object.entries(DEFENSE_TIPS)) ok(AGENTS.some((a) => a.id === id) && plain(s), `${id}: “${s}”`);
-    for (const s of [...Object.values(RANK_TIPS).flat(), ...Object.values(PARTY_TIPS).flat(), ...ROLE_IDS.flatMap((r) => Object.values(DOUBLE_TIPS[r]))]) ok(plain(s), s);
+    for (const [id, s] of [...Object.entries(ATTACK_TIPS), ...Object.entries(DEFENSE_TIPS)]) ok(AGENTS.some((a) => a.id === id) && plain(s), `${id}: “${s}”`);
+    for (const s of [...Object.values(RANK_TIPS).flat(), ...Object.values(PARTY_TIPS).flatMap((t) => [t.play, t.ask]), ...ROLE_IDS.flatMap((r) => Object.values(DOUBLE_TIPS[r]))]) ok(plain(s), s);
   });
   spec('tips name only the map’s own callouts', () => {
     for (const m of MAPS) {
@@ -141,12 +141,20 @@ describe('tips', () => {
     for (const a of AGENTS) {
       const tip = tipsFor([a.id], { map: 'haven', side: 'defense', sites: [], rank: 'any' }).find((x) => x.about === a.name)!.text;
       ok(!/after the plant|post-plant|before the hit(?! comes)|the team crosses|walk the team|enters alone|(?:stop|or) the defuse|a hit\b/.test(tip), `${a.name} on defense: “${tip}”`);
+      // and on attack, about attacking
+      const attack = tipsFor([a.id], { map: 'haven', side: 'attack', sites: [], rank: 'any' }).find((x) => x.about === a.name)!.text;
+      ok(!/\ba rush\b|the hit comes|for the retake|site entrance/.test(attack), `${a.name} on attack: “${attack}”`);
+      // an agent's page has every tip once
+      eq(new Set(agentTips(a.id)).size, agentTips(a.id).length, `${a.name}: no tip twice`);
     }
     ok(t.some((x) => x.about === 'Gold'));
     const duo = tipsFor(team, { map: 'any', side: 'both', sites: [], rank: 'any' }, 2, ['sova', 'jett']);
     ok(!duo.some((x) => x.about === 'Omen'), 'only your party’s agents');
     ok(duo.some((x) => x.about === 'Duo'));
     ok(!duo.some((x) => x.about.startsWith('Haven')));
+    // once teammates have locked in every other spot, there's no one left to ask for a role
+    const trio = (locked: number) => tipsFor(team, { map: 'any', side: 'both', sites: [], rank: 'any' }, 3, ['sova', 'jett', 'omen'], locked).filter((x) => x.about === 'Trio').map((x) => x.text);
+    ok(trio(1).includes(PARTY_TIPS[3].ask) && !trio(2).includes(PARTY_TIPS[3].ask) && trio(2).includes(PARTY_TIPS[3].play));
   });
 });
 

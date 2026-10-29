@@ -84,7 +84,7 @@ export function CompDetail({ c, i, ans, q, saveable = true }: { c: CompAnswer; i
   const tab = tourHook.value === 'comp-reasons' || tourHook.value === 'comp-strengths' ? 'why' : chosen;
   const s = ans.situation;
   const why = explainTeam(modelFor(s), c.team);
-  const tips = tipsFor(c.team, s, q.party, c.party);
+  const tips = tipsFor(c.team, s, q.party, c.party, q.locked.length);
   const save = async () => {
     const name = await prompt({ title: 'Save this plan', label: 'Name', yes: 'Save', value: `${askedTitle(s)}: ${c.team.map(nameOf).join(', ')}`.slice(0, 60), maxLength: 60 });
     if (!name) return;

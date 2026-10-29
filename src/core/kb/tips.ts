@@ -58,6 +58,14 @@ export const DEFENSE_TIPS: Record<string, string> = {
   harbor: 'Storm Surge and High Tide slow a push through a choke; keep Cove to shield the defuse on the retake.',
 };
 
+/** The tip a comp shows for an agent on attack, for the sentinels whose first tip above is about defending (shown on their page too). */
+export const ATTACK_TIPS: Record<string, string> = {
+  sage: 'Put Barrier Orb across an angle the defenders hold, so the team can cross or plant behind it.',
+  cypher: 'Trapwire the flank behind the team, and watch the Spike with Spycam after the plant.',
+  deadlock: 'After the plant, put Barrier Mesh across a way into the site, so the retake has to break it or go around.',
+  vyse: 'After the plant, put Razorvine on the Spike and Shear across a way in, so the retake comes in slow and split up.',
+};
+
 /** Two tips for each map and side. */
 export const MAP_TIPS: Record<string, Record<Side, readonly [string, string]>> = {
   abyss: {
@@ -135,16 +143,16 @@ export const RANK_TIPS: Record<'low' | 'middle' | 'high', readonly string[]> = {
 
 export const rankBand = (t: number): 'low' | 'middle' | 'high' => (t < 0.3 ? 'low' : t < 0.7 ? 'middle' : 'high');
 
-/** Tips for a duo or a trio, whose other players are random. */
-export const PARTY_TIPS: Record<2 | 3, readonly string[]> = {
-  2: [
-    'Pick two agents that work together, like a flash and an entry; the other three are random.',
-    'Ask your random teammates for the roles the planner suggests before they lock in.',
-  ],
-  3: [
-    'Three of you can cover most of a comp; ask the other two for the roles that are missing.',
-    'Play your three together and let the random teammates take the other site or lane.',
-  ],
+/** Tips for a duo or a trio, whose other players are random: how to play, and what to ask the others for (while some haven't locked in). */
+export const PARTY_TIPS: Record<2 | 3, { play: string; ask: string }> = {
+  2: {
+    play: 'Pick two agents that work together, like a flash and an entry; the other three are random.',
+    ask: 'Ask your random teammates for the roles the planner suggests before they lock in.',
+  },
+  3: {
+    play: 'Play your three together and let the random teammates take the other site or lane.',
+    ask: 'Three of you can cover most of a comp; ask the other two for the roles that are missing.',
+  },
 };
 
 /**
