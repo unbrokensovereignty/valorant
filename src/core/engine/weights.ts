@@ -4,6 +4,7 @@
  */
 import type { Dim, Role } from '../kb/roles.ts';
 import type { Side } from '../kb/maps.ts';
+import type { RankId } from '../kb/ranks.ts';
 
 /** How much each strength matters on a side before the map, site and rank change it. */
 export const BASE: Record<Side, Record<Dim, number>> = {
@@ -129,6 +130,13 @@ export const ROLE_COST: Record<Role, Record<Side, readonly [number, number, numb
   initiator: { attack: [-0.05, 0, 0, -0.06, -0.25], defense: [-0.04, 0, 0, -0.06, -0.25] },
   sentinel: { attack: [-0.015, 0, -0.01, -0.12, -0.3], defense: [-0.07, 0, -0.01, -0.1, -0.3] },
 };
+
+/**
+ * A second controller pays off only for a team that plays its smokes together, the way pro teams
+ * layer smokes and walls for a hit. A team gives up `cost` for one at Iron, less in a straight line
+ * up the ranks, and nothing from `until` up. From `note` up, the comp's cons say so.
+ */
+export const SECOND_CONTROLLER: { cost: number; until: RankId; note: number } = { cost: 0.07, until: 'immortal', note: 0.02 };
 
 /**
  * Random teammates, for a duo or trio. They pick roughly as often as players at your rank do,

@@ -17,7 +17,7 @@ import { PRO, PRO_MAPS_COUNTED, proKnown } from '../../core/kb/pro.ts';
 import { PLAYS } from '../../core/kb/plays.ts';
 import { RANKS, rankOf } from '../../core/kb/ranks.ts';
 import { kitShare, proLean } from '../../core/engine/model.ts';
-import { FIT_MID, PRO_GAMES, WIN_CAP, WIN_RANKS } from '../../core/engine/weights.ts';
+import { FIT_MID, PRO_GAMES, SECOND_CONTROLLER, WIN_CAP, WIN_RANKS } from '../../core/engine/weights.ts';
 import { tierWords } from '../planner/words.ts';
 import { fmtLongDay } from '../../core/dates.ts';
 import { listJoin } from '../../core/text.ts';
@@ -152,7 +152,7 @@ function Guide() {
           <h2>Fit and tiers</h2>
           <p>A comp’s <b>fit</b> compares it with every possible team for the same situation: the best team is 100 and the middle one is {FIT_MID}. So a fit means the same on every map, side and rank.</p>
           <p>Tiers follow the fit: {tierWords()}. An agent’s fit comes from the best comp they fit into, so a high one means “easy to build around here”, not “strong alone”.</p>
-          <p>Fit weighs what the situation needs (smokes, flashes, information, a strong anchor and so on) against what the team brings, how well the agents work together, and the role counts every team needs. Your rank changes the mix: low down, aim and simple utility win; near the top, coordinated utility and what pros play on the map count for more, such as a second controller on the maps where pros run two.</p>
+          <p>Fit weighs what the situation needs (smokes, flashes, information, a strong anchor and so on) against what the team brings, how well the agents work together, and the role counts every team needs. Your rank changes the mix: low down, aim and simple utility win; near the top, coordinated utility and what pros play on the map count for more. A second controller pays off only when the team plays its smokes together, so below {rankOf(SECOND_CONTROLLER.until).name} it costs a comp a little, less at each rank up; from {rankOf(SECOND_CONTROLLER.until).name} on, two controllers can lead again on the maps where pros run two.</p>
         </section>
         <RankHelp />
         <section class="panel stack">

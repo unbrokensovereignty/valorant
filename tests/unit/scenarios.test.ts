@@ -38,14 +38,17 @@ test('the best comp on every map, side and rank has a sound mix of roles', () =>
   none(problems);
 });
 
-test('at Immortal and Radiant, one of the top three comps shares four agents with a comp pros play', () => {
+test('at Immortal and Radiant, one of the top three comps shares four agents with a comp pros play (three on a defense pros play without a sentinel)', () => {
   const problems: string[] = [];
   for (const rank of ['immortal', 'radiant'] as const) for (const m of MAPS) for (const side of SIDES) {
     const pro = PRO[m.id];
     if (!pro) continue;
     const teams = answer(m.id, side, rank).comps.map((c) => c.team);
     const overlap = Math.max(...teams.flatMap((t) => pro.comps.map((pc) => pc.filter((id) => t.includes(id)).length)));
-    if (overlap < 4) problems.push(`${m.name} ${side} at ${rank}: at most ${overlap} in common, best is ${teams[0]!.map(name).join(', ')}`);
+    // below Radiant a defense keeps its sentinel where pro teams play without one (see the first
+    // test), so on those maps it can share one agent fewer
+    const least = rank !== 'radiant' && side === 'defense' && (proMixOf(m.id)?.sentinel ?? 1) < 0.5 ? 3 : 4;
+    if (overlap < least) problems.push(`${m.name} ${side} at ${rank}: at most ${overlap} in common, best is ${teams[0]!.map(name).join(', ')}`);
   }
   none(problems);
 });

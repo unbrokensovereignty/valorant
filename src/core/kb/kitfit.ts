@@ -29,6 +29,11 @@ export interface KitRule {
   side?: Side;
   /** The change, as "dim ±value; …". */
   caps: string;
+  /**
+   * The ability keys behind what the rule adds, when they aren't the ones the agent uses for that
+   * strength everywhere (agents.ts): on Breeze, Viper's Toxic Screen (E) does a smoke's work.
+   */
+  via?: string;
   why: string;
 }
 
@@ -43,8 +48,8 @@ export const KIT_RULES: readonly KitRule[] = [
     why: 'Hush’s Telekinesis works switches from range, so she can work {map}’s doors from cover to slow a push or open a retake path.',
   },
   {
-    agent: 'hush', space: 'tight', caps: 'disrupt +.15; clear +.1',
-    why: 'Hush’s Displacement concusses anyone it pulls into a wall, and {map}’s tight spaces are full of them.',
+    agent: 'hush', space: 'tight', caps: 'disrupt +.15; clear +.1; entry +.05',
+    why: 'Hush’s Displacement concusses anyone it pulls into a wall, and {map}’s tight spaces are full of them, so she can pull a defender out of a close corner before the team swings it.',
   },
   {
     agent: 'hush', space: 'open', caps: 'disrupt -.2; clear -.15',
@@ -136,6 +141,10 @@ export const KIT_RULES: readonly KitRule[] = [
     why: 'Brimstone’s Sky Smoke and Incendiary only reach so far from him, and {map}’s sites are wide and far apart.',
   },
   {
+    agent: 'viper', map: 'breeze', caps: 'smoke +.25', via: 'E',
+    why: 'Viper’s Toxic Screen does the work of several smokes on Breeze: one wall cuts off the long sightlines across a whole site.',
+  },
+  {
     agent: 'vyse', space: 'tight', caps: 'stall +.05; anchor +.05',
     why: 'Vyse’s Shear and Razorvine shut {map}’s narrow chokes on whoever walks in first.',
   },
@@ -189,6 +198,7 @@ export const RULES: readonly ParsedRule[] = KIT_RULES.map((r, i) => {
   if (r.map && !mapById(r.map)) throw new Error(`${who}: no map "${r.map}"`);
   if (r.site && !(r.map && mapById(r.map)!.sites.some((s) => s.id === r.site))) throw new Error(`${who}: no site ${r.site} on its map`);
   if (r.mechanic && !MAPS.some((m) => m.mechanics?.some((x) => x.id === r.mechanic))) throw new Error(`${who}: no map has ${r.mechanic}`);
+  if (r.via !== undefined && !/^[CQEX]+$/.test(r.via)) throw new Error(`${who}: can't read the ability keys "${r.via}"`);
   return { ...r, bumps: parseBumps(r.caps, who) };
 });
 

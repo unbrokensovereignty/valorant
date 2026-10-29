@@ -11,8 +11,8 @@ import { ALL_RANKS_T, rankOf } from '../kb/ranks.ts';
 import { DIMS, DIM_INFO, ROLE_IDS, roleOf, type Dim, type Role } from '../kb/roles.ts';
 import { pairOf } from '../kb/synergy.ts';
 import { listJoin } from '../text.ts';
-import { D, kitShare, needsFor, type Model } from './model.ts';
-import { KIT_NOTE, KIT_RULE_NOTE, MIX_NOTE, THREAT_NOTE, WIN_NOTE } from './weights.ts';
+import { D, kitShare, needsFor, viaIn, type Model } from './model.ts';
+import { KIT_NOTE, KIT_RULE_NOTE, MIX_NOTE, SECOND_CONTROLLER, THREAT_NOTE, WIN_NOTE } from './weights.ts';
 import { ruleWhy } from '../kb/kitfit.ts';
 import { threatLine } from '../kb/counters.ts';
 
@@ -53,25 +53,45 @@ export interface Explanation {
   against: AgainstRow[];
 }
 
-/** How to play around a gap, by strength. */
-const MAKE_UP: Record<Dim, string> = {
+/**
+ * How to play around a gap, by strength. It's for a team short of that strength, so it never asks
+ * for it. Advice that leans on another strength (`with`) has a second form for a team that's short
+ * of that one too (`or`), so a comp with no flashes is never told to lean on them. `{with}` names the
+ * ability of the team's that brings the most of it ("Omen’s Paranoia"), so the advice says what to use.
+ * Advice that only makes sense on one side has a form for each (`attack`, `defense`, and `both` for a
+ * question about both sides).
+ */
+type Advice = string | { text: string; with: Dim; or: string };
+const MAKE_UP: Record<Dim, Advice | { attack: Advice; defense: Advice; both: Advice }> = {
   smoke: 'take fights from cover and avoid crossing open ground',
-  wall: 'cross long sightlines one at a time, or smoke them off',
+  wall: { text: 'cross long sightlines one at a time, or block them with {with}', with: 'smoke', or: 'cross long sightlines one at a time, or take another way in' },
   flash: 'jiggle-peek for information and trade each other closely',
   recon: 'clear corners together and don’t rush in blind',
-  entry: 'use utility to take space instead of the first fight',
-  clear: 'check close corners one by one before planting',
-  disrupt: 'lean on flashes and trades to win the first fight',
-  stall: 'play a little further back so a rush can’t run you over',
-  anchor: 'hold sites in pairs and rotate early',
+  entry: { text: 'use {with} to take space instead of taking the first fight', with: 'flash', or: 'take space together, a step at a time, instead of one player rushing in' },
+  clear: {
+    attack: 'check close corners one by one before planting', defense: 'check close corners one by one when you retake',
+    both: 'check close corners one by one when you take a site',
+  },
+  disrupt: { text: 'lean on {with} and close trades to win the first fight', with: 'flash', or: 'play close enough together to trade the first fight' },
+  stall: {
+    attack: 'hold the planted Spike from further back so a retake can’t run you over', defense: 'play a little further back so a rush can’t run you over',
+    both: 'play a little further back so a rush can’t run you over',
+  },
+  anchor: { attack: 'hold the planted Spike in pairs', defense: 'hold sites in pairs and rotate early', both: 'hold sites in pairs' },
   flank: 'leave one player to watch the flank',
-  retake: 'save utility for the retake and retake together',
+  retake: {
+    attack: 'fight as a group when you have to take ground back', defense: 'stop the plant where you can, and retake together with the numbers on your side',
+    both: 'fight as a group when you have to take a site back',
+  },
   postplant: 'play crossfires on the Spike after planting',
   sustain: 'play for trades so no one is left low on health',
   duel: 'play together and trade every fight',
-  angles: 'take long fights with a rifle from cover, or smoke the long sightlines off',
-  mobility: 'commit to sites early instead of late rotations',
+  angles: { text: 'take long fights with a rifle from cover, or block the long sightlines with {with}', with: 'smoke', or: 'take long fights with a rifle from cover, or keep off the longest sightlines' },
+  mobility: { attack: 'commit to a site early instead of rotating late', defense: 'rotate early on information instead of late', both: 'commit early instead of moving late' },
 };
+
+/** How much of a strength a team needs before advice can lean on it: the most a "few" gap covers. */
+const LEANS_ON = 0.55;
 
 /**
  * What having none of a role costs a team (`none`, and `so`, what follows when there's no advice to
@@ -79,19 +99,25 @@ const MAKE_UP: Record<Dim, string> = {
  */
 const ROLE_GAP: Record<Role, { none: string; so?: string; dims: readonly Dim[]; many: string }> = {
   controller: {
-    none: 'nobody can smoke off sightlines', so: 'every push walks into open angles', dims: ['smoke', 'wall'],
-    many: 'Three or more controllers leave little firepower or information.',
+    none: 'there are no controller smokes to cut sightlines', so: 'pushes walk into open angles', dims: ['smoke', 'wall'],
+    many: 'leave the rest of the team short of firepower and information',
   },
-  duelist: { none: 'someone has to take the first fight without the tools for it', dims: ['entry'], many: 'Three or more duelists bring plenty of firepower but little utility.' },
-  initiator: { none: 'there are no flashes or information to set up fights', dims: ['flash', 'recon'], many: 'Three or more initiators overlap: the utility outweighs the firepower.' },
-  sentinel: { none: 'nobody watches the flank or holds a site alone', dims: ['anchor', 'flank'], many: 'Three or more sentinels play too passively to take space.' },
+  duelist: { none: 'someone has to take the first fight without the tools for it', dims: ['entry'], many: 'leave the rest of the team short of smokes and information' },
+  initiator: { none: 'nobody’s job is to set up fights with flashes and information', dims: ['flash', 'recon'], many: 'leave the rest of the team short of smokes and entry' },
+  sentinel: { none: 'nobody’s job is to watch the flank or hold a site alone', dims: ['anchor', 'flank'], many: 'make the team slow to take space' },
 };
 
 const nameOf = (a: Agent) => a.name;
 const sideWord = (s: Side) => (s === 'attack' ? 'attack' : 'defense');
 
-function agentWithAbility(a: Agent, dim: Dim): string {
-  const keys = a.via[dim] ?? '';
+/** An agent's main ability for a strength here, as the game names it: "Omen’s Paranoia" (or "Jett’s gun play"). */
+function abilityOf(m: Model, a: Agent, dim: Dim): string {
+  const keys = viaIn(m, a, dim);
+  return `${a.name}’s ${abilityNames(a.id, keys)[0] ?? (keys.includes('G') ? 'gun play' : DIM_INFO[dim].has)}`;
+}
+
+function agentWithAbility(m: Model, a: Agent, dim: Dim): string {
+  const keys = viaIn(m, a, dim);
   const names = [...abilityNames(a.id, keys), ...(keys.includes('G') ? ['gun play'] : [])];
   return names.length ? `${a.name} (${listJoin(names)})` : a.name;
 }
@@ -124,12 +150,24 @@ export function explainTeam(m: Model, ids: readonly string[]): Explanation {
     for (const a of team) miss *= m.miss[a.index * D + j]!;
     // what each agent brings to it at this rank, as the score counts it
     const by = team.map((a) => ({ a, value: 1 - m.miss[a.index * D + j]! })).filter((x) => x.value >= 0.3).sort((x, y) => y.value - x.value)
-      .map(({ a, value }) => ({ id: a.id, value, abilities: abilityNames(a.id, a.via[dim] ?? '') }));
+      .map(({ a, value }) => {
+        const keys = viaIn(m, a, dim);
+        return { id: a.id, value, abilities: [...abilityNames(a.id, keys), ...(keys.includes('G') ? ['gun play'] : [])] };
+      });
     return { dim, need: m.weight[j]! * D, cover: 1 - miss, by };
   });
 
   const pros: string[] = [], cons: string[] = [], notes: string[] = [];
   const where = map ? map.name : 'most maps';
+  // how to play around a gap, for the side, without leaning on a strength the team is short of too
+  const makeUp = (d: Dim): string => {
+    const entry = MAKE_UP[d];
+    const x = typeof entry === 'object' && 'both' in entry ? entry[s.side] : entry;
+    if (typeof x === 'string') return x;
+    const row = strengths.find((r) => r.dim === x.with)!;
+    if (row.cover < LEANS_ON || !row.by.length) return x.or;
+    return x.text.replace('{with}', abilityOf(m, agentById(row.by[0]!.id)!, x.with));
+  };
   // gaps the situation would punish, biggest first
   const gaps = strengths.filter((r) => r.need >= 0.9 && r.cover < 0.55).sort((a, b) => b.need * (1 - b.cover) - a.need * (1 - a.cover));
   // role counts first: missing a controller matters more than anything else
@@ -142,10 +180,15 @@ export function explainTeam(m: Model, ids: readonly string[]): Explanation {
       // the gaps this leaves are said here once, with how to play around them
       const left = gaps.filter((g) => gap.dims.includes(g.dim));
       for (const g of left) gaps.splice(gaps.indexOf(g), 1);
-      const so = left.length ? left.map((g) => MAKE_UP[g.dim]).join(', and ') : gap.so;
+      const so = left.length ? left.map((g) => makeUp(g.dim)).join(', and ') : gap.so;
       cons.push(`No ${roleOf(r).name.toLowerCase()}${asPros}: ${gap.none}${so ? `, so ${so}` : ''}.`);
-    } else if (counts[r] >= 3) cons.push(gap.many);
+    } else if (counts[r] >= 3) cons.push(`${capital(numberWord(counts[r]))} ${roleOf(r).plural.toLowerCase()} ${gap.many}.`);
   });
+  // a second controller needs teamwork that most teams below the top ranks don't bring (see SECOND_CONTROLLER)
+  if (counts.controller === 2 && m.secondController >= SECOND_CONTROLLER.note) {
+    const who = s.rank === 'any' ? 'most ranked teams' : `most teams at ${rankOf(s.rank).name}`;
+    cons.push(`Two controllers pay off only when the team plays its smokes together, which ${who} don’t: the second one costs firepower or information.`);
+  }
   // straying from the map's pro role mix, where it costs enough to matter (see ROLE_MIX)
   if (map) {
     ROLE_IDS.forEach((r, ri) => {
@@ -168,23 +211,25 @@ export function explainTeam(m: Model, ids: readonly string[]): Explanation {
   }
   // strengths the situation needs and the team has
   for (const row of strengths.filter((r) => r.need >= 1 && r.cover >= 0.8).sort((a, b) => b.need * b.cover - a.need * a.cover).slice(0, 3)) {
-    const who = row.by.filter((b) => b.value >= 0.45).slice(0, 2).map((b) => agentWithAbility(agentById(b.id)!, row.dim));
+    const who = row.by.filter((b) => b.value >= 0.45).slice(0, 2).map((b) => agentWithAbility(m, agentById(b.id)!, row.dim));
     const rewarded = bump(row.dim) >= 0.15 ? `, which ${where} rewards` : '';
     pros.push(`Strong ${DIM_INFO[row.dim].has}${rewarded}${who.length ? `: ${listJoin(who)}` : ''}.`);
   }
   // the other gaps
   for (const row of gaps.slice(0, 3)) {
     const info = DIM_INFO[row.dim];
-    const lead = row.cover < 0.25 ? 'No' : info.few ? 'Few' : 'Little';
-    // who brings what there is of it, so a team with a little doesn't read as having none
-    const some = row.by.slice(0, 2).map((b) => `${agentById(b.id)!.name}’s`);
-    const besides = lead !== 'No' && some.length ? ` other than ${listJoin(some)}` : '';
-    cons.push(`${lead} ${info.lacks}${besides}${bump(row.dim) >= 0.15 ? `, which ${where} needs` : ''}: ${MAKE_UP[row.dim]}.`);
+    // everyone who brings any of it, by the ability that does, so a team with a little doesn't read
+    // as having none, nor as having more than it does ("only Omen’s Paranoia")
+    const j = DIMS.indexOf(row.dim), brings = (a: Agent) => 1 - m.miss[a.index * D + j]!;
+    const some = team.filter((a) => brings(a) > 1e-9).sort((a, b) => brings(b) - brings(a)).slice(0, 3).map((a) => abilityOf(m, a, row.dim));
+    const lead = !some.length ? 'No' : info.few ? 'Few' : 'Little';
+    const only = some.length ? ` (only ${listJoin(some)})` : '';
+    cons.push(`${lead} ${info.lacks}${only}${bump(row.dim) >= 0.15 ? `, which ${where} needs` : ''}: ${makeUp(row.dim)}.`);
   }
   // a comp with no real gap still has a thinnest spot worth playing around
   if (!cons.length) {
     const thin = strengths.filter((r) => r.need >= 1).sort((a, b) => a.cover - b.cover)[0];
-    if (thin && thin.cover < 0.8) cons.push(`Its thinnest spot is ${DIM_INFO[thin.dim].lacks}: ${MAKE_UP[thin.dim]}.`);
+    if (thin && thin.cover < 0.8) cons.push(`Its thinnest spot is ${DIM_INFO[thin.dim].lacks}: ${makeUp(thin.dim)}.`);
   }
   // pairs
   const pairs: { strength: number; why: string }[] = [];

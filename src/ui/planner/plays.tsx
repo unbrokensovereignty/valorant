@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from 'preact/hooks';
 import { agentById } from '../../core/kb/agents.ts';
 import { mapById, POOL, spotName, type Side, type SiteId } from '../../core/kb/maps.ts';
 import { KIND_NAMES } from '../../core/kb/plays.ts';
-import { JOB_NAMES, playFitLabel, playsFor, WEAK_JOB, type FilledPlay } from '../../core/engine/plays.ts';
+import { JOB_NAMES, jobWords, playFitLabel, playsFor, WEAK_JOB, type FilledPlay } from '../../core/engine/plays.ts';
 import { listJoin } from '../../core/text.ts';
 import { AgentIcon } from '../art.tsx';
 import { Badge, Segmented, Select } from '../components/controls.tsx';
@@ -71,8 +71,8 @@ export function PlayCard({ f }: { f: FilledPlay }) {
                     <span key={d.id} class="step-agent">
                       <AgentIcon id={d.id} size={22} />
                       <b>{agentById(d.id)?.name}</b>
-                      <span class="muted">{JOB_NAMES[d.job]}{d.abilities.length ? ` with ${listJoin(d.abilities)}` : ''}</span>
-                      {d.value < WEAK_JOB && <span class="step-weak" data-tip="Nobody in this comp is good at this job"><Icon name="warning" size={14} label="A stretch for this comp" /></span>}
+                      <span class="muted">{jobWords(d)}</span>
+                      {d.value < WEAK_JOB && <span class="step-weak" data-tip="A stretch: nobody free in this comp is good at this job"><Icon name="warning" size={14} label="A stretch for this comp" /></span>}
                     </span>
                   ))}
                 </div>

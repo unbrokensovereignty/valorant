@@ -10,6 +10,7 @@ import { explainTeam } from '../../src/core/engine/explain.ts';
 import { modelFor, type RankPick } from '../../src/core/engine/model.ts';
 import { TIERS } from '../../src/core/engine/weights.ts';
 import { agentById } from '../../src/core/kb/agents.ts';
+import { abilityNames } from '../../src/core/kb/kits.ts';
 import { MAPS, type Side, type Space } from '../../src/core/kb/maps.ts';
 import { KIT_RULES, RULES, ruleWhy, ruleWhyAt } from '../../src/core/kb/kitfit.ts';
 
@@ -133,5 +134,49 @@ test('every kit rule applies somewhere, and its reason reads as a full sentence 
     if (where.length > 1 && (/these maps (?:is|has|was)\b/.test(many) || many.includes('{'))) problems.push(`rule ${i + 1} for several maps: "${many}"`);
   });
   if (KIT_RULES.length !== RULES.length) problems.push('a rule was dropped');
+  none(problems);
+});
+
+test('a kit rule that names its abilities names ones the agent has, and the comp names them for that strength', () => {
+  const problems: string[] = [];
+  RULES.forEach((r, i) => {
+    if (r.via === undefined) return;
+    const names = abilityNames(r.agent, r.via);
+    if (names.length !== r.via.length) problems.push(`rule ${i + 1} (${name(r.agent)}): no ability on every key of "${r.via}"`);
+  });
+  // on Breeze, Viper's Toxic Screen is what makes her smokes count for more
+  const m = modelFor({ map: 'breeze', side: 'attack', rank: 'immortal', sites: [] });
+  const smoke = explainTeam(m, ['jett', 'yoru', 'sova', 'viper', 'omen']).strengths.find((s) => s.dim === 'smoke')!;
+  const viper = smoke.by.find((b) => b.id === 'viper');
+  if (viper?.abilities[0] !== 'Toxic Screen') problems.push(`Viper's smokes on Breeze come from ${viper?.abilities.join(', ')}`);
+  none(problems);
+});
+
+test('below Immortal one controller leads, since two pay off only when a team plays its smokes together', () => {
+  const problems: string[] = [];
+  const controllers = (team: readonly string[]) => team.filter((id) => agentById(id)!.role === 'controller').length;
+  // Lotus at Platinum: pro teams run Omen and Viper there, but a Platinum team gets more from one
+  for (const side of SIDES) {
+    for (const c of answer('lotus', side, 'platinum').comps) if (controllers(c.team) !== 1) problems.push(`Lotus ${side} at Platinum: ${c.team.map(name).join(', ')}`);
+  }
+  // up to Gold everywhere; at Platinum nearly everywhere (a map pros always play with two, like
+  // Split, can still lead with them)
+  for (const rank of ['silver', 'gold', 'platinum'] as const) {
+    const two: string[] = [];
+    for (const map of MAPS) for (const side of SIDES) {
+      const best = answer(map.id, side, rank).comps[0]!.team;
+      if (controllers(best) !== 1) two.push(`${map.name} ${side} at ${rank}: ${best.map(name).join(', ')}`);
+    }
+    if (two.length > (rank === 'platinum' ? 3 : 0)) problems.push(...two);
+  }
+  // from Immortal up, the pro comps with two lead again where pros play them
+  for (const side of SIDES) {
+    const best = answer('lotus', side, 'immortal').comps[0]!.team;
+    if (controllers(best) !== 2) problems.push(`Lotus ${side} at Immortal: ${best.map(name).join(', ')}`);
+  }
+  // and a comp with two says what the second one costs, where it costs
+  const said = (rank: RankPick) => explainTeam(modelFor({ map: 'lotus', side: 'attack', rank, sites: [] }), ['raze', 'fade', 'viper', 'omen', 'chamber']).cons.some((c) => c.startsWith('Two controllers pay off only'));
+  if (!said('gold')) problems.push('no word at Gold of what the second controller costs');
+  if (said('immortal')) problems.push('a word at Immortal of what the second controller costs');
   none(problems);
 });

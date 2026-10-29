@@ -2,10 +2,11 @@
  * The tips that fit a plan: the map and side, the team's doubled-up roles, each agent, the rank
  * and the party. Every tip says what it's about, so a list of them reads clearly.
  */
-import { agentById } from '../kb/agents.ts';
+import { agentById, type Agent } from '../kb/agents.ts';
+import { abilityNames } from '../kb/kits.ts';
 import { mapById, SIDES, type Side } from '../kb/maps.ts';
 import { rankOf } from '../kb/ranks.ts';
-import { ROLES, ROLE_IDS } from '../kb/roles.ts';
+import { ROLES, ROLE_IDS, type Dim } from '../kb/roles.ts';
 import { AGENT_MAP_TIPS, AGENT_TIPS, ATTACK_TIPS, DEFENSE_TIPS, DOUBLE_TIPS, MAP_TIPS, PARTY_TIPS, RANK_TIPS, agentMapTip, rankBand } from '../kb/tips.ts';
 import type { Situation } from './model.ts';
 import type { PartySize } from './query.ts';
@@ -13,6 +14,26 @@ import type { PartySize } from './query.ts';
 export interface Tip { about: string; text: string }
 
 const sideName = (s: Side) => SIDES.find((x) => x.id === s)!.name;
+
+/** How much of a strength makes an initiator the one for that job, in a tip for two of them. */
+const DOES = 0.5;
+const ability = (a: Agent, d: Dim) => abilityNames(a.id, a.via[d] ?? '')[0];
+
+/**
+ * The tip for two initiators, from their kits: one finds the enemies and the other flashes or stops
+ * them, or, when both do the same job, how to share it. It never gives a job to a kit without the
+ * tools for it (KAY/O has no drone to find anyone with, Sova no flash).
+ */
+function twoInitiators(a: Agent, b: Agent): string {
+  const finds = (x: Agent) => x.caps.recon, hits = (x: Agent) => Math.max(x.caps.flash, x.caps.disrupt);
+  const [f, h] = finds(a) - hits(a) >= finds(b) - hits(b) ? [a, b] : [b, a];
+  if (finds(f) >= DOES && hits(h) >= DOES) {
+    const how = h.caps.flash >= h.caps.disrupt ? `flashes them with ${ability(h, 'flash')}` : `stops them with ${ability(h, 'disrupt')}`;
+    return `${f.name} finds the enemies with ${ability(f, 'recon')} and ${h.name} ${how}; don’t spend both on the same angle.`;
+  }
+  if (finds(f) >= DOES && finds(h) >= DOES) return `${f.name} and ${h.name} both find enemies: send their utility to different places, so you learn twice as much.`;
+  return `${f.name} and ${h.name} both set up fights: take turns, so one still has utility for the next fight.`;
+}
 
 /**
  * Tips for a team in a situation; `party` is your party's size, and only your party's agents get agent
@@ -32,7 +53,9 @@ export function tipsFor(team: readonly string[], s: Situation, party: PartySize 
   }
   const agents = team.map((id) => agentById(id)).filter((a) => !!a);
   for (const r of ROLE_IDS) {
-    if (agents.filter((a) => a.role === r).length === 2) out.push({ about: `Two ${ROLES.find((x) => x.id === r)!.plural.toLowerCase()}`, text: DOUBLE_TIPS[r][s.side] });
+    const two = agents.filter((a) => a.role === r);
+    if (two.length !== 2) continue;
+    out.push({ about: `Two ${ROLES.find((x) => x.id === r)!.plural.toLowerCase()}`, text: r === 'initiator' ? twoInitiators(two[0]!, two[1]!) : DOUBLE_TIPS[r][s.side] });
   }
   const yours = party < 5 && partyAgents.length ? agents.filter((a) => partyAgents.includes(a.id)) : agents;
   for (const a of yours) {

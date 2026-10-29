@@ -12,7 +12,7 @@ import { DIMS, ROLE_IDS, type Dim, type Role } from '../kb/roles.ts';
 import { PAIRS } from '../kb/synergy.ts';
 import { rulesFor, type ParsedRule } from '../kb/kitfit.ts';
 import { THREATS, type Threat } from '../kb/counters.ts';
-import { BASE, BY_RANK, EXEC, FIT, NEW_WIN_SHARE, PAIR_STEP, PRO_GAMES, PRO_RISE, ROLE_COST, ROLE_MIX, WIN_CAP, WIN_RANKS } from './weights.ts';
+import { BASE, BY_RANK, EXEC, FIT, NEW_WIN_SHARE, PAIR_STEP, PRO_GAMES, PRO_RISE, ROLE_COST, ROLE_MIX, SECOND_CONTROLLER, WIN_CAP, WIN_RANKS } from './weights.ts';
 
 export type MapPick = string; // a map id, or 'any'
 export type SidePick = Side | 'both';
@@ -56,6 +56,8 @@ export interface Model {
    * the cost of having none of a role is forgiven because pro teams there mostly play without it.
    */
   mix: { want: Float64Array; cost: Float64Array; relax: Float64Array };
+  /** What a second controller costs at this rank, since it pays off only when a team plays its smokes together (SECOND_CONTROLLER). */
+  secondController: number;
   /**
    * The kit rules (kb/kitfit.ts) that change each agent's strengths here, by agent index, with how
    * much each adds to (or takes from) a team's score on its own, averaged over the situations covered.
@@ -184,6 +186,16 @@ function single(map: MapInfo, side: Side, sites: readonly SiteId[], rankT: numbe
   return { weight, pro, rank, win, rules, threats };
 }
 
+/**
+ * The ability keys behind an agent's strength in a situation: those of the kit rules that add to it
+ * here first (kb/kitfit.ts, a rule's `via`), then the agent's own.
+ */
+export function viaIn(m: Model, a: Agent, d: Dim): string {
+  let keys = '';
+  for (const { rule } of m.kit[a.index]!) if (rule.via && (rule.bumps[d] ?? 0) > 0) keys += rule.via;
+  return [...new Set(keys + (a.via[d] ?? ''))].join('');
+}
+
 /** An agent's strength once the kit rules that apply have changed it. */
 const capWith = (a: Agent, d: Dim, rules: readonly ParsedRule[]): number =>
   Math.max(0, Math.min(1, rules.reduce((v, r) => v + (r.bumps[d] ?? 0), a.caps[d])));
@@ -265,8 +277,12 @@ export function modelFor(s: Situation): Model {
   }
   for (let ri = 0; ri < ROLES_N; ri++) want[ri] = mixed ? want[ri]! / mixed : Number.NaN;
   for (let i = 0; i < roleCost.length; i++) roleCost[i]! += mixCost[i]!;
+  // a second controller needs a team that plays its smokes together, which pro play shows how to do
+  const secondController = SECOND_CONTROLLER.cost * Math.max(0, 1 - rankT / rankOf(SECOND_CONTROLLER.until).t);
+  const ci = roleIndex('controller');
+  for (let c = 2; c < 5; c++) roleCost[ci * 5 + c]! -= secondController;
   const model: Model = {
-    situation: { ...s, sites: [...s.sites], enemy: [...(s.enemy ?? [])] }, weight, miss, base, pair, roleCost, fitParts: { pro, rank, win }, mix: { want, cost: mixCost, relax: relaxed }, kit,
+    situation: { ...s, sites: [...s.sites], enemy: [...(s.enemy ?? [])] }, weight, miss, base, pair, roleCost, fitParts: { pro, rank, win }, mix: { want, cost: mixCost, relax: relaxed }, secondController, kit,
     threats: threats.sort((a, b) => b.level - a.level),
   };
   if (cache.size > 200) cache.clear();

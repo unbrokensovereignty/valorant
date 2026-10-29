@@ -4,7 +4,6 @@ import { abilityOn } from '../../src/core/kb/kits.ts';
 import { MAPS, mapById } from '../../src/core/kb/maps.ts';
 import { JOBS, PLAYS, playsOn } from '../../src/core/kb/plays.ts';
 import { AGENT_TIPS, ATTACK_TIPS, DEFENSE_TIPS, MAP_TIPS, RANK_TIPS, PARTY_TIPS, DOUBLE_TIPS } from '../../src/core/kb/tips.ts';
-import { ROLE_IDS } from '../../src/core/kb/roles.ts';
 import { JOB_SKILLS, fillPlay, jobSkill, playsFor, WEAK_JOB } from '../../src/core/engine/plays.ts';
 import { agentTips, tipsFor } from '../../src/core/engine/tips.ts';
 import { summaryText } from '../../src/core/engine/summary.ts';
@@ -125,7 +124,7 @@ describe('tips', () => {
       for (const s of MAP_TIPS[m.id]![side]) ok(plain(s), `${m.name}: “${s}”`);
     }
     for (const [id, s] of [...Object.entries(ATTACK_TIPS), ...Object.entries(DEFENSE_TIPS)]) ok(AGENTS.some((a) => a.id === id) && plain(s), `${id}: “${s}”`);
-    for (const s of [...Object.values(RANK_TIPS).flat(), ...Object.values(PARTY_TIPS).flatMap((t) => [t.play, t.ask]), ...ROLE_IDS.flatMap((r) => Object.values(DOUBLE_TIPS[r]))]) ok(plain(s), s);
+    for (const s of [...Object.values(RANK_TIPS).flat(), ...Object.values(PARTY_TIPS).flatMap((t) => [t.play, t.ask]), ...Object.values(DOUBLE_TIPS).flatMap((t) => Object.values(t))]) ok(plain(s), s);
   });
   spec('tips name only the map’s own callouts', () => {
     for (const m of MAPS) {

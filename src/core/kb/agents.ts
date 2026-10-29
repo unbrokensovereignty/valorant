@@ -87,7 +87,7 @@ const DEFS: readonly AgentDef[] = [
   },
   {
     id: 'yoru', name: 'Yoru', role: 'duelist', released: '2021-01-12', solo: 0.55, skill: 0.85, pop: 3.5, win: 48.2,
-    caps: 'flash .6 Q; entry .7 E; mobility .75 E; recon .4 CX; flank .3 CE; duel .6 G; angles .35 E',
+    caps: 'flash .6 Q; entry .7 E; mobility .75 E; recon .4 CX; duel .6 G; angles .35 E',
     line: 'Teleports and flashes from unexpected angles; strong for fakes and lurks.',
   },
   {
@@ -102,7 +102,7 @@ const DEFS: readonly AgentDef[] = [
   },
   {
     id: 'waylay', name: 'Waylay', role: 'duelist', released: '2025-03-04', solo: 0.7, skill: 0.7, pop: 3.9, win: 48.6,
-    caps: 'entry .8 Q; mobility .85 QE; disrupt .45 CX; clear .2 C; stall .3 C; duel .65 G; angles .35 E',
+    caps: 'entry .8 Q; mobility .85 QE; disrupt .45 CX; stall .3 C; duel .65 G; angles .35 E',
     line: 'Dashes in, slows the defenders with light and zips back to safety.',
   },
   {
@@ -128,13 +128,13 @@ const DEFS: readonly AgentDef[] = [
     line: 'Guiding flashes, a scouting dog and team heals.',
   },
   {
-    id: 'kayo', name: 'KAY/O', role: 'initiator', released: '2021-06-22', solo: 0.55, skill: 0.45, pop: 0.4, win: 45.6,
+    id: 'kayo', name: 'KAY/O', role: 'initiator', released: '2021-06-22', solo: 0.45, skill: 0.45, pop: 0.4, win: 45.6,
     caps: 'flash .75 Q; disrupt .7 EX; recon .2 E; clear .45 C; postplant .45 C; retake .7 X; entry .3 X',
     line: 'Suppresses enemy abilities and flashes; his ultimate wins retakes.',
   },
   {
     id: 'fade', name: 'Fade', role: 'initiator', released: '2022-04-27', solo: 0.55, skill: 0.55, pop: 5.4, win: 50.8,
-    caps: 'recon .9 EC; disrupt .55 QX; clear .45 C; flash .3 C; retake .75 X; postplant .3 Q',
+    caps: 'recon .9 EC; disrupt .55 Q; clear .45 C; flash .3 C; retake .75 X; postplant .3 Q',
     line: 'Reveals enemies with Haunt and her Prowlers, and tethers them in place.',
   },
   {
@@ -154,13 +154,13 @@ const DEFS: readonly AgentDef[] = [
     line: 'Three quick smokes for an execute, and the best post-plant mollies.',
   },
   {
-    id: 'viper', name: 'Viper', role: 'controller', released: '2020-06-02', solo: 0.35, skill: 0.8, pop: 1.8, win: 49.8,
+    id: 'viper', name: 'Viper', role: 'controller', released: '2020-06-02', solo: 0.45, skill: 0.8, pop: 1.8, win: 49.8,
     caps: 'smoke .6 Q; wall .95 E; postplant .85 CX; stall .6 CQE; anchor .45 X; clear .4 C; retake .35 X',
     line: 'Long toxic walls and the strongest post-plant; best on big, open maps.',
   },
   {
     id: 'omen', name: 'Omen', role: 'controller', released: '2020-06-02', solo: 0.7, skill: 0.45, pop: 2.4, win: 46.5,
-    caps: 'smoke .9 E; flash .5 Q; mobility .55 CX; flank .15 X; stall .25 E; retake .35 Q; entry .2 C; duel .35 G; angles .3 C',
+    caps: 'smoke .9 E; flash .5 Q; mobility .55 CX; stall .25 E; retake .35 Q; entry .2 C; duel .35 G; angles .3 C',
     line: 'Fast-recharging smokes and a nearsight that suit any map.',
   },
   {
@@ -177,7 +177,7 @@ const DEFS: readonly AgentDef[] = [
     id: 'clove', name: 'Clove', role: 'controller', released: '2024-03-26', solo: 0.85, skill: 0.35, pop: 13.9, win: 53.3,
     // patch 13.09: Pick-me-up's speed went from 15% to 10%, and killing Clove after Not Dead Yet
     // gives the killer an ultimate point and a step toward their signature ability
-    caps: 'smoke .85 E; entry .4 CX; disrupt .3 Q; sustain .25 C; duel .55 GX; mobility .25 C',
+    caps: 'smoke .85 E; entry .4 CX; clear .3 Q; sustain .25 C; duel .55 GX; mobility .25 C',
     line: 'Smokes even after dying, so they can play aggressively like a duelist.',
   },
   {
@@ -218,7 +218,7 @@ const DEFS: readonly AgentDef[] = [
   },
   {
     id: 'veto', name: 'Veto', role: 'sentinel', released: '2025-10-07', solo: 0.55, skill: 0.55, pop: 0.6, win: 48.8,
-    caps: 'anchor .65 QE; flank .6 QC; stall .55 Q; mobility .35 C; disrupt .35 E; duel .5 X; angles .35 C',
+    caps: 'anchor .65 QE; flank .6 Q; stall .55 Q; mobility .35 C; disrupt .35 Q; duel .5 X; angles .35 C',
     line: 'Destroys incoming utility and traps attackers; teleports to hold two places at once.',
   },
 ];

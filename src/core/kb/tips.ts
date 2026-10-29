@@ -166,7 +166,7 @@ export const AGENT_MAP_TIPS: Record<string, Record<string, string | Partial<Reco
     viper: 'Corrode’s lobbies are long ways in; a Toxic Screen across A Main or B Main lets the team cross them together.',
     fade: 'Haunt and Prowlers find the defenders in the corners near Corrode’s plant spots, like A Yard, A Pocket and A Elbow.',
     vyse: { defense: 'Shear and Razorvine shut the narrow way from a lobby onto Corrode’s sites on whoever walks in first.' },
-    waylay: 'Lightspeed gets Waylay onto Corrode’s sites before the corners can be checked; go in right behind Fade’s information.',
+    waylay: 'Lightspeed gets Waylay onto Corrode’s sites before the defenders can settle; go in the moment the team’s utility lands.',
   },
   fracture: {
     breach: 'Fracture’s sites are reached through narrow ways from both ends; Fault Line and Flashpoint through the walls let both groups go in together.',
@@ -276,18 +276,15 @@ export const PARTY_TIPS: Record<2 | 3, { play: string; ask: string }> = {
 
 /**
  * Tips for a team with two of a role (what doubling up asks of the team), shown under "Two duelists"
- * and so on: one for each side, and one for a question about both.
+ * and so on: one for each side, and one for a question about both. Two initiators get a tip built
+ * from their kits instead (engine/tips.ts), since which one finds enemies and which one flashes
+ * depends on who they are.
  */
-export const DOUBLE_TIPS: Record<Role, Record<Side | 'both', string>> = {
+export const DOUBLE_TIPS: Record<Exclude<Role, 'initiator'>, Record<Side | 'both', string>> = {
   duelist: {
     attack: 'Go in one right after the other, so the second can trade the first.',
     defense: 'Split them up: one takes early fights for information, and the other stays back to trade or retake.',
     both: 'On attack, go in one right after the other so the second can trade the first; on defense, one takes early fights and the other stays back.',
-  },
-  initiator: {
-    attack: 'One finds the enemies and the other flashes them; don’t spend both on the same angle.',
-    defense: 'One finds the enemies and the other flashes them; don’t spend both on the same angle.',
-    both: 'One finds the enemies and the other flashes them; don’t spend both on the same angle.',
   },
   controller: {
     attack: 'One smokes the hit and the other plays mid or saves smokes for after the plant.',
