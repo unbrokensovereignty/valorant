@@ -137,6 +137,7 @@
 .pro-comps { gap: 6px; }
 .map-side { margin: 28px 0 12px; }
 .map-tips { margin-bottom: 12px; }
+.map-plays { margin-top: 28px; }
 .map-detail + .map-side h2 { font-size: 1.2rem; }
 .map-page-plays { margin-top: 24px; }
 

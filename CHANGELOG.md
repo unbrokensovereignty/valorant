@@ -14,7 +14,7 @@ Every version of Playbook By Sovereign and what it changed.
 - **Plays checked.** Two plays no longer smoke the way a teammate is coming in: Lotus's C split leaves C Waterfall open for the pinch, and Fracture's B pincer smokes B Generator instead of B Tunnel, where a teammate holds.
 - **Asking teammates.** A duo or trio's best pick names the role to ask your random teammates for, and now also how often they pick one on their own, so a likely teammate in that role doesn't read as a sure thing.
 - **Guided tours.** Help has a new Tours tab: six short tours light up one thing at a time on the real screens, from a three-step First steps to the Planner, Rankings, agent and map pages, and Saved and Settings. Space goes on, ← goes back and Esc stops; finished tours are ticked off, and Home offers the first steps once. They can be started from the search too.
-- **Tidier Planner.** Options no longer shows as an empty heading when a map is chosen.
+- **Tidier pages.** The Planner's Options no longer shows as an empty heading when a map is chosen, and a map's plays no longer sit right up against its best comps.
 
 ## 0.1.5 (2026-10-29)
 

@@ -93,7 +93,7 @@ function Plays({ m, side, rank, newAgents }: { m: MapInfo; side: Side; rank: Ran
   const team = ans?.comps[0]?.team;
   if (!team) return null;
   return (
-    <section class="stack">
+    <section class="stack map-plays">
       <div class="row wrap"><h2>Plays</h2><span class="muted small">with the best comp:</span><TeamIcons team={team} size={26} /></div>
       <PlaysPanel team={team} map={m.id} side={side} sites={[]} />
     </section>
