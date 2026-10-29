@@ -2,7 +2,7 @@
 
 Every version of Playbook By Sovereign and what it changed.
 
-## 0.1.5 (in progress)
+## 0.1.5 (2026-10-29)
 
 - **Hush, for real.** Hush is in as a full agent now that she's out: her abilities in the game's own words, her portrait and ability icons, numbers from her first days in ranked and from hands-on reviews of her kit, her best partners and two new tips. She's no longer marked as an estimate, and the Home page and the New tag on her portrait say she's new for her first two months. Pro teams haven't had the chance to pick her yet, so pro play doesn't count for or against her, and her page says her ranked pick rate is from her first days.
 - **Patch 13.09.** Every agent's abilities are refreshed from the game's 13.09 text. Ability names stand out, and what an ability does to enemies or for your side is colored, as in the game. Clove's speed boost after Pick-me-up is smaller, as in the patch.

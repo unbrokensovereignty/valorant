@@ -2,7 +2,7 @@
 
 An offline team comp planner for VALORANT, for desktop browsers. Designed and directed by Sovereign.
 
-Download `Playbook By Sovereign v0.1.0.html` from this repository and open it in Chrome, Edge, Firefox or Safari. There's nothing to install, no account and no network: everything is saved in your browser.
+Download `Playbook By Sovereign v0.1.5.html` from this repository and open it in Chrome, Edge, Firefox or Safari. There's nothing to install, no account and no network: everything is saved in your browser.
 
 ## What it does
 

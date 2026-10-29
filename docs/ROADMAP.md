@@ -18,7 +18,7 @@ The owner asked (29 October 2026) for the next version to make the engine and th
 3. **A plan sheet to print.** One page per plan with the minimap, who does what in each play, and the tips, for a team that reviews before playing.
 4. **More plays per map.** Pistol-round and eco plays, and more fakes (there are hits, splits, defaults, setups and a retake for every site now).
 
-## 0.1.5: Hush and a tidier layout (in progress)
+## 0.1.5: Hush and a tidier layout (released 2026-10-29)
 
 The owner asked for Hush to be added fully now that she's out, with extra research to make up for how few stats there are yet, and for a review of the whole layout for inconsistencies (the role counts in the Planner were one), with rounds of testing and fixing until two rounds in a row found nothing significant. The heavier engine and knowledge work moved to the next version.
 
