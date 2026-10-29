@@ -4,7 +4,7 @@
  * teams for the same situation, so a 90 means the same thing on every map.
  */
 import { AGENTS, agentById } from '../kb/agents.ts';
-import { ALL_RANKS_T, rankOf } from '../kb/ranks.ts';
+import { rankOf } from '../kb/ranks.ts';
 import { ROLE_IDS } from '../kb/roles.ts';
 import { clamp } from '../util.ts';
 import { modelFor, situationKey, type Model, type Situation } from './model.ts';
@@ -129,7 +129,7 @@ export function rulesOf(q: Query): Rules {
   };
 }
 
-const rankT = (s: Situation) => (s.rank === 'any' ? ALL_RANKS_T : rankOf(s.rank).t);
+const rankT = (s: Situation) => rankOf(s.rank).t;
 
 /** Answers one situation of a query. `keep` is how many comps to return. */
 export function solve(q: Query, s: Situation, keep: number): SituationAnswer {

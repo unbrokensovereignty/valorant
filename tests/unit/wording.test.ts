@@ -9,7 +9,8 @@ import assert from 'node:assert/strict';
 import { solve } from '../../src/core/engine/plan.ts';
 import { newQuery } from '../../src/core/engine/query.ts';
 import { explainTeam } from '../../src/core/engine/explain.ts';
-import { D, modelFor, viaIn, type Model, type RankPick, type SidePick, type Situation } from '../../src/core/engine/model.ts';
+import { D, modelFor, viaIn, type Model, type SidePick, type Situation } from '../../src/core/engine/model.ts';
+import type { RankId } from '../../src/core/kb/ranks.ts';
 import { JOB_SKILLS, jobWords, playsFor } from '../../src/core/engine/plays.ts';
 import { tipsFor } from '../../src/core/engine/tips.ts';
 import { AGENTS, agentById, type Agent } from '../../src/core/kb/agents.ts';
@@ -69,7 +70,7 @@ function cases(): { s: Situation; team: string[] }[] {
   const out: { s: Situation; team: string[] }[] = [];
   for (const map of [...POOL.map((m) => m.id), 'any']) {
     for (const side of ['attack', 'defense', 'both'] as SidePick[]) {
-      for (const rank of ['iron', 'gold', 'platinum', 'immortal'] as RankPick[]) {
+      for (const rank of ['iron', 'gold', 'platinum', 'immortal'] as RankId[]) {
         // some questions know the other team
         const enemy = r.next() < 0.35 ? r.some(ids, 5) : [];
         const s: Situation = { map, side, rank, sites: [], enemy };

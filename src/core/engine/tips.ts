@@ -65,10 +65,8 @@ export function tipsFor(team: readonly string[], s: Situation, party: PartySize 
       ?? (s.side === 'defense' ? DEFENSE_TIPS[a.id] : s.side === 'attack' ? ATTACK_TIPS[a.id] : undefined) ?? tips?.[0];
     if (text) out.push({ about: a.name, text });
   }
-  if (s.rank !== 'any') {
-    const r = rankOf(s.rank);
-    for (const text of RANK_TIPS[rankBand(r.t)].slice(0, 2)) out.push({ about: r.name, text });
-  }
+  const r = rankOf(s.rank);
+  for (const text of RANK_TIPS[rankBand(r.t)].slice(0, 2)) out.push({ about: r.name, text });
   if (party === 2 || party === 3) {
     const about = party === 2 ? 'Duo' : 'Trio';
     out.push({ about, text: PARTY_TIPS[party].play });

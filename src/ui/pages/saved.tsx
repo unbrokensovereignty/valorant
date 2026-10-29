@@ -15,6 +15,7 @@ import { openPlanner, planWith } from '../planner/store.ts';
 import { CompDetail, Fit, TeamIcons } from '../planner/comp.tsx';
 import { askedLine, askedTitle, partyWord } from '../planner/words.ts';
 import { agentById } from '../../core/kb/agents.ts';
+import type { RankId } from '../../core/kb/ranks.ts';
 import { LIMITS, poolsOf, type Party, type Player, type SavedPlan } from '../../core/saved.ts';
 import type { Situation } from '../../core/engine/model.ts';
 import { teamFit, type CompAnswer, type SituationAnswer } from '../../core/engine/plan.ts';
@@ -29,7 +30,8 @@ type Tab = 'plans' | 'parties';
 /** The one situation a saved plan is about (a plan saved from "the best map" keeps the map it picked). */
 function situationOf(p: SavedPlan): Situation {
   const q = p.query;
-  return { map: q.map === 'best' ? 'any' : q.map, side: q.side === 'best' ? 'both' : q.side, rank: q.rank === 'best' ? 'any' : q.rank, sites: q.sites, enemy: q.enemy };
+  const rank = q.rank === 'best' ? data().settings().defaultRank as RankId : q.rank;
+  return { map: q.map === 'best' ? 'any' : q.map, side: q.side === 'best' ? 'both' : q.side, rank, sites: q.sites, enemy: q.enemy };
 }
 
 // ---------------------------------------------------------------- plans

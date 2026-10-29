@@ -18,11 +18,10 @@ import { kitOf, abilityNames, textParts } from '../../core/kb/kits.ts';
 import { mapById, MAPS, POOL } from '../../core/kb/maps.ts';
 import { agentRules, ruleHelps, ruleWhyAt } from '../../core/kb/kitfit.ts';
 import { PRO, PRO_MAPS_COUNTED, proKnown } from '../../core/kb/pro.ts';
-import { RANKS } from '../../core/kb/ranks.ts';
+import { RANKS, type RankId } from '../../core/kb/ranks.ts';
 import { DIM_INFO, DIMS, ROLES, roleOf, type Role } from '../../core/kb/roles.ts';
 import { PAIRS, type Pair } from '../../core/kb/synergy.ts';
 import { agentMapTips, agentTips } from '../../core/engine/tips.ts';
-import type { RankPick } from '../../core/engine/model.ts';
 import { tierOf } from '../../core/engine/weights.ts';
 import { fmtLongDay } from '../../core/dates.ts';
 import { listJoin } from '../../core/text.ts';
@@ -103,7 +102,7 @@ function Strengths({ a }: { a: Agent }) {
   );
 }
 
-function BestMaps({ a, rank, newAgents }: { a: Agent; rank: RankPick; newAgents: boolean }) {
+function BestMaps({ a, rank, newAgents }: { a: Agent; rank: RankId; newAgents: boolean }) {
   const rows = POOL.map((m) => {
     const ans = answerFor({ map: m.id, side: 'both', rank, sites: [] }, newAgents);
     return { m, fit: ans?.agents.find((x) => x.id === a.id)?.fit };
@@ -124,12 +123,12 @@ function BestMaps({ a, rank, newAgents }: { a: Agent; rank: RankPick; newAgents:
           </li>
         ))}
       </ul>
-      <p class="small muted">For a five-stack, both sides, at {rank === 'any' ? 'all ranks' : rankWord(rank)}. Pick a map to plan with {a.name} there.</p>
+      <p class="small muted">For a five-stack, both sides, at {rankWord(rank)}. Pick a map to plan with {a.name} there.</p>
     </section>
   );
 }
 
-function ByRank({ a, rank, newAgents }: { a: Agent; rank: RankPick; newAgents: boolean }) {
+function ByRank({ a, rank, newAgents }: { a: Agent; rank: RankId; newAgents: boolean }) {
   const rows = RANKS.map((r) => ({ r, fit: answerFor({ map: 'any', side: 'both', rank: r.id, sites: [] }, newAgents)?.agents.find((x) => x.id === a.id)?.fit }));
   const ready = rows.every((x) => x.fit !== undefined);
   return (
@@ -145,7 +144,7 @@ function ByRank({ a, rank, newAgents }: { a: Agent; rank: RankPick; newAgents: b
           </li>
         ))}
       </ul>
-      <p class="small muted">For a five-stack on any map in the pool, both sides{rank !== 'any' ? `; your usual rank is marked` : ''}. Pick a rank to plan with {a.name} there.</p>
+      <p class="small muted">For a five-stack on any map in the pool, both sides; your usual rank is marked. Pick a rank to plan with {a.name} there.</p>
     </section>
   );
 }
@@ -205,7 +204,7 @@ function MapByMap({ a }: { a: Agent }) {
 
 function AgentPage({ a }: { a: Agent }) {
   const s = useSettings();
-  const rank = s.defaultRank as RankPick;
+  const rank = s.defaultRank as RankId;
   const tips = agentTips(a.id);
   const kit = kitOf(a.id);
   const newAgents = s.includeNew || !!a.estimate;

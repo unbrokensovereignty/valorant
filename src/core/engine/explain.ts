@@ -7,7 +7,7 @@ import { AGENTS, agentById, type Agent } from '../kb/agents.ts';
 import { abilityNames } from '../kb/kits.ts';
 import { mapById, type Side } from '../kb/maps.ts';
 import { PRO } from '../kb/pro.ts';
-import { ALL_RANKS_T, rankOf } from '../kb/ranks.ts';
+import { rankOf } from '../kb/ranks.ts';
 import { DIMS, DIM_INFO, ROLE_IDS, roleOf, type Dim, type Role } from '../kb/roles.ts';
 import { pairOf } from '../kb/synergy.ts';
 import { listJoin } from '../text.ts';
@@ -138,7 +138,7 @@ const MIX_GAP: Record<Role, { fewer: string; more: string }> = {
 export function explainTeam(m: Model, ids: readonly string[]): Explanation {
   const team = ids.map((id) => agentById(id)).filter((a): a is Agent => !!a);
   const s = m.situation;
-  const t = s.rank === 'any' ? ALL_RANKS_T : rankOf(s.rank).t;
+  const t = rankOf(s.rank).t;
   const map = mapById(s.map);
   const sides: Side[] = s.side === 'both' ? ['attack', 'defense'] : [s.side];
   // what this map, side and site ask for beyond the usual
@@ -186,8 +186,7 @@ export function explainTeam(m: Model, ids: readonly string[]): Explanation {
   });
   // a second controller needs teamwork that most teams below the top ranks don't bring (see SECOND_CONTROLLER)
   if (counts.controller === 2 && m.secondController >= SECOND_CONTROLLER.note) {
-    const who = s.rank === 'any' ? 'most ranked teams' : `most teams at ${rankOf(s.rank).name}`;
-    cons.push(`Two controllers pay off only when the team plays its smokes together, which ${who} don’t: the second one costs firepower or information.`);
+    cons.push(`Two controllers pay off only when the team plays its smokes together, which most teams at ${rankOf(s.rank).name} don’t: the second one costs firepower or information.`);
   }
   // straying from the map's pro role mix, where it costs enough to matter (see ROLE_MIX)
   if (map) {
@@ -244,9 +243,9 @@ export function explainTeam(m: Model, ids: readonly string[]): Explanation {
   for (const p of pairs.filter((x) => x.strength > 0).sort((a, b) => b.strength - a.strength).slice(0, 2)) pros.push(p.why);
   for (const p of pairs.filter((x) => x.strength < 0).sort((a, b) => a.strength - b.strength).slice(0, 1)) cons.push(p.why);
   // rank
-  const rankName = s.rank === 'any' ? '' : rankOf(s.rank).name;
+  const rankName = rankOf(s.rank).name;
   let hard: Agent[] = [];
-  if (rankName && t <= KIT_NOTE.upTo) {
+  if (t <= KIT_NOTE.upTo) {
     // how much of each kit's utility a team at this rank gets (gun play aside), as the score counts it
     const kit = (a: Agent) => kitShare(a, t);
     hard = team.filter((a) => kitShare(a, 0) < KIT_NOTE.hard && !a.estimate).sort((x, y) => kit(x) - kit(y));
@@ -270,7 +269,7 @@ export function explainTeam(m: Model, ids: readonly string[]): Explanation {
     const advice = hardOnes.length === losers.length ? `: best played by someone who knows ${losers.length === 1 ? 'that agent' : 'them'} well` : '';
     cons.push(`${listJoin(losers.map(nameOf))} ${losers.length === 1 ? 'wins' : 'win'} fewer ranked games than most agents (${rates(losers)})${advice}.`);
   }
-  if (rankName && t >= 0.75) {
+  if (t >= 0.75) {
     const selfish = team.filter((a) => a.solo >= 0.85 && a.role === 'duelist' && a.caps.flash + a.caps.disrupt + a.caps.smoke < 0.5);
     if (selfish.length) cons.push(`${listJoin(selfish.map(nameOf))} ${selfish.length === 1 ? 'brings' : 'bring'} little utility, and teams at ${rankName} punish that.`);
   }

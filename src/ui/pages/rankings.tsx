@@ -17,7 +17,7 @@ import { isMap, MAPS, POOL } from '../../core/kb/maps.ts';
 import { NEW_AGENTS } from '../../core/kb/new-agents.ts';
 import { isRank, RANKS, type RankId } from '../../core/kb/ranks.ts';
 import { ROLES, type Role } from '../../core/kb/roles.ts';
-import type { RankPick, SidePick, Situation } from '../../core/engine/model.ts';
+import type { SidePick, Situation } from '../../core/engine/model.ts';
 import type { AgentAnswer } from '../../core/engine/plan.ts';
 import { newQuery } from '../../core/engine/query.ts';
 import { TIERS, tierOf } from '../../core/engine/weights.ts';
@@ -61,7 +61,7 @@ function TierList({ agents }: { agents: readonly AgentAnswer[] }) {
 }
 
 /** Every agent's fit on every map, as a table colored by tier. */
-function ByMap({ side, rank, newAgents, all, role }: { side: SidePick; rank: RankPick; newAgents: boolean; all: boolean; role: RoleFilter }) {
+function ByMap({ side, rank, newAgents, all, role }: { side: SidePick; rank: RankId; newAgents: boolean; all: boolean; role: RoleFilter }) {
   const numbers = useSettings().showNumbers;
   const maps = all ? MAPS : POOL;
   const answers = maps.map((m) => answerFor({ map: m.id, side, rank, sites: [] }, newAgents));
@@ -117,16 +117,17 @@ export function RankingsPage(_p: PageProps) {
   const tab = tourHook.value === 'tier-top' ? 'agents' : chosen;
   const [map, setMap] = useView<string>('rankings.map', 'any', (v) => v === 'any' || isMap(v));
   const [side, setSide] = useView<SidePick>('rankings.side', 'both', isSide);
-  const [rank, setRank] = useView<string>('rankings.rank', s.defaultRank, (v) => v === 'any' || isRank(v));
+  // your usual rank until you pick another: a team plays differently at each rank, so there's no tier list for all of them
+  const [rank, setRank] = useView<RankId>('rankings.rank', s.defaultRank as RankId, isRank);
   const [role, setRole] = useView<RoleFilter>('rankings.role', 'all', (v) => v === 'all' || ROLES.some((r) => r.id === v));
   const [fresh, setFresh] = useView<string>('rankings.new', s.includeNew ? 'yes' : 'no', (v) => v === 'yes' || v === 'no');
   const [allMaps, setAllMaps] = useView<string>('rankings.all', 'no', (v) => v === 'yes' || v === 'no');
   const [open, setOpen] = useState(0);
   const newAgents = fresh === 'yes';
-  const situation: Situation = { map, side, rank: rank as RankPick, sites: [] };
+  const situation: Situation = { map, side, rank, sites: [] };
   // the by-map table works its maps out in the background; the rest is one situation, answered now
   const ans = tab === 'maps' ? undefined : answerNow(situation, newAgents);
-  const q = { ...newQuery(rank as RankPick, newAgents), map, side };
+  const q = { ...newQuery(rank, newAgents), map, side };
   const agents = ans ? ans.agents.filter((a) => role === 'all' || agentById(a.id)?.role === role) : [];
   const where = `${tab === 'maps' ? 'Every map' : mapWord(map)}, ${sideWord(side).toLowerCase()}, ${rankWord(rank)}`;
   return (
@@ -138,7 +139,7 @@ export function RankingsPage(_p: PageProps) {
             options={[['any', 'Any map in the pool'], ...POOL.map((m) => [m.id, m.name] as const), ...MAPS.filter((m) => !m.pool).map((m) => [m.id, `${m.name} (out of the pool)`] as const)]} />
         )}
         <Segmented<SidePick> label="Side" value={side} onChange={(v) => { setSide(v); setOpen(0); }} options={[['both', 'Both sides'], ['attack', 'Attack'], ['defense', 'Defense']]} />
-        <Select label="Rank" value={rank} onChange={(v) => { setRank(v); setOpen(0); }} options={[['any', 'All ranks'], ...RANKS.map((r) => [r.id, r.name] as [RankId, string])]} />
+        <Select<RankId> label="Rank" value={rank} onChange={(v) => { setRank(v); setOpen(0); }} options={RANKS.map((r) => [r.id, r.name] as [RankId, string])} />
         {NEW_AGENTS.length > 0 && <Toggle checked={newAgents} onChange={(v) => setFresh(v ? 'yes' : 'no')} label={`Include ${listJoin(NEW_AGENTS.map((a) => a.name))}`} />}
         {tab === 'maps' && <Toggle checked={allMaps === 'yes'} onChange={(v) => setAllMaps(v ? 'yes' : 'no')} label={`All ${MAPS.length} maps`} />}
       </div>
@@ -154,7 +155,7 @@ export function RankingsPage(_p: PageProps) {
             {ans.comps.map((c, i) => <CompRow key={c.team.join()} c={c} i={i} ans={ans} q={q} open={open === i} onToggle={() => setOpen(open === i ? -1 : i)} />)}
           </ol>
         )}
-        {tab === 'maps' && <ByMap side={side} rank={rank as RankPick} newAgents={newAgents} all={allMaps === 'yes'} role={role} />}
+        {tab === 'maps' && <ByMap side={side} rank={rank} newAgents={newAgents} all={allMaps === 'yes'} role={role} />}
       </div>
     </>
   );

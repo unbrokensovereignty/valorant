@@ -1,7 +1,7 @@
 /** A planner question in words, for menus, lists and saved plans: "Haven, attack, C site" and "Gold · trio · with Jett". */
 import { agentById } from '../../core/kb/agents.ts';
 import { mapById } from '../../core/kb/maps.ts';
-import { rankOf } from '../../core/kb/ranks.ts';
+import { rankOf, type RankId } from '../../core/kb/ranks.ts';
 import { ROLES } from '../../core/kb/roles.ts';
 import type { Query } from '../../core/engine/query.ts';
 import type { Situation } from '../../core/engine/model.ts';
@@ -21,7 +21,7 @@ const COUNT = ['no', 'one', 'two', 'three', 'four', 'five'];
 
 export const mapWord = (map: string): string => (map === 'best' ? 'Best map' : map === 'any' ? 'Any map' : mapById(map)?.name ?? 'Any map');
 export const sideWord = (side: string): string => (side === 'attack' ? 'Attack' : side === 'defense' ? 'Defense' : side === 'best' ? 'Best side' : 'Both sides');
-export const rankWord = (rank: string): string => (rank === 'any' ? 'All ranks' : rank === 'best' ? 'Best rank' : rankOf(rank as never)?.name ?? 'All ranks');
+export const rankWord = (rank: RankId | 'best'): string => (rank === 'best' ? 'Best rank' : rankOf(rank).name);
 export const partyWord = (n: number): string => (n === 2 ? 'Duo' : n === 3 ? 'Trio' : 'Five-stack');
 export const sitesWord = (sites: readonly string[]): string => (sites.length ? `${listJoin(sites)} site${sites.length > 1 ? 's' : ''}` : '');
 const names = (ids: readonly string[]) => listJoin(ids.map((id) => agentById(id)?.name ?? id));

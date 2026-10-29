@@ -9,7 +9,6 @@ import { ROLE_IDS } from '../kb/roles.ts';
 import { D, N, ROLE_OF, ROLES_N, type Model } from './model.ts';
 import { roleCostOf, scoreTeam, TopK, walkTeams, type Rules, type Team } from './search.ts';
 import { FILL_MISSING, FILL_TOO_MANY_DUELISTS } from './weights.ts';
-import { ALL_RANKS_T } from '../kb/ranks.ts';
 
 /** How often random players at rank `t` (0 Iron to 1 Radiant) lock an agent in, relative to others. */
 export function pickWeight(agent: number, t: number): number {
@@ -121,7 +120,7 @@ export interface PartyRules extends Rules {
 }
 
 /** Ranks every party of `size` the rules allow by its expected team score. */
-export function searchParties(m: Model, rules: PartyRules, size: number, rankT = ALL_RANKS_T, keep = 40): PartyResult {
+export function searchParties(m: Model, rules: PartyRules, size: number, rankT: number, keep = 40): PartyResult {
   const locked = [...new Set(rules.locked)];
   const lockedSet = new Set(locked);
   const fillSize = 5 - size - locked.length;
@@ -225,7 +224,7 @@ export function searchParties(m: Model, rules: PartyRules, size: number, rankT =
  * score when at least one random teammate plays it, and how often they do without being asked
  * (0 to 1), best first.
  */
-export function askFor(m: Model, party: readonly number[], rules: PartyRules, rankT = ALL_RANKS_T): { role: string; expected: number; chance: number }[] {
+export function askFor(m: Model, party: readonly number[], rules: PartyRules, rankT: number): { role: string; expected: number; chance: number }[] {
   const fixed = [...party, ...rules.locked];
   const fixedSet = new Set(fixed);
   const pool: number[] = [];

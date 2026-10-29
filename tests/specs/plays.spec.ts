@@ -148,21 +148,21 @@ describe('tips', () => {
     for (const name of ['Omen', 'Viper', 'Sova', 'Jett', 'Killjoy']) ok(t.some((x) => x.about === name), name);
     // and every agent's tip on defense is about defending
     for (const a of AGENTS) {
-      const tip = tipsFor([a.id], { map: 'haven', side: 'defense', sites: [], rank: 'any' }).find((x) => x.about === a.name)!.text;
+      const tip = tipsFor([a.id], { map: 'haven', side: 'defense', sites: [], rank: 'gold' }).find((x) => x.about === a.name)!.text;
       ok(!/after the plant|post-plant|before the hit(?! comes)|the team crosses|walk the team|enters alone|(?:stop|or) the defuse|a hit\b/.test(tip), `${a.name} on defense: “${tip}”`);
       // and on attack, about attacking
-      const attack = tipsFor([a.id], { map: 'haven', side: 'attack', sites: [], rank: 'any' }).find((x) => x.about === a.name)!.text;
+      const attack = tipsFor([a.id], { map: 'haven', side: 'attack', sites: [], rank: 'gold' }).find((x) => x.about === a.name)!.text;
       ok(!/\ba rush\b|the hit comes|for the retake|site entrance/.test(attack), `${a.name} on attack: “${attack}”`);
       // an agent's page has every tip once
       eq(new Set(agentTips(a.id)).size, agentTips(a.id).length, `${a.name}: no tip twice`);
     }
     ok(t.some((x) => x.about === 'Gold'));
-    const duo = tipsFor(team, { map: 'any', side: 'both', sites: [], rank: 'any' }, 2, ['sova', 'jett']);
+    const duo = tipsFor(team, { map: 'any', side: 'both', sites: [], rank: 'gold' }, 2, ['sova', 'jett']);
     ok(!duo.some((x) => x.about === 'Omen'), 'only your party’s agents');
     ok(duo.some((x) => x.about === 'Duo'));
     ok(!duo.some((x) => x.about.startsWith('Haven')));
     // once teammates have locked in every other spot, there's no one left to ask for a role
-    const trio = (locked: number) => tipsFor(team, { map: 'any', side: 'both', sites: [], rank: 'any' }, 3, ['sova', 'jett', 'omen'], locked).filter((x) => x.about === 'Trio').map((x) => x.text);
+    const trio = (locked: number) => tipsFor(team, { map: 'any', side: 'both', sites: [], rank: 'gold' }, 3, ['sova', 'jett', 'omen'], locked).filter((x) => x.about === 'Trio').map((x) => x.text);
     ok(trio(1).includes(PARTY_TIPS[3].ask) && !trio(2).includes(PARTY_TIPS[3].ask) && trio(2).includes(PARTY_TIPS[3].play));
   });
 });

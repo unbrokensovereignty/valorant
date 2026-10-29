@@ -7,7 +7,8 @@ import assert from 'node:assert/strict';
 import { solve } from '../../src/core/engine/plan.ts';
 import { newQuery } from '../../src/core/engine/query.ts';
 import { explainTeam } from '../../src/core/engine/explain.ts';
-import { modelFor, type RankPick } from '../../src/core/engine/model.ts';
+import { modelFor } from '../../src/core/engine/model.ts';
+import type { RankId } from '../../src/core/kb/ranks.ts';
 import { TIERS } from '../../src/core/engine/weights.ts';
 import { agentById } from '../../src/core/kb/agents.ts';
 import { abilityNames } from '../../src/core/kb/kits.ts';
@@ -20,15 +21,15 @@ const min = (tier: string) => TIERS.find((t) => t.id === tier)!.min;
 const SIDES: Side[] = ['attack', 'defense'];
 
 const answers = new Map<string, ReturnType<typeof solve>>();
-function answer(map: string, side: Side, rank: RankPick) {
+function answer(map: string, side: Side, rank: RankId) {
   const key = `${map}|${side}|${rank}`;
   let a = answers.get(key);
   if (!a) answers.set(key, (a = solve({ ...newQuery(rank, true), map, side }, { map, side, rank, sites: [] }, 3)));
   return a;
 }
-const fit = (agent: string, map: string, side: Side, rank: RankPick) => answer(map, side, rank).agents.find((x) => x.id === agent)!.fit;
+const fit = (agent: string, map: string, side: Side, rank: RankId) => answer(map, side, rank).agents.find((x) => x.id === agent)!.fit;
 /** An agent's average fit over the maps of a space, on both sides. */
-function spaceFit(agent: string, space: Space, rank: RankPick): number {
+function spaceFit(agent: string, space: Space, rank: RankId): number {
   const maps = MAPS.filter((m) => m.space === space);
   let sum = 0;
   for (const m of maps) for (const side of SIDES) sum += fit(agent, m.id, side, rank);
@@ -63,7 +64,7 @@ test('Hush is strong on Lotus attack, where she works the doors from range', () 
   const problems: string[] = [];
   // her place among the duelists: fits are measured within a situation, so this is how her pick
   // compares with the other duelists' there
-  const place = (map: string, rank: RankPick) => {
+  const place = (map: string, rank: RankId) => {
     const own = fit('hush', map, 'attack', rank);
     return 1 + answer(map, 'attack', rank).agents.filter((x) => agentById(x.id)!.role === 'duelist' && x.fit > own).length;
   };
@@ -175,7 +176,7 @@ test('below Immortal one controller leads, since two pay off only when a team pl
     if (controllers(best) !== 2) problems.push(`Lotus ${side} at Immortal: ${best.map(name).join(', ')}`);
   }
   // and a comp with two says what the second one costs, where it costs
-  const said = (rank: RankPick) => explainTeam(modelFor({ map: 'lotus', side: 'attack', rank, sites: [] }), ['raze', 'fade', 'viper', 'omen', 'chamber']).cons.some((c) => c.startsWith('Two controllers pay off only'));
+  const said = (rank: RankId) => explainTeam(modelFor({ map: 'lotus', side: 'attack', rank, sites: [] }), ['raze', 'fade', 'viper', 'omen', 'chamber']).cons.some((c) => c.startsWith('Two controllers pay off only'));
   if (!said('gold')) problems.push('no word at Gold of what the second controller costs');
   if (said('immortal')) problems.push('a word at Immortal of what the second controller costs');
   none(problems);
@@ -184,7 +185,7 @@ test('below Immortal one controller leads, since two pay off only when a team pl
 test('a duo or trio is shown with the best agents for its random teammates, around the party’s own', () => {
   const problems: string[] = [];
   const controllers = (team: readonly string[]) => team.filter((id) => agentById(id)!.role === 'controller').length;
-  const party = (map: string, side: Side, rank: RankPick, size: 2 | 3, include: string[]) =>
+  const party = (map: string, side: Side, rank: RankId, size: 2 | 3, include: string[]) =>
     solve({ ...newQuery(rank, true), map, side, party: size, include }, { map, side, rank, sites: [] }, 3);
   // a Chamber and Omen duo already has its controller: its teammates aren't told to play Clove
   for (const side of SIDES) {

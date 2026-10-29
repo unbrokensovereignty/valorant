@@ -21,7 +21,8 @@ import { RULES, ruleApplies, ruleHelps } from '../../core/kb/kitfit.ts';
 import { PRO } from '../../core/kb/pro.ts';
 import { DIM_INFO, DIMS, type Dim } from '../../core/kb/roles.ts';
 import { MAP_TIPS } from '../../core/kb/tips.ts';
-import { needsFor, proMixOf, type RankPick } from '../../core/engine/model.ts';
+import { needsFor, proMixOf } from '../../core/engine/model.ts';
+import type { RankId } from '../../core/kb/ranks.ts';
 import { newQuery } from '../../core/engine/query.ts';
 import { mapAgentTips } from '../../core/engine/tips.ts';
 import { listJoin } from '../../core/text.ts';
@@ -107,7 +108,7 @@ function HowItPlays({ m }: { m: MapInfo }) {
   );
 }
 
-function BestComps({ m, side, rank, newAgents }: { m: MapInfo; side: Side; rank: RankPick; newAgents: boolean }) {
+function BestComps({ m, side, rank, newAgents }: { m: MapInfo; side: Side; rank: RankId; newAgents: boolean }) {
   const [open, setOpen] = useState(-1);
   const ans = answerFor({ map: m.id, side, rank, sites: [] }, newAgents);
   if (!ans) return <p class="row muted"><span class="spinner" aria-hidden="true" />Finding the best comps…</p>;
@@ -119,7 +120,7 @@ function BestComps({ m, side, rank, newAgents }: { m: MapInfo; side: Side; rank:
   );
 }
 
-function Plays({ m, side, rank, newAgents }: { m: MapInfo; side: Side; rank: RankPick; newAgents: boolean }) {
+function Plays({ m, side, rank, newAgents }: { m: MapInfo; side: Side; rank: RankId; newAgents: boolean }) {
   const ans = answerFor({ map: m.id, side, rank, sites: [] }, newAgents);
   const team = ans?.comps[0]?.team;
   if (!team) return null;
@@ -135,7 +136,7 @@ function MapPage({ m }: { m: MapInfo }) {
   const s = useSettings();
   const [side, setSide] = useView<Side>('maps.side', 'attack', (v) => v === 'attack' || v === 'defense');
   const [names, setNames] = useView<string>('maps.names', 'yes', (v) => v === 'yes' || v === 'no');
-  const rank = s.defaultRank as RankPick;
+  const rank = s.defaultRank as RankId;
   const tips = MAP_TIPS[m.id]?.[side] ?? [];
   const agentTips = mapAgentTips(m.id).filter((t) => !t.side || t.side === side);
   return (
@@ -183,7 +184,7 @@ function MapPage({ m }: { m: MapInfo }) {
       </div>
 
       <div class="row-between wrap map-side" data-tour="map-best">
-        <h2>Best comps at {rank === 'any' ? 'all ranks' : rankWord(rank)}</h2>
+        <h2>Best comps at {rankWord(rank)}</h2>
         <Segmented<Side> label="Side" value={side} onChange={setSide} options={[['attack', 'Attack'], ['defense', 'Defense']]} />
       </div>
       {tips.length > 0 && (

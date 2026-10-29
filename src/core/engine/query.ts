@@ -1,14 +1,15 @@
 /**
  * What you ask the planner. Every field can be given ("Haven"), left open ("Any map", "Both
- * sides", "All ranks") or asked for ("Find the best map"), which is what lets any input be an
- * output too: fix a trio and ask for the best map, or fix the map and ask for the best trio.
+ * sides") or asked for ("Find the best map"), which is what lets any input be an output too: fix a
+ * trio and ask for the best map, or fix the map and ask for the best trio. The rank is always given
+ * or asked for: a team plays differently at each rank, so no one answer fits them all.
  */
 import { isAgent, agentById } from '../kb/agents.ts';
 import { isMap, mapById, MAPS, POOL, type SiteId } from '../kb/maps.ts';
-import { isRank, RANK_IDS } from '../kb/ranks.ts';
+import { isRank, RANK_IDS, type RankId } from '../kb/ranks.ts';
 import { ROLE_IDS, type Role } from '../kb/roles.ts';
 import { isRecord } from '../util.ts';
-import type { RankPick, Situation, SidePick } from './model.ts';
+import type { Situation, SidePick } from './model.ts';
 
 export type PartySize = 2 | 3 | 5;
 export const PARTY_SIZES: readonly { id: PartySize; name: string }[] = [{ id: 5, name: 'Five-stack' }, { id: 3, name: 'Trio' }, { id: 2, name: 'Duo' }];
@@ -19,7 +20,7 @@ export interface Query {
   side: SidePick | 'best';
   /** Sites to plan for on the chosen map; none means all of them. */
   sites: SiteId[];
-  rank: RankPick | 'best';
+  rank: RankId | 'best';
   party: PartySize;
   /** Agents that must be in your party (or team, for a five-stack). */
   include: string[];
@@ -42,7 +43,7 @@ export interface Query {
   enemy: string[];
 }
 
-export const newQuery = (rank: RankPick = 'gold', newAgents = true): Query => ({
+export const newQuery = (rank: RankId = 'gold', newAgents = true): Query => ({
   map: 'any', side: 'both', sites: [], rank, party: 5, include: [], exclude: [], locked: [], roles: {}, pools: [], newAgents, allMaps: false, enemy: [],
 });
 
@@ -55,7 +56,9 @@ export function sanitizeQuery(x: unknown): Query {
   if (!isRecord(x)) return q;
   if (x.map === 'any' || x.map === 'best' || isMap(x.map)) q.map = x.map as string;
   if (x.side === 'attack' || x.side === 'defense' || x.side === 'both' || x.side === 'best') q.side = x.side;
-  if (x.rank === 'any' || x.rank === 'best' || isRank(x.rank)) q.rank = x.rank as Query['rank'];
+  if (x.rank === 'best' || isRank(x.rank)) q.rank = x.rank;
+  // a question from 0.2.0 or before could be for all ranks, which planned as Platinum does
+  else if (x.rank === 'any') q.rank = 'platinum';
   if (x.party === 2 || x.party === 3 || x.party === 5) q.party = x.party;
   q.newAgents = x.newAgents !== false;
   q.allMaps = x.allMaps === true;
@@ -111,7 +114,7 @@ export const mapsFor = (q: Pick<Query, 'allMaps'>) => (q.allMaps ? MAPS : POOL);
 export function situationsOf(q: Query): Situation[] {
   const maps = q.map === 'best' ? mapsFor(q).map((m) => m.id) : [q.map];
   const sides: SidePick[] = q.side === 'best' ? ['attack', 'defense'] : [q.side];
-  const ranks: RankPick[] = q.rank === 'best' ? [...RANK_IDS] : [q.rank];
+  const ranks: RankId[] = q.rank === 'best' ? [...RANK_IDS] : [q.rank];
   const out: Situation[] = [];
   for (const map of maps) for (const side of sides) for (const rank of ranks) out.push({ map, side, rank, sites: maps.length === 1 && map !== 'any' ? q.sites : [], enemy: q.enemy });
   return out;

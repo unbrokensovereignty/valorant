@@ -119,7 +119,7 @@ export function Question({ q }: { q: Query }) {
 
       <Part title="Rank" tour="q-rank">
         <Select label="Rank" value={q.rank} onChange={(rank) => ask({ rank: rank as Query['rank'] }, true)}
-          options={[['any', 'All ranks'], ...RANKS.map((x) => [x.id, x.name] as const), ['best', 'Find the best rank']]} />
+          options={[...RANKS.map((x) => [x.id, x.name] as const), ['best', 'Find the best rank']]} />
       </Part>
 
       <Part title="Party" tour="q-party" help={q.party === 5 ? 'All five of you pick together.' : `The other ${5 - q.party} are random teammates; the plan counts on what they usually pick.`}>

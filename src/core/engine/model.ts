@@ -7,7 +7,7 @@
 import { AGENTS, agentById, earlyStats, type Agent } from '../kb/agents.ts';
 import { MAPS, POOL, mapById, parseNeeds, type MapInfo, type Side, type SiteId } from '../kb/maps.ts';
 import { PRO, proKnown, proPick, proRoleMix } from '../kb/pro.ts';
-import { ALL_RANKS_T, rankOf, type RankId } from '../kb/ranks.ts';
+import { rankOf, type RankId } from '../kb/ranks.ts';
 import { DIMS, ROLE_IDS, type Dim, type Role } from '../kb/roles.ts';
 import { PAIRS } from '../kb/synergy.ts';
 import { rulesFor, type ParsedRule } from '../kb/kitfit.ts';
@@ -16,13 +16,12 @@ import { BASE, BY_RANK, EXEC, FIT, NEW_WIN_SHARE, PAIR_STEP, PRO_GAMES, PRO_RISE
 
 export type MapPick = string; // a map id, or 'any'
 export type SidePick = Side | 'both';
-export type RankPick = RankId | 'any';
 
 /**
  * One situation to plan for. `sites` is empty for all of the map's sites; `enemy` is the other
  * team's agents, as far as they're known (none, or left out, when they aren't).
  */
-export interface Situation { map: MapPick; side: SidePick; sites: readonly SiteId[]; rank: RankPick; enemy?: readonly string[] }
+export interface Situation { map: MapPick; side: SidePick; sites: readonly SiteId[]; rank: RankId; enemy?: readonly string[] }
 
 export const N = AGENTS.length;
 export const D = DIMS.length;
@@ -72,7 +71,7 @@ export interface Model {
 
 export interface ThreatAt { threat: Threat; level: number; who: string[] }
 
-const t = (rank: RankPick) => (rank === 'any' ? ALL_RANKS_T : rankOf(rank).t);
+const t = (rank: RankId) => rankOf(rank).t;
 
 /**
  * How much of a strength a team at rank `rankT` gets out of an agent, as a share (see EXEC):

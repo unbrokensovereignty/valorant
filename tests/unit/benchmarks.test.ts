@@ -9,20 +9,20 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { solve, teamFit } from '../../src/core/engine/plan.ts';
 import { newQuery } from '../../src/core/engine/query.ts';
-import { D, kitShare, modelFor, viaIn, type RankPick, type Situation } from '../../src/core/engine/model.ts';
+import { D, kitShare, modelFor, viaIn, type Situation } from '../../src/core/engine/model.ts';
 import { explainTeam } from '../../src/core/engine/explain.ts';
 import { KIT_NOTE, tierOf, TIERS } from '../../src/core/engine/weights.ts';
 import { AGENTS, agentById, type Agent } from '../../src/core/kb/agents.ts';
 import { abilityNames } from '../../src/core/kb/kits.ts';
 import { MAPS, POOL } from '../../src/core/kb/maps.ts';
 import { PRO, RECORDED } from '../../src/core/kb/pro.ts';
-import { RANK_IDS, rankOf, ALL_RANKS_T } from '../../src/core/kb/ranks.ts';
+import { RANK_IDS, rankOf, type RankId } from '../../src/core/kb/ranks.ts';
 import { DIMS, DIM_INFO, ROLES, ROLE_IDS, type Role } from '../../src/core/kb/roles.ts';
 
 const name = (id: string) => agentById(id)!.name;
 const none = (problems: string[]) => assert.deepEqual(problems, [], `\n${problems.join('\n')}`);
 const answers = new Map<string, ReturnType<typeof solve>>();
-function answer(map: string, rank: RankPick, side: Situation['side'] = 'both', keep = 3) {
+function answer(map: string, rank: RankId, side: Situation['side'] = 'both', keep = 3) {
   const key = [map, rank, side, keep].join('|');
   let a = answers.get(key);
   if (!a) answers.set(key, (a = solve({ ...newQuery(rank, true), map, side }, { map, side, rank, sites: [] }, keep)));
@@ -75,9 +75,9 @@ test('the comps pros played most at Masters Santiago fit well on their best map 
 
 test('low-rank tiers follow ranked results: easy winners high, hard team agents low', () => {
   const problems: string[] = [];
-  const tiers = (rank: RankPick) => new Map(answer('any', rank, 'both', 1).agents.map((x) => [x.id, x]));
+  const tiers = (rank: RankId) => new Map(answer('any', rank, 'both', 1).agents.map((x) => [x.id, x]));
   const order = TIERS.map((x) => x.id);
-  const at = (rank: RankPick, ids: string[], test: (place: number) => boolean, want: string) => {
+  const at = (rank: RankId, ids: string[], test: (place: number) => boolean, want: string) => {
     const t = tiers(rank);
     for (const id of ids) {
       const x = t.get(id)!;
@@ -112,7 +112,7 @@ function untrue(s: Situation, team: readonly string[]): string[] {
   const agents = team.map((id) => agentById(id)!);
   const row = (d: string) => e.strengths.find((r) => r.dim === d)!;
   const count = (r: Role) => agents.filter((a) => a.role === r).length;
-  const t = s.rank === 'any' ? ALL_RANKS_T : rankOf(s.rank).t;
+  const t = rankOf(s.rank).t;
   const map = MAPS.find((x) => x.id === s.map);
   const bad: string[] = [];
   type Kind = 'pro' | 'con' | 'note';
@@ -196,7 +196,7 @@ test('what the explanations say is true, for random teams and for the best comps
   for (let n = 0; n < 400; n++) {
     const map = r.pick(['any', ...MAPS.map((m) => m.id)]);
     const m = MAPS.find((x) => x.id === map);
-    const s: Situation = { map, side: r.pick(['attack', 'defense', 'both'] as const), rank: r.pick([...RANK_IDS, 'any'] as const), sites: m && r.next() < 0.3 ? [r.pick(m.sites).id] : [] };
+    const s: Situation = { map, side: r.pick(['attack', 'defense', 'both'] as const), rank: r.pick(RANK_IDS), sites: m && r.next() < 0.3 ? [r.pick(m.sites).id] : [] };
     check(s, r.some(ids, 5));
     if (n % 8 === 0) check(s, solve({ ...newQuery(s.rank, true), map: s.map, side: s.side, sites: [...s.sites] }, s, 1).comps[0]!.team);
   }

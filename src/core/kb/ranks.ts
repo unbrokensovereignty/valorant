@@ -19,5 +19,3 @@ export type RankId = (typeof RANKS)[number]['id'];
 export const RANK_IDS: readonly RankId[] = RANKS.map((r) => r.id);
 export const isRank = (v: unknown): v is RankId => typeof v === 'string' && (RANK_IDS as readonly string[]).includes(v);
 export const rankOf = (id: RankId) => RANKS.find((r) => r.id === id)!;
-/** "All ranks" sits in the middle. */
-export const ALL_RANKS_T = 0.5;

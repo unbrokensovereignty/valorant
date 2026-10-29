@@ -7,7 +7,8 @@ import assert from 'node:assert/strict';
 import { solve } from '../../src/core/engine/plan.ts';
 import { newQuery, sanitizeQuery, situationsOf } from '../../src/core/engine/query.ts';
 import { explainTeam } from '../../src/core/engine/explain.ts';
-import { modelFor, situationKey, type RankPick } from '../../src/core/engine/model.ts';
+import { modelFor, situationKey } from '../../src/core/engine/model.ts';
+import type { RankId } from '../../src/core/kb/ranks.ts';
 import { agentById } from '../../src/core/kb/agents.ts';
 import { POOL, type Side } from '../../src/core/kb/maps.ts';
 import { THREATS, threatLine } from '../../src/core/kb/counters.ts';
@@ -17,7 +18,7 @@ import { listJoin } from '../../src/core/text.ts';
 const none = (problems: string[]) => assert.deepEqual(problems, [], `\n${problems.join('\n')}`);
 const name = (id: string) => agentById(id)!.name;
 
-function answer(map: string, side: Side, rank: RankPick, enemy: string[]) {
+function answer(map: string, side: Side, rank: RankId, enemy: string[]) {
   return solve({ ...newQuery(rank, true), map, side, enemy }, { map, side, rank, sites: [], enemy }, 3);
 }
 /**
@@ -25,7 +26,7 @@ function answer(map: string, side: Side, rank: RankPick, enemy: string[]) {
  * much it moves everyone else's. Fits are measured within a situation, so a lift is relative: the
  * claim is that the agents who answer them gain on the rest.
  */
-function lift(agents: readonly string[], side: Side, rank: RankPick, enemy: string[]): { them: number; rest: number } {
+function lift(agents: readonly string[], side: Side, rank: RankId, enemy: string[]): { them: number; rest: number } {
   let them = 0, rest = 0, nThem = 0, nRest = 0;
   for (const m of POOL) {
     const a = answer(m.id, side, rank, []), b = answer(m.id, side, rank, enemy);

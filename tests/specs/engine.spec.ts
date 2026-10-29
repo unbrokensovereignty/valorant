@@ -97,7 +97,7 @@ describe('searching teams', () => {
     ok(r.mid < r.best);
   });
   spec('the fast search scores teams exactly as the plain sum does', () => {
-    for (const s of [at('haven', 'attack', 'iron'), at('lotus', 'defense', 'radiant'), at('any', 'both', 'any')]) {
+    for (const s of [at('haven', 'attack', 'iron'), at('lotus', 'defense', 'radiant'), at('any', 'both', 'platinum')]) {
       const m = modelFor(s);
       const r = searchTeams(m, anyone, 30);
       for (const t of r.top) near(t.score, scoreTeam(m, t.agents), 1e-9, ids(t.agents).join(','));
@@ -188,6 +188,8 @@ describe('questions', () => {
   spec('a damaged question falls back to the defaults, and parts that clash are dropped', () => {
     eq(sanitizeQuery(null), newQuery());
     eq(sanitizeQuery({ map: 'nowhere', side: 'up', rank: 'gold 2', party: 4 }), newQuery());
+    // a question for all ranks, from 0.2.0, planned as Platinum does
+    eq(sanitizeQuery({ rank: 'any' }).rank, 'platinum');
     const x = sanitizeQuery({ map: 'haven', sites: ['A', 'A', 'D', 'C'], party: 3, include: ['jett', 'jett', 'sova', 'omen', 'sage'], locked: ['jett', 'viper', 'nobody'], exclude: ['viper', 'reyna'] });
     eq(x.sites, ['A', 'C']);
     eq(x.include, ['jett', 'sova', 'omen'], 'no more than the party');
