@@ -55,7 +55,7 @@ const DEFS: readonly MapDef[] = [
   {
     id: 'ascent', name: 'Ascent', pool: false,
     about: 'A classic two-site map won in mid: control Market and Catwalk and both sites open up. Doors on each site can be shut.',
-    keys: 'Mid control with information and an Operator; Sova and Killjoy are staples.',
+    keys: 'Mid control with information and an Operator: pros always play Omen and Sova, often with Chamber.',
     needs: { both: 'recon +.3; smoke +.1; duel +.15; angles +.4', attack: 'flash +.1', defense: 'anchor +.2; retake +.1; angles +.2' },
     aka: { 'A Tree': 'Tree', 'A Rafters': 'Heaven', 'Mid Bottom': 'Mid', 'Mid Courtyard': 'Mid' },
     sites: [
@@ -66,7 +66,7 @@ const DEFS: readonly MapDef[] = [
   {
     id: 'bind', name: 'Bind', pool: true,
     about: 'No mid, but two one-way teleporters move players between sites fast. Narrow entrances make utility on each choke decisive.',
-    keys: 'Clearing tight chokes and stopping defuses: Viper, Brimstone and Raze shine.',
+    keys: 'Clearing tight chokes and stopping defuses: pros pair Viper with Brimstone, plus Fade for information and Yoru to take space.',
     needs: { both: 'clear +.3; flash +.15; smoke +.15; wall +.4; flank +.25; postplant +.15; angles -.6', defense: 'stall +.2; flank +.1' },
     aka: { 'A Bath': 'Showers', 'A Short': 'A Short', 'B Window': 'Hookah', 'A Tower': 'Heaven' },
     sites: [
@@ -132,7 +132,7 @@ const DEFS: readonly MapDef[] = [
   {
     id: 'lotus', name: 'Lotus', pool: true,
     about: 'Three sites linked by rotating doors, with a breakable wall on A. Tight entrances and many corners on every site.',
-    keys: 'Clearing corners and smoking chokes: pros always play Omen, usually with Viper, Fade and Raze.',
+    keys: 'Clearing corners and smoking chokes: pros always play Omen, usually with Viper and Fade, and often Chamber.',
     needs: { both: 'clear +.3; recon +.2; smoke +.2; wall +.3; flash +.1; mobility +.15; angles +.1', attack: 'postplant +.1', defense: 'anchor +.1' },
     sites: [
       { id: 'A', about: 'Hit through A Main and A Root or A Rubble; A Hut, A Tree, A Stairs and A Drop give defenders close angles.', needs: { both: 'clear +.15; flash +.1' } },
@@ -154,7 +154,7 @@ const DEFS: readonly MapDef[] = [
   {
     id: 'split', name: 'Split', pool: false,
     about: 'Tight, vertical sites with ropes up to high ground, and a mid that leads to both. Chokes everywhere.',
-    keys: 'Smokes and clearing: Viper and Omen together, with Raze and a stun-heavy initiator.',
+    keys: 'Smokes and clearing: Viper and Omen together, with Neon to take space and Fade for information.',
     needs: { both: 'clear +.3; smoke +.25; disrupt +.15; flank +.2; wall +.4; recon +.1; angles -.5', defense: 'stall +.15' },
     aka: { 'A Tower': 'A Heaven', 'B Tower': 'B Heaven', 'Mid Vent': 'Vents' },
     sites: [
@@ -176,7 +176,7 @@ const DEFS: readonly MapDef[] = [
   {
     id: 'sunset', name: 'Sunset', pool: true,
     about: 'A compact city map with a busy mid; B Market and A Elbow are tight, close-range fights.',
-    keys: 'Information and fast entry: Omen, Neon and Fade, with Chamber or Cypher.',
+    keys: 'Information and fast entry: Omen, Neon and Fade, with Chamber as the sentinel.',
     needs: { both: 'recon +.25; entry +.15; clear +.15; smoke +.1; flank +.1; angles +.3' },
     sites: [
       { id: 'A', about: 'Hit through A Main and A Lobby, or from A Link; A Elbow and A Alley hold close angles.', needs: { both: 'clear +.1' } },

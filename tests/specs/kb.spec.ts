@@ -153,6 +153,14 @@ describe('pro play', () => {
       ok(Math.abs(Object.values(mix).reduce((a, b) => a + b, 0) - 5) < 1e-9, `${id}: the role mix is five agents`);
     }
   });
+  spec('a map’s line about what wins there names only agents pros often pick on it', () => {
+    for (const m of MAPS) {
+      for (const a of AGENTS) {
+        if (!new RegExp(`(?<![A-Za-z])${a.name.replace('/', '\\/')}(?![A-Za-z])`).test(m.keys)) continue;
+        ok(proPick(m.id, a.id) >= 40, `${m.name} names ${a.name}, picked on ${proPick(m.id, a.id)}% of its pro maps`);
+      }
+    }
+  });
   spec('an agent’s pro share is their picks over every map counted', () => {
     eq(PRO_MAPS_COUNTED, Object.values(PRO).reduce((sum, p) => sum + (p.games ?? 0), 0));
     const games = (a: string) => Object.values(PRO).reduce((sum, p) => sum + ((p.picks[a] ?? 0) / 100) * (p.games ?? 0), 0);
