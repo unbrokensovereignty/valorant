@@ -31,7 +31,7 @@ export function SelfTestPage(_p: PageProps) {
   return (
     <>
       <PageHead eyebrow="Help" title="Self-test" actions={<Button kind="primary" icon="play" busy={busy} onClick={() => void run()}>{results ? 'Run again' : `Run ${specs.length} checks`}</Button>}>
-        Checks the app’s logic in this browser. It works on a throwaway copy, so your cards aren’t touched.
+        Checks the app’s logic in this browser. It works on a throwaway copy, so your saved plans, parties and settings aren’t touched.
       </PageHead>
       {results && (
         <div class="panel stack" data-testid="selftest-result">

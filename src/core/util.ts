@@ -88,7 +88,7 @@ export function typedNumber(text: string, decimals = false): number {
   return Number(decimals ? t.replace(',', '.') : t.replace(/(\d)[,.\s'’](?=\d{3}(?!\d))/g, '$1'));
 }
 
-/** "1 card", "3 cards", "1,200 cards". */
+/** "1 plan", "3 plans", "1,200 teams". */
 export function plural(n: number, one: string, many = one + 's'): string {
   return `${fmt(n)} ${Math.round(n) === 1 ? one : many}`;
 }

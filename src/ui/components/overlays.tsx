@@ -318,7 +318,7 @@ export function MenuHost() {
       role="menu"
       style={{ left: `${pos?.x ?? m.x}px`, top: `${pos?.y ?? m.y}px`, maxHeight: pos?.maxH ? `${pos.maxH}px` : '', visibility: pos ? 'visible' : 'hidden' }}
       onKeyDown={(e) => {
-        // keys in a menu are the menu's: Space on an item mustn't also show a card's answer behind it
+        // keys in a menu are the menu's: Space on an item mustn't also press something behind the menu
         e.stopPropagation();
         if (e.key === 'Escape' || e.key === 'Tab') { e.preventDefault(); closeMenu(); m.from?.focus(); }
         else if (e.key === 'ArrowDown') { e.preventDefault(); move(1); }

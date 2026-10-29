@@ -69,7 +69,7 @@ function ThemeEditor({ initial, close }: { initial: ThemePicks; close: (v?: unkn
   useEffect(() => () => previewTheme(null), []);
   const set = (patch: Partial<ThemePicks>) => setT((x) => ({ ...x, ...patch }));
   const nudged = [...new Set(g.nudged.map(friendlyToken))];
-  // Esc closes only when nothing would be lost, like the card editor
+  // Esc closes only when nothing would be lost
   const dirty = JSON.stringify(picks) !== JSON.stringify({ ...initial, bg2: initial.bg2 || '' });
   const save = () => {
     // a new theme is put to use, and so is the one showing now when its kind changes; if the app is
