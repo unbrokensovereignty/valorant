@@ -247,11 +247,15 @@ export function modelFor(s: Situation): Model {
   for (let i = 0; i < N; i++) base[i] = pro[i]! + rank[i]! + win[i]!;
   const pair = new Float64Array(N * N);
   const index = new Map(AGENTS.map((a) => [a.id, a.index]));
+  // how far a team at this rank plays its smokes together: what two controllers need (SECOND_CONTROLLER)
+  const together = Math.min(1, rankT / rankOf(SECOND_CONTROLLER.until).t);
   for (const p of PAIRS) {
     const a = index.get(p.a), b = index.get(p.b);
     if (a === undefined || b === undefined) continue;
     const share = p.side === 'both' ? 1 : sides.filter((x) => x === p.side).length / sides.length;
-    const v = p.strength * PAIR_STEP * share;
+    // two controllers' pair is that teamwork, so it counts only as far as the team plays together
+    const both = AGENTS[a]!.role === 'controller' && AGENTS[b]!.role === 'controller' ? together : 1;
+    const v = p.strength * PAIR_STEP * share * both;
     pair[a * N + b] = v;
     pair[b * N + a] = v;
   }
@@ -278,7 +282,7 @@ export function modelFor(s: Situation): Model {
   for (let ri = 0; ri < ROLES_N; ri++) want[ri] = mixed ? want[ri]! / mixed : Number.NaN;
   for (let i = 0; i < roleCost.length; i++) roleCost[i]! += mixCost[i]!;
   // a second controller needs a team that plays its smokes together, which pro play shows how to do
-  const secondController = SECOND_CONTROLLER.cost * Math.max(0, 1 - rankT / rankOf(SECOND_CONTROLLER.until).t);
+  const secondController = SECOND_CONTROLLER.cost * (1 - together);
   const ci = roleIndex('controller');
   for (let c = 2; c < 5; c++) roleCost[ci * 5 + c]! -= secondController;
   const model: Model = {

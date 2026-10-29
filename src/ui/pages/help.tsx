@@ -157,8 +157,8 @@ function Guide() {
         <RankHelp />
         <section class="panel stack">
           <h2>Duos and trios</h2>
-          <p>With a duo or trio, the others are random teammates. The Planner counts on what players at your rank usually pick, and on teammates filling a role the team is missing, then ranks your party’s picks by every team you could end up with, each weighed by how likely it is. A row shows the likeliest of them.</p>
-          <p>A party’s row shows its fit among other parties. Open it to see the fit to expect with random teammates (against the best five-stack), the role worth asking your teammates for (and how often they pick it on their own), and the best team they could pick.</p>
+          <p>With a duo or trio, the others are random teammates. The Planner counts on what players at your rank usually pick, and on teammates filling a role the team is missing, then ranks your party’s picks by every team you could end up with, each weighed by how likely it is. A row shows your party with the best agents for your random teammates to play around it.</p>
+          <p>A party’s row shows its fit among other parties. Open it to see how the team fits if your teammates play those picks, and what to expect if they pick on their own (both against the best five-stack), the role worth asking them for (and how often they pick it on their own), other good picks for them, and the team they’d most likely pick.</p>
           <p>Already know what they locked in? Add it under <b>Teammates locked in</b>. To plan around the agents your party plays, save it on the Saved page and choose it under <b>Saved party</b>.</p>
         </section>
         <section class="panel stack">

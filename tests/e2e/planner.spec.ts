@@ -140,8 +140,8 @@ test('a duo finds its best map: the maps are ranked and each one opens its picks
   await options.nth(3).click();
   await expect(options.nth(3)).toHaveAttribute('aria-selected', 'true');
   await expect(sub).not.toHaveText(before ?? '');
-  // a duo's pick names the two of you and the likely teammates
-  await expect(comps(page).first().locator('.comp-names')).toContainText('likely');
+  // a duo's pick names the two of you and the picks for your random teammates
+  await expect(comps(page).first().locator('.comp-names')).toContainText(' with ');
   await expect(page.getByRole('tab', { name: 'Duo picks' })).toBeVisible();
   // the agents tab ranks every agent for the situation
   await page.getByRole('tab', { name: 'Agents' }).click();
@@ -154,13 +154,15 @@ test('a duo’s best pick says which role to ask random teammates for, and how o
   await question(page).getByRole('group', { name: 'Party size' }).getByRole('button', { name: 'Duo' }).click();
   await chooseMap(page, 'Ascent');
   await settledAnswers(page);
+  // the picks for your random teammates, then what to expect if they pick on their own
+  await expect(comps(page).first().locator('.party-box p').first()).toHaveText(/^Your party: .+\. If your random teammates play .+, the team fits \d+ out of 100 \(the best five-stack is 100\)\. If they pick on their own, expect a team that fits about \d+, give or take \d+\.$/);
   const ask = comps(page).first().locator('.party-box p').nth(1);
   await expect(ask).toHaveText(/^Ask your teammates for (?:a (?:duelist|controller|sentinel)|an initiator) first: they pick one on their own (?:in about \d+ of 10 games|in nearly every game|hardly ever), and with one, expect about \d+\./);
   expect(await ask.textContent()).not.toMatch(/\ba [aeiou]/i);
   expect(errors).toEqual([]);
 });
 
-test('teammates already locked in are part of every likely team and never in your party', async ({ page, errors }) => {
+test('teammates already locked in are part of every team and never in your party', async ({ page, errors }) => {
   await open(page, 'planner');
   // the first answers in place, so nothing moves under the click
   await settledAnswers(page, 'Any map');

@@ -180,3 +180,25 @@ test('below Immortal one controller leads, since two pay off only when a team pl
   if (said('immortal')) problems.push('a word at Immortal of what the second controller costs');
   none(problems);
 });
+
+test('a duo or trio is shown with the best agents for its random teammates, around the party’s own', () => {
+  const problems: string[] = [];
+  const controllers = (team: readonly string[]) => team.filter((id) => agentById(id)!.role === 'controller').length;
+  const party = (map: string, side: Side, rank: RankPick, size: 2 | 3, include: string[]) =>
+    solve({ ...newQuery(rank, true), map, side, party: size, include }, { map, side, rank, sites: [] }, 3);
+  // a Chamber and Omen duo already has its controller: its teammates aren't told to play Clove
+  for (const side of SIDES) {
+    const c = party('lotus', side, 'platinum', 2, ['chamber', 'omen']).comps[0]!;
+    if (c.team.includes('clove') || controllers(c.team) !== 1) problems.push(`Chamber and Omen on Lotus ${side}: ${c.team.map(name).join(', ')}`);
+    if (!c.team.includes('chamber') || !c.team.includes('omen')) problems.push(`the duo isn't in ${c.team.map(name).join(', ')}`);
+  }
+  // and in general, below Immortal, a party with a full smoker gets no second controller to ask for
+  // (Viper isn't one: her single smoke leaves a site short, so a Viper party can be told to add one)
+  for (const [include, size] of [[['omen', 'jett'], 2], [['clove', 'sova'], 2], [['brimstone', 'killjoy', 'raze'], 3]] as const) {
+    for (const m of MAPS.filter((x) => x.pool)) for (const rank of ['gold', 'platinum'] as const) {
+      const c = party(m.id, 'attack', rank, size, [...include]).comps[0]!;
+      if (controllers(c.team) !== 1) problems.push(`${include.map(name).join(' and ')} on ${m.name} at ${rank}: ${c.team.map(name).join(', ')}`);
+    }
+  }
+  none(problems);
+});

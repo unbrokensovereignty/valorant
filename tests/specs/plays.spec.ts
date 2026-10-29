@@ -173,7 +173,7 @@ describe('copying a plan', () => {
     const s = { map: 'haven', side: 'attack', sites: [], rank: 'gold' } as const;
     const parts = { title: 'Haven, attack · Gold · duo', team, party: ['sova', 'clove'], fit: 100, tier: 'S', why: explainTeam(modelFor(s), team), tips: tipsFor(team, s, 2, ['sova', 'clove']) };
     const text = summaryText({ ...parts, ask: 'sentinel', expected: 77.4 });
-    ok(text.includes('Comp: Sova, Clove, Jett, Reyna, Chamber (your party: Sova and Clove). Fit 100 among duos, tier S.\nWith random teammates, expect a team that fits about 77 out of 100.\nAsk your random teammates for a sentinel first.'), text);
+    ok(text.includes('Comp: Sova, Clove, Jett, Reyna, Chamber (your party: Sova and Clove). Fit 100 among duos, tier S.\nPicks for your random teammates: Jett, Reyna and Chamber.\nIf they pick on their own, expect a team that fits about 77 out of 100.\nAsk your random teammates for a sentinel first.'), text);
     ok(summaryText({ ...parts, party: [] }).includes('. Fit 100, tier S.'), 'a five-stack’s fit is just its fit');
     ok(!summaryText(parts).includes('teammates for a sentinel first'), 'nothing to ask, no line');
   });

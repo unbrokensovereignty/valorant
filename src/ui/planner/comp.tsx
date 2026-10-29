@@ -1,7 +1,7 @@
 /**
  * One comp in the answers: a row with its agents and fit, which opens into why it works (pros,
  * cons and strengths), the plays it can run, and tips. A duo or trio's row shows your party first
- * and the teammates you'd likely get after it.
+ * and the best agents for your random teammates after it.
  */
 import { useState } from 'preact/hooks';
 import { agentById } from '../../core/kb/agents.ts';
@@ -41,13 +41,14 @@ export function Fit({ fit, tier, label, compact }: { fit: number; tier: string; 
   );
 }
 
-/** The agents of a team as portraits, your party's first and marked. */
-export function TeamIcons({ team, party = [], size = 40 }: { team: readonly string[]; party?: readonly string[]; size?: number }) {
+/** The agents of a team as portraits, your party's first and marked; the others' names say whether they're locked in or a pick for a random teammate. */
+export function TeamIcons({ team, party = [], locked = [], size = 40 }: { team: readonly string[]; party?: readonly string[]; locked?: readonly string[]; size?: number }) {
   const order = [...party, ...team.filter((id) => !party.includes(id))];
+  const what = (id: string) => (party.includes(id) ? ' (your party)' : locked.includes(id) ? ' (locked in)' : ' (a pick for a random teammate)');
   return (
     <span class="team-icons">
       {order.map((id) => (
-        <span key={id} class={`team-icon${party.length && !party.includes(id) ? ' other' : ''}`} data-tip={`${nameOf(id)}${party.length ? (party.includes(id) ? ' (your party)' : ' (a likely teammate)') : ''}`}>
+        <span key={id} class={`team-icon${party.length && !party.includes(id) ? ' other' : ''}`} data-tip={`${nameOf(id)}${party.length ? what(id) : ''}`}>
           <AgentIcon id={id} size={size} label />
         </span>
       ))}
@@ -58,14 +59,14 @@ export function TeamIcons({ team, party = [], size = 40 }: { team: readonly stri
 export function CompRow({ c, i, ans, q, open, onToggle }: { c: CompAnswer; i: number; ans: SituationAnswer; q: Query; open: boolean; onToggle: () => void }) {
   const party = c.party;
   const names = party.length
-    ? <><b>{listJoin(party.map(nameOf))}</b><span class="muted"> with {listJoin(c.team.filter((x) => !party.includes(x)).map(nameOf))} likely</span></>
+    ? <><b>{listJoin(party.map(nameOf))}</b><span class="muted"> with {listJoin(c.team.filter((x) => !party.includes(x)).map(nameOf))}</span></>
     : <b>{c.team.map(nameOf).join(', ')}</b>;
   const id = `comp-${i}`;
   return (
     <li class={`comp${open ? ' open' : ''}`}>
       <button type="button" class="comp-head" data-tour={i === 0 ? 'comp-first' : undefined} aria-expanded={open} aria-controls={id} onClick={() => { play(open ? 'close' : 'open'); onToggle(); }}>
         <span class="comp-rank num">{i + 1}</span>
-        <TeamIcons team={c.team} party={party} />
+        <TeamIcons team={c.team} party={party} locked={q.locked} />
         <span class="comp-names">{names}</span>
         <Fit fit={c.fit} tier={c.tier} label={party.length ? `Fit among ${party.length === 2 ? 'duos' : 'trios'}` : 'Fit'} />
         <Icon name="chevron-down" size={18} class="comp-chev" />
@@ -98,7 +99,7 @@ export function CompDetail({ c, i, ans, q, saveable = true }: { c: CompAnswer; i
     const side = s.side === 'both' ? 'attack' : s.side;
     const best = map ? playsFor(c.team, map.id, side, s.sites)[0] : undefined;
     const ask = asksFor(c, i, ans)[0];
-    void copyWithToast(summaryText({ title: `${askedTitle(s)} · ${askedLine({ ...q, rank: s.rank })}`, team: c.team, party: c.party, ask: ask && roleWord(ask.role), fit: c.fit, expected: c.expected, tier: c.tier, why, play: best, tips }), 'Copied the plan.');
+    void copyWithToast(summaryText({ title: `${askedTitle(s)} · ${askedLine({ ...q, rank: s.rank })}`, team: c.team, party: c.party, locked: q.locked, ask: ask && roleWord(ask.role), fit: c.fit, expected: c.expected, tier: c.tier, why, play: best, tips }), 'Copied the plan.');
   };
   return (
     <>
@@ -110,7 +111,7 @@ export function CompDetail({ c, i, ans, q, saveable = true }: { c: CompAnswer; i
         </div>
       </div>
       {tab === 'why' && <>
-        {c.party.length > 0 && <PartyBox c={c} i={i} ans={ans} />}
+        {c.party.length > 0 && <PartyBox c={c} i={i} ans={ans} locked={q.locked} />}
         {why.against.length > 0 && <Against rows={why.against} />}
         <div class="pros-cons" data-tour="comp-reasons">
           <div>
@@ -139,27 +140,49 @@ export function CompDetail({ c, i, ans, q, saveable = true }: { c: CompAnswer; i
 const asksFor = (c: CompAnswer, i: number, ans: SituationAnswer) => (i === 0 ? ans.askFor ?? [] : []).filter((a) => a.fit > (c.expected ?? c.fit)).slice(0, 2);
 const roleWord = (id: string) => ROLES.find((r) => r.id === id)?.name.toLowerCase() ?? id;
 
-function PartyBox({ c, i, ans }: { c: CompAnswer; i: number; ans: SituationAnswer }) {
+function PartyBox({ c, i, ans, locked }: { c: CompAnswer; i: number; ans: SituationAnswer; locked: readonly string[] }) {
   const expected = c.expected ?? c.fit;
   const ask = asksFor(c, i, ans);
   const role = roleWord;
+  // the places your random teammates pick, and the agents in them
+  const open = (id: string) => !c.party.includes(id) && !locked.includes(id);
+  const picks = c.team.filter(open);
   return (
     <div class="party-box">
-      <p>
-        Your party: <b>{listJoin(c.party.map(nameOf))}</b>. With random teammates, expect a team that fits about <b class="num">{Math.round(expected)}</b> out of 100
-        (the best five-stack is 100), give or take {Math.round(c.spread ?? 0)}.
-      </p>
+      {picks.length > 0 ? (
+        <p>
+          Your party: <b>{listJoin(c.party.map(nameOf))}</b>. If your random teammates play {listJoin(picks.map(nameOf))}, the team fits <b class="num">{Math.round(c.pickFit ?? expected)}</b> out of 100
+          (the best five-stack is 100). If they pick on their own, expect a team that fits about <b class="num">{Math.round(expected)}</b>, give or take {Math.round(c.spread ?? 0)}.
+        </p>
+      ) : (
+        <p>
+          Your party: <b>{listJoin(c.party.map(nameOf))}</b>. With the agents your teammates locked in, the team fits <b class="num">{Math.round(expected)}</b> out of 100 (the best five-stack is 100).
+        </p>
+      )}
       {ask.length > 0 && (
         <p>
           Ask your teammates for {articleOf(role(ask[0]!.role))} <b>{role(ask[0]!.role)}</b> first: they pick one on their own {howOften(ask[0]!.chance)}, and with one, expect about <span class="num">{Math.round(ask[0]!.fit)}</span>.
           {ask[1] && <> {capitalize(articleOf(role(ask[1].role)))} <b>{role(ask[1].role)}</b> helps next (<span class="num">{Math.round(ask[1].fit)}</span>).</>}
         </p>
       )}
-      {c.bestTeam && (
+      {!!c.others?.length && (
         <div class="row wrap party-best">
-          <span class="muted">At best they’d pick</span>
-          <TeamIcons team={c.bestTeam} party={c.party} size={28} />
-          <span class="muted num">fit {Math.round(c.bestFit ?? 0)}</span>
+          <span class="muted">Other good picks for them</span>
+          {c.others.map((o) => (
+            <span key={o.team.join()} class="row party-team">
+              <TeamIcons team={o.team.filter(open)} size={28} />
+              <span class="muted num">fit {Math.round(o.fit)}</span>
+            </span>
+          ))}
+        </div>
+      )}
+      {c.likely && c.likely.team.join() !== c.team.join() && (
+        <div class="row wrap party-best">
+          <span class="muted">If they pick on their own, most likely</span>
+          <span class="row party-team">
+            <TeamIcons team={c.likely.team.filter(open)} size={28} />
+            <span class="muted num">fit {Math.round(c.likely.fit)}</span>
+          </span>
         </div>
       )}
     </div>

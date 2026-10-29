@@ -134,9 +134,11 @@ export const ROLE_COST: Record<Role, Record<Side, readonly [number, number, numb
 /**
  * A second controller pays off only for a team that plays its smokes together, the way pro teams
  * layer smokes and walls for a hit. A team gives up `cost` for one at Iron, less in a straight line
- * up the ranks, and nothing from `until` up. From `note` up, the comp's cons say so.
+ * up the ranks, and nothing from `until` up. Two controllers' pair (synergy.ts) is that same teamwork,
+ * so it counts in the same straight line: none of it at Iron, all of it from `until` up. From `note` up,
+ * the comp's cons say so.
  */
-export const SECOND_CONTROLLER: { cost: number; until: RankId; note: number } = { cost: 0.07, until: 'immortal', note: 0.02 };
+export const SECOND_CONTROLLER: { cost: number; until: RankId; note: number } = { cost: 0.06, until: 'immortal', note: 0.02 };
 
 /**
  * Random teammates, for a duo or trio. They pick roughly as often as players at your rank do,

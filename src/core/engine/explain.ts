@@ -11,7 +11,7 @@ import { ALL_RANKS_T, rankOf } from '../kb/ranks.ts';
 import { DIMS, DIM_INFO, ROLE_IDS, roleOf, type Dim, type Role } from '../kb/roles.ts';
 import { pairOf } from '../kb/synergy.ts';
 import { listJoin } from '../text.ts';
-import { D, kitShare, needsFor, viaIn, type Model } from './model.ts';
+import { D, N, kitShare, needsFor, viaIn, type Model } from './model.ts';
 import { KIT_NOTE, KIT_RULE_NOTE, MIX_NOTE, SECOND_CONTROLLER, THREAT_NOTE, WIN_NOTE } from './weights.ts';
 import { ruleWhy } from '../kb/kitfit.ts';
 import { threatLine } from '../kb/counters.ts';
@@ -231,13 +231,14 @@ export function explainTeam(m: Model, ids: readonly string[]): Explanation {
     const thin = strengths.filter((r) => r.need >= 1).sort((a, b) => a.cover - b.cover)[0];
     if (thin && thin.cover < 0.8) cons.push(`Its thinnest spot is ${DIM_INFO[thin.dim].lacks}: ${makeUp(thin.dim)}.`);
   }
-  // pairs
+  // pairs, by what each adds to the score here (two controllers' pair counts less where teams don't play together)
   const pairs: { strength: number; why: string }[] = [];
   for (let i = 0; i < team.length; i++) {
     for (let k = i + 1; k < team.length; k++) {
       const p = pairOf(team[i]!.id, team[k]!.id);
-      if (!p || (p.side !== 'both' && !sides.includes(p.side))) continue;
-      pairs.push({ strength: p.strength, why: p.side === 'both' || sides.length === 1 ? p.why : `On ${sideWord(p.side)}: ${p.why}` });
+      const v = m.pair[team[i]!.index * N + team[k]!.index]!;
+      if (!p || Math.abs(v) < 1e-9 || (p.side !== 'both' && !sides.includes(p.side))) continue;
+      pairs.push({ strength: v, why: p.side === 'both' || sides.length === 1 ? p.why : `On ${sideWord(p.side)}: ${p.why}` });
     }
   }
   for (const p of pairs.filter((x) => x.strength > 0).sort((a, b) => b.strength - a.strength).slice(0, 2)) pros.push(p.why);

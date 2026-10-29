@@ -303,11 +303,16 @@ describe('duos and trios', () => {
     for (const c of a.comps) {
       eq(c.party.length, 3);
       ok(c.party.includes('viper') && c.team.includes('viper'));
-      ok(c.bestFit! >= c.expected!, 'the best fill is at least the expected one');
+      // the comp shown is the party with the best picks for the random teammates
+      ok(c.pickFit! >= c.expected!, 'the best picks are at least what to expect');
+      ok(c.others!.every((o) => o.fit <= c.pickFit! + 1e-9 && o.team.includes('viper')), 'other picks come after the best, with the party');
+      ok(c.likely!.fit <= c.pickFit! + 1e-9 && c.party.every((id) => c.likely!.team.includes(id)), 'the likeliest team keeps the party');
       ok(c.fit <= 100 && c.expected! <= c.fit + 1e-9, 'ranked against the best party, which a five-stack beats');
       eq(c.team.length, 5);
     }
-    ok(a.askFor && a.askFor.length === 4, 'all four roles');
+    // only roles the best party's picks play, so the role to ask for is one the picks have
+    const picked: string[] = a.comps[0]!.team.filter((id) => !a.comps[0]!.party.includes(id)).map((id) => agentById(id)!.role);
+    ok(a.askFor && a.askFor.length >= 1 && a.askFor.every((x) => picked.includes(x.role)), 'roles the picks play');
     for (let i = 1; i < a.askFor!.length; i++) ok(a.askFor![i - 1]!.fit >= a.askFor![i]!.fit);
   });
   spec('asking for a role compares teams where a random teammate plays it', () => {

@@ -46,7 +46,10 @@ export function agentFitOf(bestScore: number, ref: Reference): number {
 }
 
 export interface CompAnswer {
-  /** The team (five-stack), or the likeliest full team (duo or trio). Agent ids. */
+  /**
+   * The team (five-stack), or for a duo or trio, your party with the best agents for your random
+   * teammates to pick. Agent ids.
+   */
   team: string[];
   /** Your party, for a duo or trio (empty for a five-stack). */
   party: string[];
@@ -58,10 +61,14 @@ export interface CompAnswer {
    * five-stack (`fit` then ranks the party against the best party for the situation).
    */
   expected?: number;
-  /** Duo or trio: how much the fit swings with random teammates, and the best team they could make. */
+  /** Duo or trio: how much the fit swings with random teammates. */
   spread?: number;
-  bestTeam?: string[];
-  bestFit?: number;
+  /** Duo or trio: the fit of `team`, your party with the best picks for your random teammates. */
+  pickFit?: number;
+  /** Duo or trio: other good picks for your random teammates (the full teams, next best first), with their fits. */
+  others?: { team: string[]; fit: number }[];
+  /** Duo or trio: the team you'd most likely get if your teammates pick on their own, and its fit. */
+  likely?: { team: string[]; fit: number };
 }
 
 export interface AgentAnswer { id: string; fit: number; tier: string; team: string[] }
@@ -73,7 +80,10 @@ export interface SituationAnswer {
   agents: AgentAnswer[];
   /** How many teams (or parties) the rules allowed. */
   count: number;
-  /** Duo or trio: the roles to hope random teammates pick, best first. */
+  /**
+   * Duo or trio: the roles to hope random teammates pick, best first. Only roles the best party's
+   * picks play, so the role to ask for is never one the picks leave out.
+   */
   askFor?: { role: string; fit: number; chance: number }[];
 }
 
@@ -154,14 +164,17 @@ export function solve(q: Query, s: Situation, keep: number): SituationAnswer {
   const comps = r.top.slice(0, keep).map((p): CompAnswer => {
     const fit = fitOf(p.expected, partyRef);
     return {
-      team: idsOf(p.likely.agents), party: idsOf(p.party), fit, tier: tierOf(fit), score: p.expected, expected: fitOf(p.expected, ref),
-      spread: (p.spread / Math.max(1e-9, ref.best - ref.mid)) * (100 - FIT_MID), bestTeam: idsOf(p.best.agents), bestFit: fitOf(p.best.score, ref),
+      team: idsOf(p.best.agents), party: idsOf(p.party), fit, tier: tierOf(fit), score: p.expected, expected: fitOf(p.expected, ref),
+      spread: (p.spread / Math.max(1e-9, ref.best - ref.mid)) * (100 - FIT_MID), pickFit: fitOf(p.best.score, ref),
+      others: p.others.map((t) => ({ team: idsOf(t.agents), fit: fitOf(t.score, ref) })),
+      likely: { team: idsOf(p.likely.agents), fit: fitOf(p.likely.score, ref) },
     };
   });
-  const ask = top ? askFor(m, top.party, prules, rankT(s)).map((x) => ({ role: x.role, fit: fitOf(x.expected, ref), chance: x.chance })) : undefined;
+  const picked = new Set<string>(top ? top.best.agents.filter((a) => !top.party.includes(a) && !prules.locked.includes(a)).map((a) => AGENTS[a]!.role) : []);
+  const ask = top ? askFor(m, top.party, prules, rankT(s)).filter((x) => picked.has(x.role)).map((x) => ({ role: x.role, fit: fitOf(x.expected, ref), chance: x.chance })) : undefined;
   return {
     situation: s, ref, comps, count: r.count, askFor: ask,
-    agents: agentAnswers(r.bestWith.map((p) => p && { score: p.expected, team: p.likely.agents }), partyRef),
+    agents: agentAnswers(r.bestWith.map((p) => p && { score: p.expected, team: p.best.agents }), partyRef),
   };
 }
 
