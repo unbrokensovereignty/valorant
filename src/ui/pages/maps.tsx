@@ -20,7 +20,7 @@ import { mapById, MAPS, type MapInfo, type Side } from '../../core/kb/maps.ts';
 import { PRO } from '../../core/kb/pro.ts';
 import { DIM_INFO, DIMS, type Dim } from '../../core/kb/roles.ts';
 import { MAP_TIPS } from '../../core/kb/tips.ts';
-import { needsFor, type RankPick } from '../../core/engine/model.ts';
+import { needsFor, proMixOf, type RankPick } from '../../core/engine/model.ts';
 import { newQuery } from '../../core/engine/query.ts';
 import { listJoin } from '../../core/text.ts';
 import type { PageProps } from './index.ts';
@@ -29,8 +29,8 @@ function MapGrid() {
   const groups: [string, MapInfo[]][] = [['In the pool', MAPS.filter((m) => m.pool)], ['Out of the pool', MAPS.filter((m) => !m.pool)]];
   return (
     <div class="stack">
-      {groups.map(([title, maps]) => (
-        <section key={title} class="stack">
+      {groups.map(([title, maps], i) => (
+        <section key={title} class="stack" data-tour={i === 0 ? 'map-group' : undefined}>
           <h2>{title}</h2>
           <div class="map-grid map-cards">
             {maps.map((m) => (
@@ -93,7 +93,7 @@ function Plays({ m, side, rank, newAgents }: { m: MapInfo; side: Side; rank: Ran
   const team = ans?.comps[0]?.team;
   if (!team) return null;
   return (
-    <section class="stack">
+    <section class="stack map-plays">
       <div class="row wrap"><h2>Plays</h2><span class="muted small">with the best comp:</span><TeamIcons team={team} size={26} /></div>
       <PlaysPanel team={team} map={m.id} side={side} sites={[]} />
     </section>
@@ -116,13 +116,13 @@ function MapPage({ m }: { m: MapInfo }) {
       </PageHead>
       <div class="map-detail">
         <div class="stack">
-          <div class="map-big">
+          <div class="map-big" data-tour="map-minimap">
             <Minimap map={m.id} labels={names === 'yes' ? 'all' : 'none'} label={`Minimap of ${m.name}${names === 'yes' ? ' with callouts' : ''}`} />
           </div>
           <Toggle checked={names === 'yes'} onChange={(v) => setNames(v ? 'yes' : 'no')} label="Show callouts" />
         </div>
         <div class="stack">
-          <section class="panel stack">
+          <section class="panel stack" data-tour="map-wins">
             <h2>What wins here</h2>
             <p>{m.keys}</p>
             <dl class="facts">
@@ -130,7 +130,7 @@ function MapPage({ m }: { m: MapInfo }) {
                 const extra = extraNeeds(m, sd);
                 return [<dt key={sd + 't'}>{sd === 'attack' ? 'Attack' : 'Defense'} needs</dt>, <dd key={sd + 'd'}>{extra.length ? listJoin(extra.map((d) => DIM_INFO[d].name.toLowerCase())) : 'The usual mix'}</dd>];
               })}
-              <dt>Controllers</dt><dd>{m.twoControllers ? 'Pros usually run two' : 'One is usually enough'}</dd>
+              <dt>Controllers</dt><dd>{Math.round(proMixOf(m.id)?.controller ?? 1) >= 2 ? 'Pros usually run two' : 'Pros usually run one'}</dd>
             </dl>
           </section>
           <section class="panel stack">
@@ -149,7 +149,7 @@ function MapPage({ m }: { m: MapInfo }) {
         </div>
       </div>
 
-      <div class="row-between wrap map-side">
+      <div class="row-between wrap map-side" data-tour="map-best">
         <h2>Best comps at {rank === 'any' ? 'all ranks' : rankWord(rank)}</h2>
         <Segmented<Side> label="Side" value={side} onChange={setSide} options={[['attack', 'Attack'], ['defense', 'Defense']]} />
       </div>

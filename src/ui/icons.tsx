@@ -57,6 +57,8 @@ export const ICONS = {
   sidebar: rect(3, 4, 18, 16) + p('M9 4v16'),
   grid: rect(4, 4, 7, 7, 1.5) + rect(13, 4, 7, 7, 1.5) + rect(4, 13, 7, 7, 1.5) + rect(13, 13, 7, 7, 1.5),
   refresh: p('M20 11.5a8 8 0 1 1-2.4-5.7L20 8M20 3.5V8h-4.5'),
+  // a compass, for the guided tours
+  compass: c(12, 12, 9) + p('M15.8 8.2l-2.1 5.5-5.5 2.1 2.1-5.5z'),
 } as const;
 
 export type IconName = keyof typeof ICONS;

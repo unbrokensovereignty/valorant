@@ -1,16 +1,16 @@
 import { describe, spec, eq, ok, near } from './harness.ts';
 import { AGENTS, agentById } from '../../src/core/kb/agents.ts';
 import { NEW_AGENTS } from '../../src/core/kb/new-agents.ts';
-import { POOL, MAPS, mapById } from '../../src/core/kb/maps.ts';
+import { POOL, MAPS } from '../../src/core/kb/maps.ts';
 import { RANK_IDS } from '../../src/core/kb/ranks.ts';
 import { ROLE_IDS } from '../../src/core/kb/roles.ts';
-import { D, N, ROLE_OF, modelFor, roleIndex, type Situation } from '../../src/core/engine/model.ts';
+import { D, N, ROLE_OF, kitShare, modelFor, proMixOf, proShare, roleIndex, type Situation } from '../../src/core/engine/model.ts';
 import { anyRoles, scoreTeam, searchTeams, TopK, walkTeams, type Rules } from '../../src/core/engine/search.ts';
 import { askFor, fillLikelihood, pickWeight, searchParties, type PartyRules } from '../../src/core/engine/party.ts';
 import { newQuery, placesTaken, sanitizeQuery, situationsOf, asksBest, nothingFixed, type Query } from '../../src/core/engine/query.ts';
 import { agentFitOf, fitOf, poolsFit, referenceFor, rulesOf, solve, teamFit } from '../../src/core/engine/plan.ts';
 import { explainTeam } from '../../src/core/engine/explain.ts';
-import { TIERS, tierOf } from '../../src/core/engine/weights.ts';
+import { ROLE_COST, TIERS, tierOf } from '../../src/core/engine/weights.ts';
 
 const at = (map: string, side: Situation['side'] = 'both', rank: Situation['rank'] = 'gold', sites: Situation['sites'] = []): Situation => ({ map, side, rank, sites });
 const ix = (id: string) => agentById(id)!.index;
@@ -45,19 +45,43 @@ describe('the model', () => {
   spec('a model is kept and handed back for the same situation, whatever order its sites came in', () => {
     eq(modelFor(at('haven', 'attack', 'gold', ['A', 'C'])), modelFor(at('haven', 'attack', 'gold', ['C', 'A'])));
   });
-  spec('a team with one controller gives up a little on maps where pros run two, more so at high ranks', () => {
-    const one = (map: string, rank: Situation['rank']) => modelFor(at(map, 'attack', rank)).roleCost[roleIndex('controller') * 5 + 1]!;
-    const two = (map: string, rank: Situation['rank']) => modelFor(at(map, 'attack', rank)).roleCost[roleIndex('controller') * 5 + 2]!;
-    ok(mapById('bind')!.twoControllers && !mapById('haven')!.twoControllers);
-    near(one('haven', 'radiant'), two('haven', 'radiant'), 1e-12);
-    ok(one('bind', 'radiant') < two('bind', 'radiant'));
-    ok(one('bind', 'radiant') < one('bind', 'iron') && one('bind', 'iron') < two('bind', 'iron'));
-    const pool = POOL.filter((m) => m.twoControllers).length / POOL.length;
-    near(one('any', 'radiant') - two('any', 'radiant'), pool * (one('bind', 'radiant') - two('bind', 'radiant')), 1e-12);
+  spec('a team far from the map’s pro role mix gives up a little, more so at high ranks', () => {
+    const cost = (map: string, rank: Situation['rank'], c: number) => modelFor(at(map, 'attack', rank)).mix.cost[roleIndex('controller') * 5 + c]!;
+    // pros run about two controllers on Lotus and about one on Sunset
+    near(proMixOf('lotus')!.controller, 1.77, 0.01);
+    near(proMixOf('sunset')!.controller, 1.08, 0.01);
+    ok(cost('lotus', 'radiant', 2) > cost('lotus', 'radiant', 1));
+    ok(cost('sunset', 'radiant', 1) > cost('sunset', 'radiant', 2));
+    ok(cost('lotus', 'radiant', 2) - cost('lotus', 'radiant', 1) > cost('lotus', 'iron', 2) - cost('lotus', 'iron', 1));
+    // a small sample pulls less: Bind's numbers come from five maps
+    ok(proShare('bind') < proShare('lotus') && proShare('bind') >= 0.5);
+    // the role costs hold the mix's part on top of the hard rules
+    const m = modelFor(at('lotus', 'attack', 'radiant'));
+    for (let c = 0; c < 5; c++) near(m.roleCost[roleIndex('controller') * 5 + c]!, ROLE_COST.controller.attack[c]! + m.mix.cost[roleIndex('controller') * 5 + c]!, 1e-12);
+    // any map is the average of the pool
+    near(cost('any', 'radiant', 1), POOL.reduce((acc, p) => acc + cost(p.id, 'radiant', 1), 0) / POOL.length, 1e-12);
     const cons = (team: string[], map: string) => explainTeam(modelFor(at(map, 'attack', 'radiant')), team).cons.join(' ');
-    ok(/Only one controller/.test(cons(['omen', 'sova', 'fade', 'raze', 'killjoy'], 'bind')));
-    ok(!/Only one controller/.test(cons(['omen', 'sova', 'fade', 'raze', 'killjoy'], 'haven')));
-    ok(!/Only one controller/.test(cons(['omen', 'viper', 'fade', 'raze', 'killjoy'], 'bind')));
+    ok(/One controller, where pro teams on Lotus usually run two/.test(cons(['omen', 'sova', 'fade', 'raze', 'killjoy'], 'lotus')));
+    ok(!/controller/i.test(cons(['omen', 'sova', 'fade', 'raze', 'killjoy'], 'sunset')));
+    ok(/Two controllers, where pro teams on Sunset usually run one/.test(cons(['omen', 'viper', 'fade', 'neon', 'chamber'], 'sunset')));
+    ok(!/where pro teams/.test(cons(['omen', 'viper', 'fade', 'raze', 'chamber'], 'lotus')));
+    // at Iron the pro mix hardly counts, so the cons leave it out
+    ok(!/where pro teams/.test(explainTeam(modelFor(at('lotus', 'attack', 'iron')), ['omen', 'sova', 'fade', 'raze', 'killjoy']).cons.join(' ')));
+  });
+  spec('where pro teams mostly play without a role, having none of it costs less at high ranks, and the con says why', () => {
+    const none = (rank: Situation['rank']) => modelFor(at('abyss', 'defense', rank)).roleCost[roleIndex('sentinel') * 5]!;
+    // pros on Abyss hardly ever run a sentinel
+    ok(proMixOf('abyss')!.sentinel < 0.5);
+    ok(none('radiant') > none('iron'));
+    ok(none('radiant') < 0, 'still a cost: a defense without one gives something up');
+    const con = (rank: Situation['rank']) => explainTeam(modelFor(at('abyss', 'defense', rank)), ['yoru', 'waylay', 'sova', 'astra', 'harbor']).cons[0]!;
+    eq(con('radiant').startsWith('No sentinel, as most pro teams play Abyss: '), true, con('radiant'));
+    eq(con('iron').startsWith('No sentinel: '), true, con('iron'));
+    // the gaps it leaves are said once, with how to play around them
+    ok(!explainTeam(modelFor(at('abyss', 'defense', 'iron')), ['yoru', 'waylay', 'sova', 'astra', 'harbor']).cons.some((c) => /^(No|Little) (site setups|flank watch)/.test(c)));
+    // on a map where pros run one, nothing changes
+    const lotus = modelFor(at('lotus', 'defense', 'radiant'));
+    near(lotus.mix.relax[roleIndex('sentinel')]!, 0, 1e-12);
   });
   spec('pair synergy is the same both ways', () => {
     const m = modelFor(at('bind'));
@@ -292,6 +316,10 @@ describe('duos and trios', () => {
     const party = [ix('jett'), ix('raze'), ix('reyna')];
     const ask = askFor(m, party, rules, 0.5);
     eq(ask[0]!.role, 'controller', 'three duelists want a controller most');
+    ok(ask.every((x) => x.chance > 0 && x.chance < 1), 'random teammates bring each role in some games, not all');
+    // the two random teammates play two agents, so the chances of the four roles add up to between one and two
+    const total = ask.reduce((n, x) => n + x.chance, 0);
+    ok(total >= 1 - 1e-9 && total <= 2 + 1e-9, `the chances add up to ${total}`);
   });
 });
 
@@ -330,7 +358,11 @@ describe('explanations', () => {
     for (const rank of ['iron', 'radiant'] as const) {
       const m = modelFor(at('haven', 'attack', rank));
       eq(m.fitParts.pro[ix('hush')], 0, rank);
-      ok(m.fitParts.rank[ix('hush')]! <= 0, `${rank}: a hard agent costs a little at low ranks, and nothing at Radiant`);
     }
+    // her hard kit still costs at low ranks, and nothing at Radiant
+    const hush = agentById('hush')!;
+    ok(kitShare(hush, 0) < 0.75, 'a team at Iron gets less of her kit');
+    eq(kitShare(hush, 1), 1);
+    eq(modelFor(at('haven', 'attack', 'radiant')).fitParts.rank[ix('hush')], 0);
   });
 });

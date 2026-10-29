@@ -2,9 +2,12 @@
 
 What's planned, what the owner has approved, and what's done. Update it as work lands. Items marked **proposed** wait for the owner's OK before they're built. Small fixes don't need to be listed here.
 
-## Next version: more reliable answers, and a guided tour (approved)
+## 0.2.0: more reliable answers, and a guided tour (released 2026-10-29)
 
 The owner asked (29 October 2026) for the next version to make the engine and the knowledge base much more reliable and accurate, and to expand what they cover: think about what's missing, crosscheck the answers against what pro teams play and what experts say, and test that what the app says is actually good advice, not just numbers that look right. Ranked win rates are part of it. Also a guided tour of the app, checked in every round of testing. The detailed plan comes first, then rounds of testing and fixing until two rounds in a row find nothing significant. The owner asked for this to go ahead without waiting on them.
+
+- **Planned:** an audit against Champions 2026 pro picks, ranked win rates and expert tier lists found that no top comp had an Operator player (Chamber, picked by pros on 52% of maps, was in none) and that agent tiers below Immortal followed pro play more than ranked results. The engine will count a kit for what a team at the rank gets out of it, weigh ranked win rates, pull toward pro picks mostly from Diamond up, measure long angles for the Operator, and read each map's role mix from pro play, all checked by benchmark tests. Agent pages show an agent's tier at each rank and their win rate, Help says where the numbers come from, and six guided tours show the app on its real screens.
+- **Built:** kits counted for what a team at each rank gets out of them, ranked win rates weighed most in the middle ranks, this year's pro picks and role mixes pulling mostly from Diamond up, long angles for the Operator, map lines and agent pages from this year's pro play, each agent's tier at every rank, clearer cons (one line for a missing role, gaps that name who partly covers them, hard kits with what a team at the rank gets of them), plays checked so no smoke lands on a teammate's way, tips that fit each side, how often random teammates pick the role to ask for, and six guided tours. Then twelve rounds of testing and fixing, until two rounds in a row found nothing significant.
 
 ## Keeping the numbers current (approved, every version)
 

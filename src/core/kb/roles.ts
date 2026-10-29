@@ -15,7 +15,7 @@ export const isRole = (v: unknown): v is Role => typeof v === 'string' && (ROLE_
 export const roleOf = (id: Role) => ROLES.find((r) => r.id === id)!;
 
 export const DIMS = [
-  'smoke', 'wall', 'flash', 'recon', 'entry', 'clear', 'disrupt', 'stall', 'anchor', 'flank', 'retake', 'postplant', 'sustain', 'duel', 'mobility',
+  'smoke', 'wall', 'flash', 'recon', 'entry', 'clear', 'disrupt', 'stall', 'anchor', 'flank', 'retake', 'postplant', 'sustain', 'duel', 'angles', 'mobility',
 ] as const;
 export type Dim = (typeof DIMS)[number];
 export const isDim = (v: unknown): v is Dim => typeof v === 'string' && (DIMS as readonly string[]).includes(v);
@@ -38,6 +38,7 @@ export const DIM_INFO: Record<Dim, { name: string; has: string; lacks: string; f
   retake: { name: 'Retake', has: 'retake utility', lacks: 'retake utility', blurb: 'Utility that takes a planted site back.' },
   postplant: { name: 'Post-plant', has: 'post-plant utility', lacks: 'post-plant utility', blurb: 'Mollies and lineups that stop a defuse from a distance.' },
   sustain: { name: 'Healing', has: 'healing', lacks: 'healing', blurb: 'Heals and revives that keep players in the round.' },
-  duel: { name: 'Firepower', has: 'firepower', lacks: 'firepower', blurb: 'Agents who win fights on their own: operators, self-heals, kill resets.' },
+  duel: { name: 'Firepower', has: 'firepower', lacks: 'firepower', blurb: 'Agents who win fights on their own: self-heals, kill resets and abilities made for duels.' },
+  angles: { name: 'Long angles', has: 'Operator play', lacks: 'Operator play', blurb: 'Holds a long sightline with the Operator, with a way out after the shot.' },
   mobility: { name: 'Speed', has: 'speed', lacks: 'speed', blurb: 'Fast movement for quick hits, rotations and lurks.' },
 };

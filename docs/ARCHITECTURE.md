@@ -20,7 +20,7 @@ Everything the app knows about the game, as data with a comment at the top of ea
 
 - `agents.ts`: every agent's role, strengths (`caps`, from 0 to 1 per strength, with the abilities behind each), how well they work alone (`solo`), how hard they are (`skill`), ranked pick rate (`pop`) and pro pick rate (`pro`). `new-agents.ts` holds agents revealed but too new for real numbers (none right now), marked `estimate`, with the steps to update them.
 - `roles.ts`: the four roles and the fifteen strengths ("dims") everything is measured by: smokes, walls, flashes, information, entry, clearing, crowd control, delay, site hold, flank watch, retake, post-plant, healing, firepower and speed. Each has its name and its words for pros and cons in `DIM_INFO`.
-- `maps.ts`: the maps, the competitive pool, sites, and what each map, side and site needs on top of a side's usual needs (`wall +.5`). `twoControllers` marks maps where pro teams run two controllers.
+- `maps.ts`: the maps, the competitive pool, sites, and what each map, side and site needs on top of a side's usual needs (`wall +.5`). How many of each role pro teams run on a map comes from its pro picks (`proRoleMix` in `pro.ts`).
 - `ranks.ts`: the nine ranks, each placed between Iron (0) and Radiant (1).
 - `pro.ts`: what pro teams pick on each map, and typical pro comps. `PRO_CUTOFF` is when the last of those events began: an agent released after it (Hush, for now) isn't pulled either way by pro play, since pros haven't had the chance to pick them (`proKnown`).
 - `synergy.ts`: pairs that work well together or clash, from −3 to 3, with the reason in words.
@@ -61,6 +61,7 @@ Anything read back goes through a sanitizer first (`core/saved.ts` for plans and
 - `pages/`: Home, Planner, Rankings, Agents, Maps, Saved (plans and parties), Settings, Themes, Help, and two hidden pages: the gallery (`#/gallery`, every control in the current theme) and the self-test (`#/selftest`, which runs the specs in the browser).
 - `planner/`: the question (`question.tsx`), the answers (`answers.tsx`), a comp with its pros, cons, plays and tips (`comp.tsx`, `plays.tsx`), and the question in words (`words.ts`).
 - `components/`: shared controls and overlays, agent and map pickers, the minimap with callouts.
+- `tours/`: the guided tours. `list.ts` holds every tour's steps, each pointing at a `data-tour` hook in a screen (never at a styling class), with its words built from the engine's constants; `engine.tsx` draws the spotlight and card, waits for each target to arrive and settle, and handles the keys; `place.ts` works out where the card goes; `now.ts` is the tour on screen, which a screen can read to show what a step points at (the first comp opened, the Pros and cons tab) without saving anything. Tours remember only which ones you finished, in the app's `tips`.
 - `art.tsx`: agent portraits, ability and role icons, map banners and minimaps from `assets/`, each falling back to plain text when an image is missing (a new agent's portrait, say).
 - `theme.ts`, `sound.ts`, `styles/`: themes, synthesized sounds and styles (tokens in `styles/base.css`).
 
@@ -73,5 +74,5 @@ npx playwright test   # browser tests, light and dark (build first)
 ```
 
 - `tests/specs/` holds the behaviour specs for the engine, the knowledge base, plays, saved records and data. They also run inside the app, on the hidden self-test page.
-- `tests/unit/scenarios.test.ts` checks the engine's answers as a whole against pro play, ranked play and common sense; `questions.test.ts` asks hundreds of random questions and checks every answer keeps the question's rules. Both are Node only (too slow for the self-test).
-- `tests/e2e/` drives the built file in a real browser: the Planner, Rankings, Agents, Maps, Saved plans and parties, search, copy, backups, settings, themes, a layout sweep of every page (at three widths and with extra-large text) and an automated accessibility check.
+- `tests/unit/scenarios.test.ts` checks the engine's answers as a whole against pro play, ranked play and common sense; `benchmarks.test.ts` measures how close the best comps come to what pros play, checks tiers at low ranks against ranked play, and checks that every reason a comp gives is true of it; `questions.test.ts` asks hundreds of random questions and checks every answer keeps the question's rules. All three are Node only (too slow for the self-test). `tours.test.ts` checks that every hook and page a tour names exists, and where the card goes.
+- `tests/e2e/` drives the built file in a real browser: the Planner, Rankings, Agents, Maps, Saved plans and parties, search, copy, backups, settings, themes, a layout sweep of every page (at three widths and with extra-large text), an automated accessibility check, and every guided tour run from the keyboard (each step lit, its card clear of it, in a small window too).

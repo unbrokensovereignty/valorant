@@ -9,11 +9,11 @@ import type { Side } from '../kb/maps.ts';
 export const BASE: Record<Side, Record<Dim, number>> = {
   attack: {
     smoke: 1, wall: 0.2, flash: 0.7, recon: 0.75, entry: 0.85, clear: 0.6, disrupt: 0.55, stall: 0.1,
-    anchor: 0.05, flank: 0.35, retake: 0.05, postplant: 0.6, sustain: 0.25, duel: 0.7, mobility: 0.3,
+    anchor: 0.05, flank: 0.35, retake: 0.05, postplant: 0.6, sustain: 0.25, duel: 0.7, angles: 0.2, mobility: 0.3,
   },
   defense: {
     smoke: 0.7, wall: 0.15, flash: 0.45, recon: 0.7, entry: 0.2, clear: 0.3, disrupt: 0.45, stall: 0.8,
-    anchor: 0.8, flank: 0.55, retake: 0.7, postplant: 0.05, sustain: 0.35, duel: 0.7, mobility: 0.3,
+    anchor: 0.8, flank: 0.55, retake: 0.7, postplant: 0.05, sustain: 0.35, duel: 0.7, angles: 0.45, mobility: 0.3,
   },
 };
 
@@ -23,23 +23,83 @@ export const BASE: Record<Side, Record<Dim, number>> = {
  * most out of coordinated utility such as lineups and walls.
  */
 export const BY_RANK: Record<Dim, readonly [number, number]> = {
-  smoke: [0.85, 1.1], wall: [0.6, 1.15], flash: [0.8, 1.05], recon: [0.8, 1.1], entry: [1, 1], clear: [0.9, 1],
+  smoke: [0.85, 1.1], wall: [0.6, 1.15], flash: [0.8, 1.05], recon: [0.7, 1.1], entry: [1, 1], clear: [0.9, 1],
   disrupt: [0.8, 1.1], stall: [0.8, 1.05], anchor: [1.05, 0.95], flank: [1, 0.9], retake: [0.8, 1.05],
-  postplant: [0.6, 1.15], sustain: [1.2, 0.8], duel: [1.5, 1], mobility: [0.9, 1.05],
+  postplant: [0.6, 1.15], sustain: [1.2, 0.8], duel: [1.5, 1], angles: [1, 1], mobility: [0.9, 1.05],
 };
 
 /**
- * Agent fit beyond the team's strengths. `pro`: the pull toward what pros play on the map, at
- * Radiant (it fades to `proLow` of that at Iron). `solo` and `skill`: at Iron, the reward for
- * agents who work alone and the cost of hard agents (both fade to nothing at Radiant).
+ * How much of an agent's kit a team gets out of it, by rank. At Iron, each point of `skill` (how
+ * hard the agent is to play well) costs `skill` of the kit, and each point the agent depends on
+ * the team (1 − `solo`) costs `team`; both fade to nothing at Radiant. Strengths that come only
+ * from gun play (the G key in kb/agents.ts) count in full at every rank, and those that come
+ * partly from it, halfway between.
  */
-export const FIT = { pro: 0.07, proLow: 0.1, solo: 0.06, skill: 0.035 };
+export const EXEC = { skill: 0.4, team: 0.3 };
 
 /**
- * On maps where pro teams run two controllers (`twoControllers` in kb/maps.ts), what a team with
- * only one gives up at Radiant. Like the pull toward pro picks, it fades to `FIT.proLow` of that at Iron.
+ * Agent fit beyond the team's strengths. `pro`: the pull toward what pros play on the map, at
+ * Radiant (see PRO_RISE for lower ranks). `solo` and `skill`: at Iron, the reward for agents who
+ * work alone and the cost of hard agents (both fade to nothing at Radiant; EXEC does most of the
+ * work for hard agents). `win`: the reward per point of ranked win rate above 50% (and the cost
+ * per point below), where win rates count fully (WIN_RANKS).
  */
-export const SECOND_CONTROLLER = 0.03;
+export const FIT = { pro: 0.07, solo: 0.06, skill: 0.01, win: 0.004 };
+
+/**
+ * How the pull toward pro play grows with rank: `low` of the full pull at Iron, rising with the
+ * rank's place (0 Iron to 1 Radiant, kb/ranks.ts) to the power `power`, so it stays small through
+ * the middle ranks and grows fast from Diamond up. The same goes for each map's pro role mix.
+ */
+export const PRO_RISE = { low: 0.1, power: 2 };
+
+/**
+ * Pro numbers from fewer than this many maps of play pull less, in proportion, but never under
+ * half; numbers from an earlier year's play pull `dated` of the full amount.
+ */
+export const PRO_GAMES = { full: 10, least: 0.5, dated: 0.7 };
+
+/**
+ * Each map's role mix in pro play (how many of each role a pro team runs there, from kb/pro.ts):
+ * at Radiant, a team gives up this much per role, times the square of how far it is from that mix.
+ * Being one agent off costs the full amount, half an agent off a quarter of it.
+ */
+export const ROLE_MIX = 0.15;
+
+/**
+ * Ranked win rates are taken across all ranks, so they mostly come from games between Silver and
+ * Diamond. They count fully from `from` to `to` (a rank's place from 0 at Iron to 1 at Radiant)
+ * and fade in a straight line to `iron` of that at Iron and to `radiant` at Radiant.
+ */
+export const WIN_RANKS = { iron: 0.5, from: 0.25, to: 0.625, radiant: 0.2 };
+
+/** A win rate also says who plays the agent, so only this many points either side of 50% count. */
+export const WIN_CAP = 3;
+
+/**
+ * An agent's first weeks are played by people still learning them, which drags the win rate down:
+ * within NEW_DAYS of release (kb/agents.ts), only this share of the gap from 50% counts.
+ */
+export const NEW_WIN_SHARE = 0.5;
+
+/** How much an agent's win rate has to add to (or take from) its fit before a comp's pros (or cons) say so. */
+export const WIN_NOTE = { more: 0.005, fewer: 0.006 };
+
+/**
+ * When a comp's role count is this far from the map's pro mix, and costs at least `cost`, its cons
+ * say so (so only from the middle ranks up, where the pro mix starts to count). When at least
+ * `relax` of the cost of having none of a role is forgiven (pro teams on the map mostly play
+ * without it), the con for the missing role says that pro teams play that way too.
+ */
+export const MIX_NOTE = { off: 0.7, cost: 0.03, relax: 0.3 };
+
+/**
+ * A comp's cons say an agent takes practice to play well when a team at Iron would get less than
+ * `hard` of the kit (engine/model.ts, kitShare): the agents notably harder than most, not every
+ * agent who isn't the easiest. They say so at ranks up to `upTo` on the climb from Iron (0) to
+ * Radiant (1), with the share a team at that rank gets.
+ */
+export const KIT_NOTE = { hard: 0.6, upTo: 0.5 };
 
 /** Points per step of a pair's strength (−3 to 3, see kb/synergy.ts). */
 export const PAIR_STEP = 0.006;

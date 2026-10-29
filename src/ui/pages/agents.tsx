@@ -1,6 +1,7 @@
 /**
- * Agents: every agent by role, and for each one their kit, what they're strong at, the maps they
- * fit best, who they pair well with (and clash with), tips, and how often they're picked.
+ * Agents: every agent by role, and for each one their kit, what they're strong at, the maps and
+ * ranks they fit best, who they pair well with (and clash with), tips, and how often they're
+ * picked and win.
  */
 import { PageHead } from '../shell.tsx';
 import { Badge, Bar, Button, Segmented, Empty } from '../components/controls.tsx';
@@ -12,10 +13,11 @@ import { answerFor } from '../solved.ts';
 import { planWith } from '../planner/store.ts';
 import { Fit } from '../planner/comp.tsx';
 import { rankWord } from '../planner/words.ts';
-import { agentById, AGENTS_BY_NAME, earlyStats, type Agent } from '../../core/kb/agents.ts';
+import { agentById, AGENTS_BY_NAME, earlyStats, STATS_ON, type Agent } from '../../core/kb/agents.ts';
 import { kitOf, abilityNames, textParts } from '../../core/kb/kits.ts';
 import { POOL } from '../../core/kb/maps.ts';
-import { PRO, proKnown } from '../../core/kb/pro.ts';
+import { PRO, PRO_MAPS_COUNTED, proKnown } from '../../core/kb/pro.ts';
+import { RANKS } from '../../core/kb/ranks.ts';
 import { DIM_INFO, DIMS, ROLES, roleOf, type Role } from '../../core/kb/roles.ts';
 import { PAIRS, type Pair } from '../../core/kb/synergy.ts';
 import { agentTips } from '../../core/engine/tips.ts';
@@ -33,8 +35,8 @@ function AgentGrid() {
   return (
     <>
       <Segmented<RoleFilter> label="Role" value={role} onChange={setRole} options={[['all', 'All'], ...ROLES.map((r) => [r.id, r.plural] as const)]} />
-      {groups.map((r) => (
-        <section key={r.id} class="agent-role-group">
+      {groups.map((r, i) => (
+        <section key={r.id} class="agent-role-group" data-tour={i === 0 ? 'agent-group' : undefined}>
           <h2 class="row"><RoleIcon role={r.id} size={20} />{r.plural}<span class="muted small">{r.blurb}</span></h2>
           <ul class="agent-cards">
             {AGENTS_BY_NAME.filter((a) => a.role === r.id).map((a) => (
@@ -59,7 +61,7 @@ function Kit({ a }: { a: Agent }) {
   const kit = kitOf(a.id);
   if (!kit) return null;
   return (
-    <section class="panel stack">
+    <section class="panel stack" data-tour="agent-kit">
       <h2>Abilities</h2>
       <ul class="kit">
         {kit.abilities.map((k) => (
@@ -79,7 +81,7 @@ function Kit({ a }: { a: Agent }) {
 function Strengths({ a }: { a: Agent }) {
   const rows = DIMS.map((d) => ({ d, v: a.caps[d] })).filter((x) => x.v >= 0.15).sort((x, y) => y.v - x.v);
   return (
-    <section class="panel stack">
+    <section class="panel stack" data-tour="agent-strengths">
       <h2>Strengths</h2>
       <table class="agent-strengths">
         <tbody>
@@ -108,7 +110,7 @@ function BestMaps({ a, rank, newAgents }: { a: Agent; rank: RankPick; newAgents:
   const ready = rows.every((r) => r.fit !== undefined);
   const sorted = ready ? [...rows].sort((x, y) => y.fit! - x.fit!) : rows;
   return (
-    <section class="panel stack">
+    <section class="panel stack" data-tour="agent-best-maps">
       <div class="row-between"><h2>Best maps</h2>{!ready && <span class="spinner" aria-label="Working it out" />}</div>
       <ul class="plain-list best-maps">
         {sorted.map(({ m, fit }) => (
@@ -122,6 +124,27 @@ function BestMaps({ a, rank, newAgents }: { a: Agent; rank: RankPick; newAgents:
         ))}
       </ul>
       <p class="small muted">For a five-stack, both sides, at {rank === 'any' ? 'all ranks' : rankWord(rank)}. Pick a map to plan with {a.name} there.</p>
+    </section>
+  );
+}
+
+function ByRank({ a, rank, newAgents }: { a: Agent; rank: RankPick; newAgents: boolean }) {
+  const rows = RANKS.map((r) => ({ r, fit: answerFor({ map: 'any', side: 'both', rank: r.id, sites: [] }, newAgents)?.agents.find((x) => x.id === a.id)?.fit }));
+  const ready = rows.every((x) => x.fit !== undefined);
+  return (
+    <section class="panel stack" data-tour="agent-by-rank">
+      <div class="row-between"><h2>By rank</h2>{!ready && <span class="spinner" aria-label="Working it out" />}</div>
+      <ul class="plain-list by-rank">
+        {rows.map(({ r, fit }) => (
+          <li key={r.id}>
+            <button type="button" class={`by-rank-cell${r.id === rank ? ' current' : ''}`} aria-current={r.id === rank ? 'true' : undefined} onClick={() => planWith({ rank: r.id, include: [a.id], newAgents })}>
+              <span class="small">{r.name}</span>
+              {fit !== undefined ? <Fit fit={fit} tier={tierOf(fit)} label={`${a.name} at ${r.name}`} compact /> : <span class="faint small">…</span>}
+            </button>
+          </li>
+        ))}
+      </ul>
+      <p class="small muted">For a five-stack on any map in the pool, both sides{rank !== 'any' ? `; your usual rank is marked` : ''}. Pick a rank to plan with {a.name} there.</p>
     </section>
   );
 }
@@ -145,7 +168,7 @@ function Partners({ a }: { a: Agent }) {
   };
   if (!mine.length) return null;
   return (
-    <section class="panel stack">
+    <section class="panel stack" data-tour="agent-partners">
       <h2>Partners</h2>
       {good.length > 0 && <><h3 class="row good-text"><Icon name="check" size={16} />Works well with</h3><ul class="plain-list pairs">{good.map(row)}</ul></>}
       {bad.length > 0 && <><h3 class="row bad-text"><Icon name="warning" size={16} />Gets in the way of</h3><ul class="plain-list pairs">{bad.map(row)}</ul></>}
@@ -179,6 +202,7 @@ function AgentPage({ a }: { a: Agent }) {
         </div>
         <div class="stack">
           <BestMaps a={a} rank={rank} newAgents={newAgents} />
+          <ByRank a={a} rank={rank} newAgents={newAgents} />
           <Partners a={a} />
           {tips.length > 0 && (
             <section class="panel stack">
@@ -187,13 +211,19 @@ function AgentPage({ a }: { a: Agent }) {
             </section>
           )}
           <section class="panel stack">
-            <h2>How often they’re picked</h2>
+            <h2>Picks and wins</h2>
             <dl class="facts">
               <dt>In ranked</dt><dd>{a.estimate ? 'Not known yet' : `${a.pop}% of all picks`}</dd>
-              <dt>By pros</dt><dd>{a.estimate ? 'Not known yet' : proKnown(a) ? `${a.pro}% of maps at the year’s top events` : `None yet: ${a.name} came out after the year’s top events`}</dd>
+              <dt>Ranked wins</dt><dd>{a.estimate ? 'Not known yet' : `${a.win.toFixed(1)}% of games`}</dd>
+              <dt>By pros</dt><dd>{a.estimate ? 'Not known yet' : proKnown(a) ? `${a.pro ? `${a.pro}% of` : 'Hardly ever, in'} the ${PRO_MAPS_COUNTED} maps counted from the year’s top events` : `None yet: ${a.name} came out after the year’s top events`}</dd>
               <dt>Released</dt><dd>{fmtLongDay(a.released)}</dd>
             </dl>
-            {!a.estimate && earlyStats(a) && <p class="small muted">The ranked pick rate is from {a.name}’s first days, while players are still learning the agent.</p>}
+            {!a.estimate && (
+              <p class="small muted">
+                Ranked numbers are across all ranks, as of {fmtLongDay(STATS_ON)}, and win rates are evened out so the average agent wins half its games.
+                {earlyStats(a) && ` They’re from ${a.name}’s first days, while players are still learning the agent.`}
+              </p>
+            )}
           </section>
         </div>
       </div>

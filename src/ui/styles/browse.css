@@ -19,8 +19,6 @@
 .star-on path { fill: currentColor; }
 .page-head .eyebrow a { gap: 2px; color: var(--text3); text-decoration: none; }
 .page-head .eyebrow a:hover { color: var(--text); }
-.page-head .eyebrow a { gap: 2px; color: var(--text3); text-decoration: none; }
-.page-head .eyebrow a:hover { color: var(--text); }
 
 /* ---------------------------------------------------------------- home */
 
@@ -113,6 +111,14 @@
 .pair-row { display: flex; align-items: flex-start; gap: 10px; width: 100%; padding: 6px 8px 6px 4px; border: 0; border-radius: var(--r); background: none; color: var(--text); text-align: left; cursor: pointer; }
 .pair-row:hover { background: var(--surface-2); }
 .pair-row small { display: block; margin-top: 1px; line-height: 1.4; }
+.by-rank { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.by-rank-cell {
+  display: grid; gap: 4px; width: 100%; min-width: 0; padding: 7px 10px; border: 1px solid var(--line); border-radius: var(--r);
+  background: none; color: var(--text); text-align: left; cursor: pointer; transition: background-color var(--dur-quick);
+}
+.by-rank-cell:hover { background: var(--surface-2); }
+.by-rank-cell.current { border-color: var(--accent-line); background: var(--accent-soft); }
+.by-rank-cell > .small { color: var(--text2); font-weight: 600; }
 .home-list h3, .agent-detail h3 { gap: 6px; font-size: 0.95rem; }
 
 /* ---------------------------------------------------------------- maps */
@@ -131,6 +137,7 @@
 .pro-comps { gap: 6px; }
 .map-side { margin: 28px 0 12px; }
 .map-tips { margin-bottom: 12px; }
+.map-plays { margin-top: 28px; }
 .map-detail + .map-side h2 { font-size: 1.2rem; }
 .map-page-plays { margin-top: 24px; }
 

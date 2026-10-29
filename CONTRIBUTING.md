@@ -32,7 +32,7 @@ Your data while testing: files opened from disk can share saved data with the re
 | You want to change… | Look in |
 | --- | --- |
 | How much anything counts in a team's score | `src/core/engine/weights.ts` (every number, each with a comment) |
-| What a situation needs, an agent's own fit, the two-controller rule | `src/core/engine/model.ts` |
+| What a situation needs, an agent's own fit at a rank, each map's pro role mix | `src/core/engine/model.ts` |
 | How teams are scored and searched | `src/core/engine/search.ts` |
 | Duos and trios, and how random teammates pick | `src/core/engine/party.ts`, `FILL_*` in `weights.ts` |
 | Fits, tiers and the answer to a question | `src/core/engine/plan.ts` |
@@ -62,6 +62,7 @@ Your data while testing: files opened from disk can share saved data with the re
 | Icons | `src/ui/icons.tsx`; the game's art through `src/ui/art.tsx` |
 | The in-app guide and About | `src/ui/pages/help.tsx` |
 | What's new in a version | `src/core/whatsnew.ts` |
+| The guided tours | `src/ui/tours/` (`list.ts` the steps, `engine.tsx` the spotlight and keys, `place.ts` where the card goes) |
 
 ## Recipes
 
@@ -78,11 +79,11 @@ npm run art -- ~/playbook-content         # → assets/ and src/core/kb/content.
 
 `fetch-art` lists anything the API doesn't have yet (a new agent's art, say); the app shows the agent's initial until it's there. `art` resizes the images to WebP in `assets/` and writes every agent's abilities and every map's callouts into `content.gen.ts`. If the game files a new agent's ability under a different slot from the key players press, add it to `KEY_FIXES` in `tools/prepare-art.mjs` (the specs check that every agent has an ability on each key). Check the diff of `content.gen.ts` for changed callout names: plays and tips name callouts, and a renamed one fails the specs until it's updated there. Keep the build under its size budget (`SIZE_BUDGET` in `tools/build.mjs`).
 
-**Add an agent.** Give it an entry in `src/core/kb/agents.ts` (or `new-agents.ts` with `estimate: true` while it's new): id, name, role, release date, strengths as `dim value keys`, `solo`, `skill`, `pop` and `pro`. Refresh the game's content for its abilities and art. Give it two tips in `src/core/kb/tips.ts`, any pairs in `synergy.ts`, and pro picks in `pro.ts` once pros play it. Plays need nothing: their jobs go to whoever in the comp is best at them. `npm run check` tells you if anything's missing.
+**Add an agent.** Give it an entry in `src/core/kb/agents.ts` (or `new-agents.ts` with `estimate: true` while it's new): id, name, role, release date, strengths as `dim value keys`, `solo`, `skill`, `pop` and `win` (its pro pick rate is worked out from `pro.ts`). Refresh the game's content for its abilities and art. Give it two tips in `src/core/kb/tips.ts`, any pairs in `synergy.ts`, and pro picks in `pro.ts` once pros play it. Plays need nothing: their jobs go to whoever in the comp is best at them. `npm run check` tells you if anything's missing.
 
 **Change the map pool.** Set `pool: true` or `false` on the maps in `src/core/kb/maps.ts`, and update `PATCH` and `POOL_SINCE` (with the date of the next change in the comment). Pick rates in `agents.ts` and `pro.ts` name the patch and events they came from; update those comments when you update the numbers.
 
-**Add a map.** Add it to `DEFS` in `src/core/kb/maps.ts` with its sites, needs (as bumps over a side's usual needs), `aka` for callouts players call something else, and `twoControllers` if pro teams run two controllers there. Refresh the game's content for its minimap, banner and callouts. Add its plays to `src/core/kb/plays.ts` (both sides, every site), its tips to `tips.ts` and its pro picks to `pro.ts`. The specs check each of these.
+**Add a map.** Add it to `DEFS` in `src/core/kb/maps.ts` with its sites, needs (as bumps over a side's usual needs), and `aka` for callouts players call something else. Refresh the game's content for its minimap, banner and callouts. Add its plays to `src/core/kb/plays.ts` (both sides, every site), its tips to `tips.ts` and its pro picks to `pro.ts` (the engine reads the map's pro role mix from them). The specs check each of these.
 
 **Add or change a play.** Plays are in `src/core/kb/plays.ts`, written as `jobs: route | what to do`, five steps a play (one per player), over the map's own callouts. The comment at the top of the file explains the format. A typo in a job or callout throws, so `npm test` catches it. Look at the play on the map's page in both themes: its routes are drawn on the minimap.
 
@@ -98,6 +99,8 @@ npm run art -- ~/playbook-content         # → assets/ and src/core/kb/content.
 
 **Make a change undoable.** Change saved data only through a method on `Repo` (`src/data/repo.ts`) that runs one transaction with a label in plain words ("Delete “Haven default”"). That label is what Undo and Redo name. Show its message with `toast(text, { undo: true })` to give the message an Undo button for that change.
 
+**Add or change a tour.** Tours are in `src/ui/tours/list.ts`. A step names the page to be on (or stays on the one before), a `data-tour` hook to light up, a title and a line or two of text, and the side the card should go. Put the hook on the thing itself in the screen (`data-tour="…"`, or the `tour` prop on `Button`, `Tabs` and the Planner's question parts), on something small enough to leave room for the card. Build any number a step quotes from the engine's constants, as `fitWords()` does. If a step points at something a screen hides by default (a closed comp, another tab), have the screen show it while the step is on, by reading `tourHook` from `src/ui/tours/now.ts`, without saving anything. `tests/unit/tours.test.ts` checks the hooks and pages, and `tests/e2e/tours.spec.ts` runs every tour from the keyboard and fails if a step's card covers what it points at.
+
 **Add a sound.** Add its name and group to `SOUNDS` in `src/ui/sound.ts` and a case built from the helpers there. Keep it short and quiet; it follows the volume sliders and every sound set.
 
 **Add an icon.** Add it to `ICONS` in `src/ui/icons.tsx`, drawn on the 24 px grid with the same stroke. Use it through `<Icon name="…" />`.
@@ -109,7 +112,7 @@ npm run art -- ~/playbook-content         # → assets/ and src/core/kb/content.
 | Where | What | Run with |
 | --- | --- | --- |
 | `tests/specs/` | Behaviour specs for the engine, the knowledge base, plays and tips, saved records, backups, settings and data. They also run in the browser on the hidden `#/selftest` page, so no Node imports. List new files in `tests/specs/index.ts`. | `npm test` |
-| `tests/unit/` | The scenario checks (the engine's answers against pro play, ranked play and common sense) and the random-question check. Node only. | `npm test` |
+| `tests/unit/` | The scenario checks (the engine's answers against pro play, ranked play and common sense), the benchmarks (how close the best comps come to pro comps, low-rank tiers against ranked play, and that every reason a comp gives is true), the random-question check, and the tour checks. Node only. | `npm test` |
 | `tests/e2e/` | Playwright on the built file for the version in `package.json`, in Chromium light and dark (`E2E_BROWSERS=others` runs Firefox and WebKit instead, `all` runs every browser; CI runs both). Every test fails on a console error. `pages.spec.ts` sweeps every page for cut-off text and runs an automated accessibility check (axe); helpers are in `app.ts` (`open`, `go`, `saved`). | `npm run build && npx playwright test` |
 | `tools/test-timezones.mjs` | `npm test` in ten tricky time zones. | `npm run test:tz` |
 

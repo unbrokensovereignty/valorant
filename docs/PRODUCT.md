@@ -20,6 +20,7 @@ The owner made these. Don't reverse one without asking.
 - **New agents are honest.** An agent revealed but not out yet gets numbers estimated from the kit that was shown, kept in one file (`core/kb/new-agents.ts`) so they're easy to replace. The app says they're estimates wherever it shows them, and people can leave them out of a question or of every question (Settings → Planner, shown only while there's one). Once an agent is out, their numbers come from their first days in ranked and from their kit, the app says the pick rate is that early, and pro play counts neither for nor against them until pro teams have had the chance to pick them (Hush, out since 27 October 2026, for now).
 - **A fresh product from 0.1.0.** The app, its docs and its history never refer to anything before 0.1.0. Saved data has its own format with no imports from anything earlier.
 - **All rights reserved, shared privately.** Sovereign shares the app with people they choose; it is not public or open source. No legal machinery beyond the notice in `LICENSE` and Help → About.
+- **Guided tours.** Help → Tours has a short tour for each page, and Home offers the three-step First steps once. A tour lights up one thing at a time on the real screens, goes at your pace (Space, ←, Esc), changes nothing but which tours you've finished, and is part of every test-and-fix round: the e2e tests run each tour from the keyboard and check its card never covers what it points at.
 - **Credits.** Wherever the app or docs credit someone, it reads "Designed and directed by Sovereign". Sovereign came up with the ideas and design and directs the work, but doesn't claim to have written the code, and nothing says how the code was written.
 
 ## Answers people can trust
@@ -29,7 +30,7 @@ The owner made these. Don't reverse one without asking.
 - **Rank changes the answer.** Low ranks reward aim and simple, selfish utility and agents who work alone; high ranks reward coordinated utility and lean toward what pro teams play. The tests check both ends.
 - **Parties plan for real lobbies.** A duo or trio is scored over the teammates they're likely to get at their rank, not over a perfect five.
 - **Say what can't be done, and why.** When no comp fits the choices, the page points at the likely cause and offers to clear the agent and role choices. When a role count can't fit the party, it says so instead of quietly changing it.
-- **Sensible, not stale.** The scenario tests (`tests/unit/scenarios.test.ts`) keep the answers sound across maps and ranks: every top comp has a controller and a sound mix of roles, high-rank answers stay close to pro play, each map's signature agents show up, and new agents don't take over.
+- **Sensible, not stale.** The scenario tests (`tests/unit/scenarios.test.ts`) keep the answers sound across maps and ranks: every top comp has a controller and a sound mix of roles, high-rank answers stay close to pro play, each map's signature agents show up, and new agents don't take over. The benchmarks (`tests/unit/benchmarks.test.ts`) hold the answers to what pros and ranked play show: how many agents the best comps share with pro comps, the comps pros played rating well, each map's controller count and signature picks, low-rank tiers that match ranked results, and every reason a comp gives being true of it.
 
 ## Look
 

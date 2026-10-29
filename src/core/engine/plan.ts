@@ -74,7 +74,7 @@ export interface SituationAnswer {
   /** How many teams (or parties) the rules allowed. */
   count: number;
   /** Duo or trio: the roles to hope random teammates pick, best first. */
-  askFor?: { role: string; fit: number }[];
+  askFor?: { role: string; fit: number; chance: number }[];
 }
 
 const index = (id: string) => agentById(id)!.index;
@@ -158,7 +158,7 @@ export function solve(q: Query, s: Situation, keep: number): SituationAnswer {
       spread: (p.spread / Math.max(1e-9, ref.best - ref.mid)) * (100 - FIT_MID), bestTeam: idsOf(p.best.agents), bestFit: fitOf(p.best.score, ref),
     };
   });
-  const ask = top ? askFor(m, top.party, prules, rankT(s)).map((x) => ({ role: x.role, fit: fitOf(x.expected, ref) })) : undefined;
+  const ask = top ? askFor(m, top.party, prules, rankT(s)).map((x) => ({ role: x.role, fit: fitOf(x.expected, ref), chance: x.chance })) : undefined;
   return {
     situation: s, ref, comps, count: r.count, askFor: ask,
     agents: agentAnswers(r.bestWith.map((p) => p && { score: p.expected, team: p.likely.agents }), partyRef),

@@ -5,6 +5,7 @@
 import { agentById } from '../kb/agents.ts';
 import { spotName } from '../kb/maps.ts';
 import { listJoin } from '../text.ts';
+import { aWord } from '../util.ts';
 import type { Explanation } from './explain.ts';
 import { JOB_NAMES, playFitLabel, type FilledPlay } from './plays.ts';
 import type { Tip } from './tips.ts';
@@ -17,7 +18,12 @@ export interface SummaryParts {
   team: readonly string[];
   /** Your party, for a duo or trio. */
   party?: readonly string[];
+  /** The role to ask your random teammates for ("sentinel"), if any. */
+  ask?: string;
+  /** For a party, its fit ranks it among parties of its size. */
   fit: number;
+  /** For a party, the fit of the team to expect with random teammates. */
+  expected?: number;
   tier: string;
   why: Explanation;
   play?: FilledPlay;
@@ -27,7 +33,10 @@ export interface SummaryParts {
 export function summaryText(p: SummaryParts): string {
   const lines: string[] = [`Playbook: ${p.title}`];
   const yours = p.party?.length ? ` (your party: ${listJoin(p.party.map(name))})` : '';
-  lines.push(`Comp: ${p.team.map(name).join(', ')}${yours}. Fit ${Math.round(p.fit)}, tier ${p.tier}.`);
+  const among = p.party?.length ? ` among ${p.party.length === 2 ? 'duos' : 'trios'}` : '';
+  lines.push(`Comp: ${p.team.map(name).join(', ')}${yours}. Fit ${Math.round(p.fit)}${among}, tier ${p.tier}.`);
+  if (p.expected !== undefined && p.party?.length) lines.push(`With random teammates, expect a team that fits about ${Math.round(p.expected)} out of 100.`);
+  if (p.ask) lines.push(`Ask your random teammates for ${aWord(p.ask)} first.`);
   const list = (head: string, items: readonly string[]) => {
     if (!items.length) return;
     lines.push('', head, ...items.map((x) => `- ${x}`));

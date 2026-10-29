@@ -127,6 +127,17 @@ test('a duo finds its best map: the maps are ranked and each one opens its picks
   expect(errors).toEqual([]);
 });
 
+test('a duo’s best pick says which role to ask random teammates for, and how often they pick one', async ({ page, errors }) => {
+  await open(page, 'planner');
+  await question(page).getByRole('group', { name: 'Party size' }).getByRole('button', { name: 'Duo' }).click();
+  await chooseMap(page, 'Ascent');
+  await settledAnswers(page);
+  const ask = comps(page).first().locator('.party-box p').nth(1);
+  await expect(ask).toHaveText(/^Ask your teammates for (?:a (?:duelist|controller|sentinel)|an initiator) first: they pick one on their own (?:in about \d+ of 10 games|in nearly every game|hardly ever), and with one, expect about \d+\./);
+  expect(await ask.textContent()).not.toMatch(/\ba [aeiou]/i);
+  expect(errors).toEqual([]);
+});
+
 test('teammates already locked in are part of every likely team and never in your party', async ({ page, errors }) => {
   await open(page, 'planner');
   // the first answers in place, so nothing moves under the click

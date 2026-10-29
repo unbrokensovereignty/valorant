@@ -21,7 +21,7 @@ export const AGENT_TIPS: Record<string, readonly [string, string]> = {
   breach: ['Call your Flashpoint before throwing it so the entry swings as it pops.', 'Fault Line and Aftershock clear close spots so the entry doesn’t have to fight them.'],
   skye: ['Guiding Light tells you if it hit; call it so the entry knows when to swing.', 'Trailblazer clears a corner on its own; send it before anyone peeks.'],
   kayo: ['Throw ZERO/point before the hit: it shows who is there and shuts off their utility.', 'NULL/cmd makes a hit or a retake much safer; use it when the whole team commits.'],
-  fade: ['Follow your Prowler in: it finds and blinds the enemy in the corner for you.', 'Hold Seize until enemies commit, then use it to stop the entry or the defuse.'],
+  fade: ['Follow your Prowler in: it finds and blinds the enemy in the corner for you.', 'After the plant, throw Seize onto the Spike: anyone who goes to defuse is held there, deafened and weakened.'],
   gekko: ['Pick Wingman and Dizzy back up after they land; you get them again for free.', 'Let Wingman plant or defuse while you hold the angle that matters.'],
   tejo: ['Send the Stealth Drone ahead and push while the enemies are suppressed.', 'Guided Salvo and Armageddon stop a defuse from far away; save them for after the plant.'],
   brimstone: ['Place Sky Smokes before the hit so the whole team crosses at once.', 'Keep Incendiary and Orbital Strike for the post-plant.'],
@@ -38,6 +38,32 @@ export const AGENT_TIPS: Record<string, readonly [string, string]> = {
   deadlock: ['GravNet stops a rush in place; follow it with a molly or a spray.', 'Barrier Mesh blocks a choke and buys time for the rotation.'],
   vyse: ['Razorvine and Shear stop a rush; Arc Rose blinds through walls for the retake.', 'Steel Garden jams primary weapons in an area: use it to retake or to stop a hit.'],
   veto: ['Interceptor destroys thrown utility; place it where the enemy throws theirs.', 'Chokehold holds a push in place; Crosscut lets you get back to the fight fast.'],
+};
+
+/**
+ * The tip a comp shows for an agent on defense, for the agents whose first tip above is about
+ * attacking: their second tip when it fits defense, or one of its own (shown on their page too).
+ */
+export const DEFENSE_TIPS: Record<string, string> = {
+  jett: 'With the Operator, take one shot and dash out instead of holding the same angle twice.',
+  raze: 'Boom Bot and Paint Shells punish a push through a choke; throw them at the first sound of a rush.',
+  yoru: 'Place Gatecrash early on defense, so you can rotate or come in behind the push the moment the hit comes.',
+  neon: 'Relay Bolt concusses a group coming through a choke; peek as it goes off.',
+  sova: 'A Recon Bolt early in the round finds a fast push; keep the drone for the retake.',
+  kayo: 'Throw ZERO/point onto a choke as the push comes so the attackers can’t use their utility, and save NULL/cmd for the retake.',
+  fade: 'Hold Seize until the attackers commit and use it to stop the entry, then throw Haunt over the site to start the retake.',
+  tejo: 'Guided Salvo stops a push at a choke from safety; fire it as the enemies commit.',
+  brimstone: 'Smoke the choke the enemies push through, and save Orbital Strike to drive the attackers off the Spike on the retake.',
+  viper: 'Put Toxic Screen across the choke the attackers come through, and save Viper’s Pit to take the site back on a retake.',
+  harbor: 'Storm Surge and High Tide slow a push through a choke; keep Cove to shield the defuse on the retake.',
+};
+
+/** The tip a comp shows for an agent on attack, for the sentinels whose first tip above is about defending (shown on their page too). */
+export const ATTACK_TIPS: Record<string, string> = {
+  sage: 'Put Barrier Orb across an angle the defenders hold, so the team can cross or plant behind it.',
+  cypher: 'Trapwire the flank behind the team, and watch the Spike with Spycam after the plant.',
+  deadlock: 'After the plant, put Barrier Mesh across a way into the site, so the retake has to break it or go around.',
+  vyse: 'After the plant, put Razorvine on the Spike and Shear across a way in, so the retake comes in slow and split up.',
 };
 
 /** Two tips for each map and side. */
@@ -117,22 +143,41 @@ export const RANK_TIPS: Record<'low' | 'middle' | 'high', readonly string[]> = {
 
 export const rankBand = (t: number): 'low' | 'middle' | 'high' => (t < 0.3 ? 'low' : t < 0.7 ? 'middle' : 'high');
 
-/** Tips for a duo or a trio, whose other players are random. */
-export const PARTY_TIPS: Record<2 | 3, readonly string[]> = {
-  2: [
-    'Pick two agents that work together, like a flash and an entry; the other three are random.',
-    'Ask your random teammates for the roles the planner suggests before they lock in.',
-  ],
-  3: [
-    'Three of you can cover most of a comp; ask the other two for the roles that are missing.',
-    'Play your three together and let the random teammates take the other site or lane.',
-  ],
+/** Tips for a duo or a trio, whose other players are random: how to play, and what to ask the others for (while some haven't locked in). */
+export const PARTY_TIPS: Record<2 | 3, { play: string; ask: string }> = {
+  2: {
+    play: 'Pick two agents that work together, like a flash and an entry; the other three are random.',
+    ask: 'Ask your random teammates for the roles the Planner suggests before they lock in.',
+  },
+  3: {
+    play: 'Play your three together and let the random teammates take the other site or lane.',
+    ask: 'Three of you can cover most of a comp; ask the other two for the roles that are missing.',
+  },
 };
 
-/** Tips for a team with two of a role (what doubling up asks of the team), shown under "Two duelists" and so on. */
-export const DOUBLE_TIPS: Record<Role, string> = {
-  duelist: 'Go in one right after the other, so the second can trade the first.',
-  initiator: 'One finds the enemies and the other flashes them; don’t spend both on the same angle.',
-  controller: 'One smokes the hit and the other plays mid or saves smokes for after the plant.',
-  sentinel: 'One holds a site and the other watches the flank or plays mid.',
+/**
+ * Tips for a team with two of a role (what doubling up asks of the team), shown under "Two duelists"
+ * and so on: one for each side, and one for a question about both.
+ */
+export const DOUBLE_TIPS: Record<Role, Record<Side | 'both', string>> = {
+  duelist: {
+    attack: 'Go in one right after the other, so the second can trade the first.',
+    defense: 'Split them up: one takes early fights for information, and the other stays back to trade or retake.',
+    both: 'On attack, go in one right after the other so the second can trade the first; on defense, one takes early fights and the other stays back.',
+  },
+  initiator: {
+    attack: 'One finds the enemies and the other flashes them; don’t spend both on the same angle.',
+    defense: 'One finds the enemies and the other flashes them; don’t spend both on the same angle.',
+    both: 'One finds the enemies and the other flashes them; don’t spend both on the same angle.',
+  },
+  controller: {
+    attack: 'One smokes the hit and the other plays mid or saves smokes for after the plant.',
+    defense: 'One slows the hit with smokes, and the other keeps some back for the retake.',
+    both: 'One smokes the fight that’s on and the other keeps some back: for after the plant on attack, for the retake on defense.',
+  },
+  sentinel: {
+    attack: 'One watches the flank, and the other locks down the site after the plant.',
+    defense: 'One holds each site with a setup, so neither site falls without a fight.',
+    both: 'On defense, one holds each site with a setup; on attack, one watches the flank and the other locks down the plant.',
+  },
 };

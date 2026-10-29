@@ -10,7 +10,7 @@ import { fold } from '../../core/text.ts';
 
 export interface Command {
   id: string;
-  group: 'Go to' | 'Saved plans' | 'Parties' | 'Actions' | 'Agents' | 'Maps' | 'Plan for' | 'Settings';
+  group: 'Go to' | 'Saved plans' | 'Parties' | 'Actions' | 'Agents' | 'Maps' | 'Plan for' | 'Settings' | 'Tours';
   label: string;
   icon: IconName;
   hint?: string;
@@ -47,7 +47,7 @@ function highlight(label: string, q: string) {
   return <>{label.slice(0, at)}<mark>{label.slice(at, at + n)}</mark>{label.slice(at + n)}</>;
 }
 
-const GROUP_ORDER: readonly Command['group'][] = ['Go to', 'Saved plans', 'Parties', 'Actions', 'Agents', 'Maps', 'Plan for', 'Settings'];
+const GROUP_ORDER: readonly Command['group'][] = ['Go to', 'Saved plans', 'Parties', 'Actions', 'Agents', 'Maps', 'Plan for', 'Settings', 'Tours'];
 /** The groups shown before anything is typed (the rest are a search away). */
 const AT_FIRST: ReadonlySet<Command['group']> = new Set(['Go to', 'Saved plans', 'Parties', 'Actions']);
 

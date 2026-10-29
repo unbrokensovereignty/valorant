@@ -1,9 +1,9 @@
 import AxeBuilder from '@axe-core/playwright';
 import type { Page } from '@playwright/test';
-import { expect, go, open, test } from './app.ts';
+import { expect, go, open, still, test } from './app.ts';
 
 const PAGES = ['home', 'planner', 'rankings', 'agents', 'agents/sova', 'agents/hush', 'maps', 'maps/haven', 'saved', 'saved/parties',
-  'settings', 'themes', 'help', 'help/keys', 'help/about', 'gallery'];
+  'settings', 'themes', 'help', 'help/tours', 'help/keys', 'help/about', 'gallery'];
 
 /** Text that is cut off without an ellipsis, or anything pushed past the window's sides. */
 function layoutProblems() {
@@ -38,9 +38,7 @@ function layoutProblems() {
 /** Waits for the page's entrance and any answers being worked out, so it's measured where it rests. */
 async function settled(page: Page) {
   await expect(page.locator('.spinner')).toHaveCount(0, { timeout: 20_000 });
-  await page.evaluate(() => Promise.all(document.getAnimations()
-    .filter((a) => Number.isFinite(a.effect?.getComputedTiming().endTime ?? Infinity))
-    .map((a) => a.finished.catch(() => {}))));
+  await still(page);
 }
 
 for (const [width, narrow] of [[1280, false], [1280, true], [800, false]] as const) {

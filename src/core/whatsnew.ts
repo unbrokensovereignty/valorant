@@ -17,6 +17,15 @@ export interface VersionNotes { version: string; items: readonly NewThing[] }
 /** Newest first. */
 export const WHATS_NEW: readonly VersionNotes[] = [
   {
+    version: '0.2.0',
+    items: [
+      { icon: 'target', title: 'Answers that fit your rank', text: 'Hard kits count for less low down, ranked win rates count most in the middle ranks, and what pro teams play counts most near the top.', page: 'planner' },
+      { icon: 'trophy', title: 'This year’s pro play', text: 'Pro picks from Champions and Masters Santiago 2026, and how many of each role pros run on each map, like two controllers on Lotus.', page: 'maps/lotus' },
+      { icon: 'agents', title: 'Agents by rank', text: 'Each agent’s page shows their tier at every rank, from Iron to Radiant, and a click plans with them there.', page: 'agents/sova' },
+      { icon: 'compass', title: 'Guided tours', text: 'Short tours light up one thing at a time on the real screens, from the first steps to every page.', page: 'help/tours' },
+    ],
+  },
+  {
     version: '0.1.5',
     items: [
       { icon: 'agents', title: 'Hush, for real', text: 'Hush is out, so she’s in as a full agent: her abilities in the game’s own words, her portrait and icons, numbers from her first days in ranked, her best partners and tips.', page: 'agents/hush' },

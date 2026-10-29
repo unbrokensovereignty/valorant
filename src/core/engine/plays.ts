@@ -104,12 +104,14 @@ export function fillPlay(play: Play, team: readonly string[]): FilledPlay {
 
 /**
  * The plays a team can run on a map and side, best fit first. With sites, only plays for those
- * sites (and plays for the whole map); site plays come before whole-map ones at equal fit.
+ * sites and plays for the whole map, the sites' own first (they're what was asked about); without,
+ * site plays come before whole-map ones at equal fit.
  */
 export function playsFor(team: readonly string[], map: string, side: Side, sites: readonly SiteId[] = []): FilledPlay[] {
+  const wide = (f: FilledPlay) => Number(!f.play.site);
   return playsOn(map, side, sites)
     .map((p) => fillPlay(p, team))
-    .sort((a, b) => b.fit - a.fit || Number(!a.play.site) - Number(!b.play.site) || a.play.name.localeCompare(b.play.name));
+    .sort((a, b) => (sites.length ? wide(a) - wide(b) : 0) || b.fit - a.fit || wide(a) - wide(b) || a.play.name.localeCompare(b.play.name));
 }
 
 /** A fit in words, for a play. */
