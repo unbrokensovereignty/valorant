@@ -50,6 +50,52 @@ for (const [width, narrow] of [[1280, false], [1280, true], [800, false]] as con
   });
 }
 
+test('every page lays out cleanly with extra-large text and motion off', async ({ page, errors }) => {
+  test.setTimeout(120_000);
+  await page.setViewportSize({ width: 1024, height: 800 });
+  await open(page, 'settings/appearance');
+  await page.getByRole('combobox', { name: 'Text size' }).selectOption({ label: 'Extra large' });
+  await page.getByRole('combobox', { name: 'Motion' }).selectOption({ label: 'Off' });
+  await expect(page.locator('html')).toHaveAttribute('data-text', 'xl');
+  await expect(page.locator('html')).toHaveAttribute('data-motion', 'off');
+  for (const p of PAGES) {
+    await go(page, p);
+    await expect(page.locator('main h1').first(), p).toBeVisible();
+    await settled(page);
+    expect(await page.evaluate(layoutProblems), p).toEqual([]);
+  }
+  expect(errors).toEqual([]);
+});
+
+test('the Planner’s pickers and an open comp pass the accessibility check too', async ({ page, errors }) => {
+  await open(page, 'planner');
+  const found: string[] = [];
+  const check = async (where: string, name: string) => {
+    const r = await new AxeBuilder({ page }).include(where).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'best-practice']).analyze();
+    for (const v of r.violations) for (const n of v.nodes) found.push(`${name}: ${v.id} at ${n.target.join(' ')}`);
+  };
+  await page.getByRole('button', { name: /^Map: .*\. Change$/ }).click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await settled(page);
+  await check('[role=dialog]', 'map picker');
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: 'Agents the team must play: choose' }).click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await settled(page);
+  await check('[role=dialog]', 'agent picker');
+  await page.keyboard.press('Escape');
+  await settled(page);
+  for (const tab of ['Plays', 'Tips']) {
+    await page.locator('.comp.open').getByRole('tab', { name: tab }).click();
+    await check('.comp.open', `comp ${tab}`);
+  }
+  await page.getByRole('tab', { name: 'Agents' }).click();
+  await page.locator('.agent-row').first().click();
+  await check('.answers', 'agents tab');
+  expect(found).toEqual([]);
+  expect(errors).toEqual([]);
+});
+
 test('every page passes an automated accessibility check (WCAG AA: contrast, names, roles, headings)', async ({ page, errors }) => {
   test.setTimeout(180_000);
   await open(page);
