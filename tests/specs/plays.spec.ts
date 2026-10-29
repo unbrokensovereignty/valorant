@@ -31,6 +31,16 @@ describe('plays', () => {
       }
     }
   });
+  spec('an attack play never smokes the way a teammate comes in or the spot they hold', () => {
+    for (const p of PLAYS.filter((x) => x.side === 'attack')) {
+      const names = mapById(p.map)!.callouts.map((c) => c.name).filter((c) => !c.endsWith(' Site'));
+      for (const s of p.steps.filter((x) => x.jobs.includes('smoke'))) {
+        // the callouts the smoke goes on: those its text names, up to anything it says to leave open
+        const on = names.filter((c) => s.text.replace(/\bleave .*$/i, '').includes(c) && !s.route.includes(c));
+        for (const o of p.steps) if (o !== s) for (const c of o.route) ok(!on.includes(c), `${p.map}, ${p.name}: the smoke on ${c} is on a teammate’s way`);
+      }
+    }
+  });
   spec('only the chosen sites’ plays come, with the whole-map ones', () => {
     const c = playsOn('haven', 'attack', ['C']);
     ok(c.every((p) => p.site === 'C' || p.site === null));
