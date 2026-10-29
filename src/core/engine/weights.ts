@@ -64,7 +64,7 @@ export const PRO_GAMES = { full: 10, least: 0.5, dated: 0.7 };
  * at Radiant, a team gives up this much per role, times the square of how far it is from that mix.
  * Being one agent off costs the full amount, half an agent off a quarter of it.
  */
-export const ROLE_MIX = 0.15;
+export const ROLE_MIX = 0.08;
 
 /**
  * Ranked win rates are taken across all ranks, so they mostly come from games between Silver and
@@ -100,6 +100,12 @@ export const MIX_NOTE = { off: 0.7, cost: 0.03, relax: 0.3 };
  * Radiant (1), with the share a team at that rank gets.
  */
 export const KIT_NOTE = { hard: 0.6, upTo: 0.5 };
+
+/**
+ * How much a kit rule (kb/kitfit.ts) has to add to (or take from) a team's score on its own before
+ * a comp's pros (or cons) give its reason, and how many such reasons each list gets at most.
+ */
+export const KIT_RULE_NOTE = { gain: 0.006, most: 2 };
 
 /** Points per step of a pair's strength (−3 to 3, see kb/synergy.ts). */
 export const PAIR_STEP = 0.006;

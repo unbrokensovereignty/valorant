@@ -10,6 +10,7 @@ import { PRO, proKnown, proPick, proRoleMix } from '../kb/pro.ts';
 import { ALL_RANKS_T, rankOf, type RankId } from '../kb/ranks.ts';
 import { DIMS, ROLE_IDS, type Dim, type Role } from '../kb/roles.ts';
 import { PAIRS } from '../kb/synergy.ts';
+import { rulesFor, type ParsedRule } from '../kb/kitfit.ts';
 import { BASE, BY_RANK, EXEC, FIT, NEW_WIN_SHARE, PAIR_STEP, PRO_GAMES, PRO_RISE, ROLE_COST, ROLE_MIX, WIN_CAP, WIN_RANKS } from './weights.ts';
 
 export type MapPick = string; // a map id, or 'any'
@@ -51,6 +52,11 @@ export interface Model {
    * the cost of having none of a role is forgiven because pro teams there mostly play without it.
    */
   mix: { want: Float64Array; cost: Float64Array; relax: Float64Array };
+  /**
+   * The kit rules (kb/kitfit.ts) that change each agent's strengths here, by agent index, with how
+   * much each adds to (or takes from) a team's score on its own, averaged over the situations covered.
+   */
+  kit: { rule: ParsedRule; gain: number }[][];
 }
 
 const t = (rank: RankPick) => (rank === 'any' ? ALL_RANKS_T : rankOf(rank).t);
@@ -137,8 +143,14 @@ function single(map: MapInfo, side: Side, sites: readonly SiteId[], rankT: numbe
     rank[a.index] = f.rank;
     win[a.index] = f.win;
   }
-  return { weight, pro, rank, win };
+  // how this map, side and site change each agent's strengths (kb/kitfit.ts)
+  const rules = AGENTS.map((a) => rulesFor(a.id, map.id, side, sites));
+  return { weight, pro, rank, win, rules };
 }
+
+/** An agent's strength once the kit rules that apply have changed it. */
+const capWith = (a: Agent, d: Dim, rules: readonly ParsedRule[]): number =>
+  Math.max(0, Math.min(1, rules.reduce((v, r) => v + (r.bumps[d] ?? 0), a.caps[d])));
 
 const roleOfId = (id: string) => agentById(id)?.role;
 /** How many of each role pro teams run on a map, on average (see proRoleMix in kb/pro.ts). */
@@ -157,15 +169,26 @@ export function modelFor(s: Situation): Model {
   const rankT = t(s.rank);
   const weight = new Float64Array(D), pro = new Float64Array(N), rank = new Float64Array(N), win = new Float64Array(N);
   const parts = maps.length * sides.length;
+  const miss = new Float64Array(N * D);
+  const kit: { rule: ParsedRule; gain: number }[][] = AGENTS.map(() => []);
   for (const m of maps) {
     for (const side of sides) {
       const one = single(m, side, s.map === 'any' ? [] : s.sites, rankT);
       for (let j = 0; j < D; j++) weight[j]! += one.weight[j]! / parts;
       for (let i = 0; i < N; i++) { pro[i]! += one.pro[i]! / parts; rank[i]! += one.rank[i]! / parts; win[i]! += one.win[i]! / parts; }
+      for (const a of AGENTS) {
+        const rules = one.rules[a.index]!;
+        DIMS.forEach((d, j) => { miss[a.index * D + j]! += (1 - capWith(a, d, rules) * execShare(a, d, rankT)) / parts; });
+        for (const rule of rules) {
+          // what the rule adds on its own: each strength it changes, as the score weighs it here
+          const gain = DIMS.reduce((acc, d, j) => acc + one.weight[j]! * (capWith(a, d, [rule]) - a.caps[d]) * execShare(a, d, rankT), 0) / parts;
+          const had = kit[a.index]!.find((k) => k.rule === rule);
+          if (had) had.gain += gain;
+          else kit[a.index]!.push({ rule, gain });
+        }
+      }
     }
   }
-  const miss = new Float64Array(N * D);
-  for (const a of AGENTS) DIMS.forEach((d, j) => { miss[a.index * D + j] = 1 - a.caps[d] * execShare(a, d, rankT); });
   const base = new Float64Array(N);
   for (let i = 0; i < N; i++) base[i] = pro[i]! + rank[i]! + win[i]!;
   const pair = new Float64Array(N * N);
@@ -201,7 +224,7 @@ export function modelFor(s: Situation): Model {
   for (let ri = 0; ri < ROLES_N; ri++) want[ri] = mixed ? want[ri]! / mixed : Number.NaN;
   for (let i = 0; i < roleCost.length; i++) roleCost[i]! += mixCost[i]!;
   const model: Model = {
-    situation: { ...s, sites: [...s.sites] }, weight, miss, base, pair, roleCost, fitParts: { pro, rank, win }, mix: { want, cost: mixCost, relax: relaxed },
+    situation: { ...s, sites: [...s.sites] }, weight, miss, base, pair, roleCost, fitParts: { pro, rank, win }, mix: { want, cost: mixCost, relax: relaxed }, kit,
   };
   if (cache.size > 200) cache.clear();
   cache.set(key, model);

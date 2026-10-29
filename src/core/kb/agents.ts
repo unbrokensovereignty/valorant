@@ -107,7 +107,7 @@ const DEFS: readonly AgentDef[] = [
   },
   {
     id: 'hush', name: 'Hush', role: 'duelist', released: '2026-10-27', solo: 0.6, skill: 0.75, pop: 6.8, win: 47.5,
-    caps: 'disrupt .55 EX; entry .55 EQ; flash .5 Q; clear .35 E; mobility .3 C; retake .55 X; postplant .3 X; stall .3 E; duel .6 G',
+    caps: 'disrupt .45 EX; entry .5 EQ; flash .45 Q; clear .3 E; mobility .3 C; retake .45 X; postplant .3 X; stall .25 E; duel .6 G',
     line: 'Steers a flash and a pulling blast around corners, and lifts a whole site helpless with her ultimate.',
   },
   ...NEW_AGENTS,

@@ -2,6 +2,8 @@
 
 Every version of Playbook By Sovereign and what it changed.
 
+## 0.2.5 (in progress)
+
 ## 0.2.0 (2026-10-29)
 
 - **Answers that fit your rank.** A comp now counts each agent for what a team at your rank gets out of them: a hard or team-dependent kit counts for less at low ranks and in full at Radiant, while gun play counts the same everywhere. Ranked win rates (metabot.gg and winio.ai, October 2026) count too, most in the middle ranks where most games are played, and the pull toward what pro teams play grows mostly from Diamond up. When a comp has an agent who's notably hard to play, like Astra or Yoru, its cons say so from Iron to Platinum, with how much of the kit a team at your rank usually gets.

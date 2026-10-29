@@ -12,7 +12,8 @@ import { DIMS, DIM_INFO, ROLE_IDS, roleOf, type Dim, type Role } from '../kb/rol
 import { pairOf } from '../kb/synergy.ts';
 import { listJoin } from '../text.ts';
 import { D, kitShare, needsFor, type Model } from './model.ts';
-import { KIT_NOTE, MIX_NOTE, WIN_NOTE } from './weights.ts';
+import { KIT_NOTE, KIT_RULE_NOTE, MIX_NOTE, WIN_NOTE } from './weights.ts';
+import { ruleWhy } from '../kb/kitfit.ts';
 
 export interface StrengthRow {
   dim: Dim;
@@ -138,6 +139,12 @@ export function explainTeam(m: Model, ids: readonly string[]): Explanation {
       const pros = want < 0.5 ? `pro teams on ${map.name} rarely run one` : `pro teams on ${map.name} usually run ${numberWord(Math.round(want))}`;
       cons.push(`${what}, where ${pros}: ${c < want ? MIX_GAP[r].fewer : MIX_GAP[r].more}.`);
     });
+  }
+  // what these kits do on this map, side or site in particular (kb/kitfit.ts), biggest first
+  if (map) {
+    const rules = team.flatMap((a) => m.kit[a.index]!).filter((k) => Math.abs(k.gain) >= KIT_RULE_NOTE.gain);
+    for (const k of rules.filter((x) => x.gain > 0).sort((a, b) => b.gain - a.gain).slice(0, KIT_RULE_NOTE.most)) pros.push(ruleWhy(k.rule, map.id));
+    for (const k of rules.filter((x) => x.gain < 0).sort((a, b) => a.gain - b.gain).slice(0, KIT_RULE_NOTE.most)) cons.push(ruleWhy(k.rule, map.id));
   }
   // strengths the situation needs and the team has
   for (const row of strengths.filter((r) => r.need >= 1 && r.cover >= 0.8).sort((a, b) => b.need * b.cover - a.need * a.cover).slice(0, 3)) {
