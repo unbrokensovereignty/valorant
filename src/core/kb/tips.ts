@@ -129,10 +129,10 @@ export const PARTY_TIPS: Record<2 | 3, readonly string[]> = {
   ],
 };
 
-/** Tips for a team with two of a role (what doubling up asks of the team). */
+/** Tips for a team with two of a role (what doubling up asks of the team), shown under "Two duelists" and so on. */
 export const DOUBLE_TIPS: Record<Role, string> = {
-  duelist: 'With two duelists, enter one right after the other so the second can trade the first.',
-  initiator: 'With two initiators, one finds the enemies and the other flashes them; don’t spend both on the same angle.',
-  controller: 'With two controllers, one smokes the hit and the other plays mid or saves smokes for after the plant.',
-  sentinel: 'With two sentinels, one holds a site and the other watches the flank or plays mid.',
+  duelist: 'Go in one right after the other, so the second can trade the first.',
+  initiator: 'One finds the enemies and the other flashes them; don’t spend both on the same angle.',
+  controller: 'One smokes the hit and the other plays mid or saves smokes for after the plant.',
+  sentinel: 'One holds a site and the other watches the flank or plays mid.',
 };
