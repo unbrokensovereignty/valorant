@@ -167,7 +167,7 @@ function Guide() {
           <h2>Plays</h2>
           <p>Each map has plays for attack and defense ({plural(PLAYS.length, 'play')} in all): hits, splits, fakes, defaults, setups and retakes. A play has a job for each player, like smoking a choke, flashing the entry or watching the flank.</p>
           <p>The Planner gives each job to the agent on the team who does it best, and names the abilities they’d use. A play <b>fits well</b>, <b>works</b> or is <b>a stretch</b>, from how good the players are at their jobs; a warning sign marks a job nobody on the team is good at.</p>
-          <p>The minimap draws each player’s route in their own color. Point at a step, or Tab to it, to bring its route forward. A dashed start is the walk out of spawn, and a ring is a spot to hold.</p>
+          <p>The minimap draws each player’s route in their own color, along the corridors and through the doorways they’d really take. Point at a step, or Tab to it, to bring its route forward. A dashed start is the walk out of spawn, and a ring is a spot to hold.</p>
         </section>
         <section class="panel stack">
           <h2>Where the numbers come from</h2>

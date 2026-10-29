@@ -61,7 +61,11 @@ export interface MapDef {
   sites: readonly SiteDef[];
   /** Other names players use for a callout: the game's name → what people also call it. */
   aka?: Record<string, string>;
-  /** Where a callout really sits on the minimap, for the few the game's content places badly. */
+  /**
+   * Where a callout really sits on the minimap, when the game's content places it badly: in a wall,
+   * on the edge of its site or outside its own area. Each was checked by hand against the minimap,
+   * and the specs check that every callout stands on the floor.
+   */
   places?: Record<string, readonly [x: number, y: number]>;
 }
 
@@ -76,6 +80,7 @@ const DEFS: readonly MapDef[] = [
     about: 'An open map with no walls at its edges: fall off and you die. Long sightlines, a contested mid and two wide sites.',
     keys: 'Information and long walls. Pros run Sova with two controllers, often Harbor and Astra.',
     needs: { both: 'wall +.6; smoke +.15; recon +.35; mobility +.1; angles +.4', attack: 'entry +.1', defense: 'anchor +.1; retake +.1' },
+    places: { 'A Secret': [0.183, 0.262], 'A Site': [0.39, 0.11], 'B Danger': [0.625, 0.94], 'B Site': [0.36, 0.89] },
     sites: [
       { id: 'A', about: 'A large site reached from A Main and A Lobby, overlooked by A Tower and the bridge, with A Secret and A Security behind it.', needs: { both: 'recon +.15', attack: 'flash +.1' } },
       { id: 'B', about: 'Reached down B Main past B Danger and B Nest; B Tower looks over the site and B Link joins it to mid.', needs: { both: 'wall +.2', attack: 'postplant +.1' } },
@@ -88,6 +93,7 @@ const DEFS: readonly MapDef[] = [
     keys: 'Mid control with information and an Operator: pros always play Omen and Sova, often with Chamber.',
     needs: { both: 'recon +.3; smoke +.1; duel +.15; angles +.4', attack: 'flash +.1', defense: 'anchor +.2; retake +.1; angles +.2' },
     aka: { 'A Tree': 'Tree', 'A Rafters': 'Heaven', 'Mid Bottom': 'Mid', 'Mid Courtyard': 'Mid' },
+    places: { 'A Site': [0.32, 0.16], 'B Lobby': [0.717, 0.671], 'B Site': [0.29, 0.78] },
     sites: [
       { id: 'A', about: 'Entered through A Main (from A Lobby) or from mid through A Garden and Tree; A Rafters (Heaven) and A Wine overlook it.', needs: { both: 'clear +.1', attack: 'smoke +.1' } },
       { id: 'B', about: 'Entered through B Main or from mid through Market; B Boat House sits at the back of a deep site.', needs: { both: 'disrupt +.1', defense: 'stall +.1' } },
@@ -100,6 +106,7 @@ const DEFS: readonly MapDef[] = [
     keys: 'Clearing tight chokes and stopping defuses: pros pair Viper with Brimstone, plus Fade for information and Yoru to take space.',
     needs: { both: 'clear +.3; flash +.15; smoke +.15; wall +.4; flank +.25; postplant +.15; angles -.6', defense: 'stall +.2; flank +.1' },
     aka: { 'A Bath': 'Showers', 'A Short': 'A Short', 'B Window': 'Hookah', 'A Tower': 'Heaven' },
+    places: { 'Attacker Side Spawn': [0.582, 0.95] },
     sites: [
       { id: 'A', about: 'Hit through A Short and A Bath (Showers); A Lamps and A Tower (Heaven) look down on it, and the teleporter exits in A Short.', needs: { both: 'clear +.2; flash +.1' } },
       { id: 'B', about: 'Hit down B Long or through B Window (Hookah); B Garden and B Elbow give defenders close angles.', needs: { both: 'wall +.15; smoke +.1', defense: 'stall +.1' } },
@@ -112,7 +119,7 @@ const DEFS: readonly MapDef[] = [
     keys: 'Long walls and an Operator: Viper is close to a must, with Sova for information.',
     needs: { both: 'wall +1; smoke +.15; duel +.3; recon +.25; mobility +.2; flank +.1; angles +.6', defense: 'anchor +.15' },
     aka: { 'A Pyramids': 'Pyramids', 'Mid Nest': 'Nest', 'B Elbow': 'Elbow' },
-    places: { 'A Lobby': [0.66, 0.8] },
+    places: { 'A Bridge': [0.686, 0.193], 'A Lobby': [0.66, 0.83], 'A Pyramids': [0.79, 0.43], 'A Ramp': [0.63, 0.27], 'A Shop': [0.742, 0.629], 'A Site': [0.87, 0.45], 'Attacker Side Spawn': [0.45, 0.88], 'B Back': [0.1, 0.233], 'B Elbow': [0.262, 0.439], 'B Main': [0.17, 0.51], 'B Site': [0.1, 0.31], 'B Tunnel': [0.36, 0.31], 'B Wall': [0.27, 0.17], 'B Window': [0.172, 0.593], 'Defender Side Arches': [0.38, 0.12], 'Defender Side Spawn': [0.66, 0.13], 'Mid Bottom': [0.47, 0.66], 'Mid Cannon': [0.308, 0.579], 'Mid Hall': [0.619, 0.475], 'Mid Nest': [0.48, 0.17], 'Mid Pillar': [0.48, 0.48], 'Mid Top': [0.479, 0.339], 'Mid Wood Doors': [0.61, 0.44] },
     sites: [
       { id: 'A', about: 'A big site with the Pyramids in the middle, reached through A Shop or from mid through Mid Hall; A Bridge links it to defender spawn.', needs: { both: 'wall +.2', attack: 'smoke +.1' } },
       { id: 'B', space: 'mixed', about: 'Reached through B Main and B Window, or from mid through B Tunnel; tighter than A, with B Wall and B Back to clear.', needs: { both: 'clear +.1; smoke +.1' } },
@@ -123,7 +130,7 @@ const DEFS: readonly MapDef[] = [
     about: 'A newer two-site map with a three-lane mid. Sites are reached through lobbies with many corners near the plant spots.',
     keys: 'Two controllers with Viper, plus Fade for information; Waylay or Neon to take space.',
     needs: { both: 'wall +.6; smoke +.15; recon +.2; angles -.3', attack: 'entry +.1', defense: 'stall +.15' },
-    places: { 'A Main': [0.59, 0.21], 'A Lobby': [0.71, 0.29] },
+    places: { 'A Lobby': [0.71, 0.29], 'A Main': [0.59, 0.21], 'A Site': [0.4, 0.19], 'B Site': [0.4, 0.76] },
     sites: [
       { id: 'A', about: 'Reached through A Main or from mid through A Link; A Yard, A Pocket, A Elbow and A Crane give defenders many corners.', needs: { both: 'clear +.15; recon +.1' } },
       { id: 'B', about: 'Reached through B Main or from mid through B Link; B Tower and B Arch overlook the plant.', needs: { both: 'smoke +.1', attack: 'postplant +.1' } },
@@ -135,6 +142,7 @@ const DEFS: readonly MapDef[] = [
     about: 'Attackers spawn on both ends and can hit a site from two sides at once; defenders start in the middle.',
     keys: 'Stuns and flank watch: Breach, Brimstone and a sentinel who covers the back.',
     needs: { both: 'flank +.35; disrupt +.25; clear +.15; smoke +.1; mobility +.15; angles -.3', defense: 'stall +.2; retake +.15; recon +.15; flank +.2' },
+    places: { 'A Site': [0.86, 0.5] },
     sites: [
       { id: 'A', about: 'Hit from A Main and A Door on one end, or from the other side down A Rope; A Dish and A Drop look over it.', needs: { both: 'disrupt +.15' } },
       { id: 'B', about: 'Hit from B Main and B Tree, or through B Arcade from the far side; B Tower and B Canteen hold over it.', needs: { both: 'clear +.15' } },
@@ -146,6 +154,7 @@ const DEFS: readonly MapDef[] = [
     keys: 'Information and speed: Sova and Neon are favorites, and every defender must hold alone at times.',
     needs: { both: 'recon +.3; mobility +.2; duel +.1; angles +.3', attack: 'entry +.1', defense: 'anchor +.2; retake +.15; mobility +.1' },
     aka: { 'A Tower': 'Heaven', 'A Long': 'A Long', 'C Garage': 'Garage' },
+    places: { 'C Lobby': [0.7, 0.74], 'C Long': [0.62, 0.84], 'C Site': [0.37, 0.82] },
     sites: [
       { id: 'A', about: 'Hit through A Long or A Sewer (Short); A Tower (Heaven) and A Link let defenders hold from above and behind.', needs: { both: 'flash +.1; clear +.1' } },
       { id: 'B', space: 'tight', about: 'The small middle site, open to Mid Window and Mid Doors; quick to take and quick to retake.', needs: { both: 'disrupt +.1', attack: 'postplant +.1' } },
@@ -158,6 +167,7 @@ const DEFS: readonly MapDef[] = [
     about: 'Vertical sites full of boxes and ziplines, with long open lanes into each site.',
     keys: 'Long walls and an Operator, with information to clear the many high spots.',
     needs: { both: 'wall +.8; recon +.25; duel +.2; clear +.15; angles +.4', attack: 'postplant +.2', defense: 'anchor +.15' },
+    places: { 'B Back': [0.79, 0.28], 'B Fence': [0.755, 0.33] },
     sites: [
       { id: 'A', about: 'Entered past A Belt and A Nest; A Pipes, A Rafters and A Screen give defenders high and close spots.', needs: { both: 'clear +.2; recon +.1' } },
       { id: 'B', about: 'Entered through B Yellow and B Green; defenders hold from B Snowman, B Back, B Hall and B Kitchen.', needs: { both: 'wall +.2', attack: 'postplant +.1' } },
@@ -169,6 +179,7 @@ const DEFS: readonly MapDef[] = [
     about: 'Three sites linked by rotating doors, with a breakable wall on A. Tight entrances and many corners on every site.',
     keys: 'Clearing corners and smoking chokes: pros always play Omen, usually with Viper and Fade, and often Chamber.',
     needs: { both: 'clear +.3; recon +.2; smoke +.2; wall +.3; flash +.1; mobility +.15; angles +.1', attack: 'postplant +.1', defense: 'anchor +.1' },
+    places: { 'A Hut': [0.872, 0.331], 'A Site': [0.885, 0.3], 'C Lobby': [0.343, 0.812], 'C Mound': [0.275, 0.62] },
     sites: [
       { id: 'A', about: 'Hit through A Main and A Root or A Rubble; A Hut, A Tree, A Stairs and A Drop give defenders close angles.', needs: { both: 'clear +.15; flash +.1' } },
       { id: 'B', about: 'The small center site, through B Main and B Pillars; B Upper overlooks it.', needs: { both: 'disrupt +.1', attack: 'postplant +.1' } },
@@ -181,6 +192,7 @@ const DEFS: readonly MapDef[] = [
     keys: 'Smokes placed anywhere and information: Astra is the pro pick.',
     needs: { both: 'smoke +.2; recon +.25; wall +.2; mobility +.1; angles +.1', defense: 'anchor +.15' },
     aka: { 'B Main': 'B Long' },
+    places: { 'A Art': [0.88, 0.56], 'A Dugout': [0.915, 0.3], 'A Flowers': [0.76, 0.24], 'A Link': [0.729, 0.333], 'A Main': [0.83, 0.47], 'A Restaurant': [0.74, 0.66], 'A Secret': [0.83, 0.17], 'A Site': [0.88, 0.34], 'Attacker Side Spawn': [0.53, 0.93], 'B Club': [0.27, 0.8], 'B Hall': [0.15, 0.29], 'B Link': [0.33, 0.5], 'B Main': [0.089, 0.606], 'B Ramp': [0.2, 0.735], 'B Site': [0.19, 0.4], 'B Tower': [0.285, 0.33], 'B Tunnel': [0.33, 0.235], 'Defender Side Records': [0.47, 0.24], 'Defender Side Spawn': [0.57, 0.08], 'Defender Side Water': [0.585, 0.3], 'Mid Connector': [0.621, 0.436], 'Mid Doors': [0.519, 0.549], 'Mid Plaza': [0.52, 0.63], 'Mid Shops': [0.4, 0.72], 'Mid Top': [0.57, 0.79] },
     sites: [
       { id: 'A', about: 'Hit through A Main or from A Art and A Link; A Flowers, A Secret and A Dugout give defenders cover.', needs: { both: 'smoke +.1' } },
       { id: 'B', space: 'open', about: 'Hit down the long B Main from B Ramp, with B Screen, B Tower and B Hall to clear.', needs: { both: 'wall +.15; duel +.1' } },
@@ -193,6 +205,7 @@ const DEFS: readonly MapDef[] = [
     keys: 'Smokes and clearing: Viper and Omen together, with Neon to take space and Fade for information.',
     needs: { both: 'clear +.3; smoke +.25; disrupt +.15; flank +.2; wall +.4; recon +.1; angles -.5', defense: 'stall +.15' },
     aka: { 'A Tower': 'A Heaven', 'B Tower': 'B Heaven', 'Mid Vent': 'Vents' },
+    places: { 'A Rafters': [0.353, 0.268], 'A Site': [0.3, 0.12], 'B Rafters': [0.368, 0.751], 'B Site': [0.32, 0.83] },
     sites: [
       { id: 'A', about: 'Hit through A Main and up A Ramps, with A Rafters, A Screens and A Tower (Heaven) above the site.', needs: { both: 'flash +.1' } },
       { id: 'B', about: 'Hit through B Garage or from mid down B Link; B Tower (Heaven), B Rafters and B Alley overlook the site.', needs: { both: 'clear +.15; disrupt +.1' } },
@@ -203,7 +216,7 @@ const DEFS: readonly MapDef[] = [
     about: 'A newer two-site map with a wide mid around Mid Fountain and Mid Tiles; both sites have lots of cover.',
     keys: 'Fast entry and information: Neon and Fade are the pro picks, with Chamber holding angles.',
     needs: { both: 'entry +.15; recon +.25; duel +.15; wall +.15; mobility +.1; angles +.4', defense: 'stall +.15' },
-    places: { 'Attacker Side Spawn': [0.49, 0.92] },
+    places: { 'A Lobby': [0.693, 0.75], 'A Site': [0.91, 0.43], 'Attacker Side Spawn': [0.49, 0.92], 'B Lobby': [0.27, 0.62] },
     sites: [
       { id: 'A', about: 'Hit through A Main or from mid through A Link; A Garden, A Art, A Hall and A Cave surround the site.', needs: { both: 'clear +.1', attack: 'flash +.1' } },
       { id: 'B', about: 'Hit through B Main or from mid through B Link; B Tower, B Gym, B Trophy and B Drop overlook the plant.', needs: { both: 'smoke +.1', attack: 'postplant +.1' } },
@@ -214,6 +227,7 @@ const DEFS: readonly MapDef[] = [
     about: 'A compact city map with a busy mid; B Market and A Elbow are tight, close-range fights.',
     keys: 'Information and fast entry: Omen, Neon and Fade, with Chamber as the sentinel.',
     needs: { both: 'recon +.25; entry +.15; clear +.15; smoke +.1; flank +.1; angles +.3' },
+    places: { 'A Alley': [0.786, 0.254], 'A Elbow': [0.839, 0.493], 'A Link': [0.72, 0.4], 'A Lobby': [0.68, 0.66], 'A Main': [0.7, 0.56], 'A Site': [0.8, 0.36], 'Attacker Side Spawn': [0.54, 0.91], 'B Boba': [0.17, 0.29], 'B Lobby': [0.36, 0.73], 'B Main': [0.12, 0.63], 'B Market': [0.27, 0.5], 'B Site': [0.08, 0.41], 'Defender Side Spawn': [0.5, 0.08], 'Mid Bottom': [0.37, 0.64], 'Mid Courtyard': [0.45, 0.54], 'Mid Tiles': [0.55, 0.63], 'Mid Top': [0.43, 0.32] },
     sites: [
       { id: 'A', about: 'Hit through A Main and A Lobby, or from A Link; A Elbow and A Alley hold close angles.', needs: { both: 'clear +.1' } },
       { id: 'B', about: 'Hit through B Main or from mid through B Market; B Boba overlooks the site.', needs: { both: 'smoke +.1; disrupt +.1' } },

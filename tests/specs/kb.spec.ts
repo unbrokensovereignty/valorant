@@ -2,6 +2,8 @@ import { describe, spec, eq, ok, throws } from './harness.ts';
 import { AGENTS, agentById, isNew, parseCaps } from '../../src/core/kb/agents.ts';
 import { kitOf, abilityOn, abilityNames, plainText, textParts } from '../../src/core/kb/kits.ts';
 import { MAPS, MECHANICS, POOL, mapById, parseNeeds, calloutLabel } from '../../src/core/kb/maps.ts';
+import { hasFloor, onFloor, walk, type Spot } from '../../src/core/kb/floor.ts';
+import { PLAYS } from '../../src/core/kb/plays.ts';
 import { AGENT_MAP_TIPS, MAP_TIPS } from '../../src/core/kb/tips.ts';
 import { PRO, PRO_MAPS_COUNTED, RECORDED, proKnown, proOverall, proPick, proRoleMix } from '../../src/core/kb/pro.ts';
 import { PAIRS, pairOf } from '../../src/core/kb/synergy.ts';
@@ -111,6 +113,41 @@ describe('maps', () => {
       for (const name of Object.keys(m.places ?? {})) ok(m.callouts.some((c) => c.name === name), `${m.name}: “${name}” is a callout to move`);
       eq(mapById(m.id), m);
     }
+  });
+  spec('every callout stands on its minimap’s floor', () => {
+    for (const m of MAPS) {
+      ok(hasFloor(m.id), `${m.name}: the floor was read from its minimap`);
+      for (const c of m.callouts) ok(onFloor(m.id, [c.x, c.y]), `${m.name}: ${c.name} is on the floor, not in a wall`);
+    }
+  });
+  spec('every route in a play keeps to the floor, and goes no long way round', () => {
+    const length = (ps: readonly Spot[]) => ps.slice(1).reduce((t, q, k) => t + Math.hypot(q[0] - ps[k]![0], q[1] - ps[k]![1]), 0);
+    for (const p of PLAYS) {
+      const m = mapById(p.map)!;
+      for (const s of p.steps) {
+        const spots = s.route.map((n) => m.callouts.find((c) => c.name === n)!).map((c): Spot => [c.x, c.y]);
+        for (let i = 1; i < spots.length; i++) {
+          const a = spots[i - 1]!, b = spots[i]!, line = walk(m.id, a, b);
+          const where = `${m.name}: ${s.route[i - 1]} to ${s.route[i]}`;
+          // a spot every half a percent of the minimap along the line
+          for (let k = 1; k < line.length; k++) {
+            const [x0, y0] = line[k - 1]!, [x1, y1] = line[k]!;
+            const n = Math.ceil(Math.hypot(x1 - x0, y1 - y0) * 200);
+            for (let j = 0; j <= n; j++) ok(onFloor(m.id, [x0 + ((x1 - x0) * j) / n, y0 + ((y1 - y0) * j) / n]), `${where} goes through a wall`);
+          }
+          ok(length(line) <= 2.2 * length([a, b]) + 0.05, `${where} goes a long way round`);
+        }
+      }
+    }
+  });
+  spec('a route goes round a wall rather than through it', () => {
+    // Lotus: from C Mound to B Main there's a wall in the straight line, so the route bends
+    const lotus = mapById('lotus')!, at = (n: string): Spot => { const c = lotus.callouts.find((x) => x.name === n)!; return [c.x, c.y]; };
+    const line = walk('lotus', at('C Mound'), at('B Main'));
+    ok(line.length > 2, 'it has a corner');
+    eq(line[0], at('C Mound'));
+    eq(line[line.length - 1], at('B Main'));
+    eq(walk('nowhere', [0.1, 0.1], [0.9, 0.9]), [[0.1, 0.1], [0.9, 0.9]], 'a map without a floor gets the straight line');
   });
   spec('a typo in a need fails loudly', () => {
     throws(() => parseNeeds('smok +.5', 'x'));

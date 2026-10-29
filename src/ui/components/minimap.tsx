@@ -1,9 +1,12 @@
 /**
  * A map's minimap with callouts, and a play's routes drawn on it: one color per step, an arrow
- * where each player ends up, a ring where a player holds, and a dashed start from spawn. The
- * minimap always sits on a dark frame (like in the game), so the route colors read in both themes.
+ * where each player ends up, a ring where a player holds, and a dashed start from spawn. A route
+ * keeps to the floor between its callouts (core/kb/floor.ts), so it goes round walls, not through
+ * them. The minimap always sits on a dark frame (like in the game), so the route colors read in
+ * both themes.
  */
 import { useMemo } from 'preact/hooks';
+import { walk, type Spot } from '../../core/kb/floor.ts';
 import { mapById, spotName, type MapInfo } from '../../core/kb/maps.ts';
 import { minimapOf } from '../art.tsx';
 
@@ -82,27 +85,30 @@ function placeLabels(spots: readonly { text: string; x: number; y: number }[]): 
 /** Short names for a small map: "Attack spawn", and "Arches" for "Defender Side Arches". */
 const shortName = (name: string): string => spotName(name).replace(/^(Attacker|Defender) Side /, '');
 
+/** The line through a route's spots, along the floor from each one to the next. */
+const along = (map: string, spots: readonly Spot[]): Spot[] => spots.flatMap((s, i) => (i === 0 ? [s] : walk(map, spots[i - 1]!, s).slice(1)));
+
 function RoutePath({ r, i, uid, map, dim, onFocus }: { r: Route; i: number; uid: string; map: MapInfo; dim: boolean; onFocus?: (i: number) => void }) {
-  const pts = r.route.map((n) => map.callouts.find((c) => c.name === n)).filter((c) => !!c).map((c) => [c.x * 100, c.y * 100] as const);
+  const pts = r.route.map((n) => map.callouts.find((c) => c.name === n)).filter((c) => !!c).map((c): Spot => [c.x, c.y]);
   const color = i % ROUTE_COLORS;
   const cls = `route r${color}${dim ? ' dim' : ''}`;
   const hover = onFocus ? { onMouseEnter: () => onFocus(i), onMouseLeave: () => onFocus(-1) } : {};
   if (!pts.length) return null;
   if (pts.length === 1) {
     const [x, y] = pts[0]!;
-    return <g class={cls} {...hover}><circle cx={x} cy={y} r="2.4" class="route-hold" /><circle cx={x} cy={y} r="0.9" class="route-fill" /></g>;
+    return <g class={cls} {...hover}><circle cx={x * 100} cy={y * 100} r="2.4" class="route-hold" /><circle cx={x * 100} cy={y * 100} r="0.9" class="route-fill" /></g>;
   }
   // the walk out of spawn is only a direction, so it's dashed and the line proper starts after it
   const fromSpawn = isSpawn(r.route[0]!);
   const main = fromSpawn ? pts.slice(1) : pts;
-  const line = (ps: readonly (readonly [number, number])[]) => ps.map(([x, y]) => `${x.toFixed(2)},${y.toFixed(2)}`).join(' ');
+  const line = (ps: readonly Spot[]) => along(map.id, ps).map(([x, y]) => `${(x * 100).toFixed(2)},${(y * 100).toFixed(2)}`).join(' ');
   const arrow = `url(#${uid}-a${color})`;
   return (
     <g class={cls} {...hover}>
       {fromSpawn && <polyline points={line(pts.slice(0, 2))} class="route-line spawn" marker-end={main.length === 1 ? arrow : undefined} />}
       {main.length > 1 && <polyline points={line(main)} class="route-line" marker-end={arrow} />}
-      {main.length > 1 && <circle cx={main[0]![0]} cy={main[0]![1]} r="1.1" class="route-fill" />}
-      {main.length === 1 && <circle cx={main[0]![0]} cy={main[0]![1]} r="2.4" class="route-hold" />}
+      {main.length > 1 && <circle cx={main[0]![0] * 100} cy={main[0]![1] * 100} r="1.1" class="route-fill" />}
+      {main.length === 1 && <circle cx={main[0]![0] * 100} cy={main[0]![1] * 100} r="2.4" class="route-hold" />}
     </g>
   );
 }

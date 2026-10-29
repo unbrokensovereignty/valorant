@@ -26,7 +26,8 @@ Everything the app knows about the game, as data with a comment at the top of ea
 - `synergy.ts`: pairs that work well together or clash, from −3 to 3, with the reason in words.
 - `plays.ts`: plays for every map (hits, splits, fakes, defaults, setups and retakes), written as jobs and routes over the game's own callouts, so any comp can run them. A typo in a job or callout throws, so a bad edit fails the tests.
 - `tips.ts`: short advice for each agent, map side, rank, party size and doubled-up role.
-- `content.gen.ts`: the game's own ability text, agent colors and map callouts, made by `npm run art` (see `CONTRIBUTING.md`). Don't edit it by hand. `kits.ts` reads it, falling back to a new agent's revealed kit in `new-agents.ts`.
+- `content.gen.ts`: the game's own ability text, agent colors and map callouts, made by `npm run art` (see `CONTRIBUTING.md`). Don't edit it by hand. `kits.ts` reads it, falling back to a new agent's revealed kit in `new-agents.ts`. The game places some callouts badly (in a wall, or on the edge of a site), so `places` in `maps.ts` moves them, each checked by hand against the minimap.
+- `floor.gen.ts` and `floor.ts`: where you can walk on each minimap, read from the minimap images by `tools/floor.mjs`, and `walk()`, the way along the floor from one spot to another, so a play's route goes round walls instead of through them. The specs check that every callout stands on the floor and every route keeps to it.
 
 ## The engine (`src/core/engine/`)
 
@@ -60,7 +61,7 @@ Anything read back goes through a sanitizer first (`core/saved.ts` for plans and
 - `shell.tsx`: the frame, sidebar (with the current question and Saved count), search (`components/palette.tsx`) and global keys.
 - `pages/`: Home, Planner, Rankings, Agents, Maps, Saved (plans and parties), Settings, Themes, Help, and two hidden pages: the gallery (`#/gallery`, every control in the current theme) and the self-test (`#/selftest`, which runs the specs in the browser).
 - `planner/`: the question (`question.tsx`), the answers (`answers.tsx`), a comp with its pros, cons, plays and tips (`comp.tsx`, `plays.tsx`), and the question in words (`words.ts`).
-- `components/`: shared controls and overlays, agent and map pickers, the minimap with callouts.
+- `components/`: shared controls and overlays, agent and map pickers, the minimap with callouts (its routes follow `core/kb/floor.ts`).
 - `tours/`: the guided tours. `list.ts` holds every tour's steps, each pointing at a `data-tour` hook in a screen (never at a styling class), with its words built from the engine's constants; `engine.tsx` draws the spotlight and card, waits for each target to arrive and settle, and handles the keys; `place.ts` works out where the card goes; `now.ts` is the tour on screen, which a screen can read to show what a step points at (the first comp opened, the Pros and cons tab) without saving anything. Tours remember only which ones you finished, in the app's `tips`.
 - `art.tsx`: agent portraits, ability and role icons, map banners and minimaps from `assets/`, each falling back to plain text when an image is missing (a new agent's portrait, say).
 - `theme.ts`, `sound.ts`, `styles/`: themes, synthesized sounds and styles (tokens in `styles/base.css`).

@@ -47,6 +47,8 @@ Your data while testing: files opened from disk can share saved data with the re
 | Pairs that help or clash | `src/core/kb/synergy.ts` |
 | Plays | `src/core/kb/plays.ts` |
 | Abilities, agent colors, callouts, art | `src/core/kb/content.gen.ts` and `assets/`, both made by `npm run art` (below) |
+| A callout in the wrong spot on a minimap | `places` for its map in `src/core/kb/maps.ts` |
+| Where routes can go on a minimap | `src/core/kb/floor.gen.ts`, read from the minimaps by `node tools/floor.mjs` (`npm run art` runs it too) |
 | Saved plans and parties | `src/core/saved.ts` (records and sanitizers), `src/data/repo.ts` (changes), `src/ui/pages/saved.tsx` |
 | Backups | `src/core/backup.ts`, `src/ui/backup.tsx` |
 | Settings | `src/core/settings.ts` (the schema), `src/ui/pages/settings.tsx` (drawn from it) |
@@ -77,13 +79,13 @@ npm run fetch-art -- ~/playbook-content   # downloads agents.json, maps.json and
 npm run art -- ~/playbook-content         # → assets/ and src/core/kb/content.gen.ts
 ```
 
-`fetch-art` lists anything the API doesn't have yet (a new agent's art, say); the app shows the agent's initial until it's there. `art` resizes the images to WebP in `assets/` and writes every agent's abilities and every map's callouts into `content.gen.ts`. If the game files a new agent's ability under a different slot from the key players press, add it to `KEY_FIXES` in `tools/prepare-art.mjs` (the specs check that every agent has an ability on each key). Check the diff of `content.gen.ts` for changed callout names: plays and tips name callouts, and a renamed one fails the specs until it's updated there. Keep the build under its size budget (`SIZE_BUDGET` in `tools/build.mjs`).
+`fetch-art` lists anything the API doesn't have yet (a new agent's art, say); the app shows the agent's initial until it's there. `art` resizes the images to WebP in `assets/` and writes every agent's abilities and every map's callouts into `content.gen.ts`. If the game files a new agent's ability under a different slot from the key players press, add it to `KEY_FIXES` in `tools/prepare-art.mjs` (the specs check that every agent has an ability on each key). Check the diff of `content.gen.ts` for changed callout names: plays and tips name callouts, and a renamed one fails the specs until it's updated there. `art` also reads where you can walk on each minimap into `floor.gen.ts`; a new minimap can leave a callout in a wall, which the specs report, and `places` in `maps.ts` moves it. Look at the map's page with Show callouts on to check every name sits where players stand. Keep the build under its size budget (`SIZE_BUDGET` in `tools/build.mjs`).
 
 **Add an agent.** Give it an entry in `src/core/kb/agents.ts` (or `new-agents.ts` with `estimate: true` while it's new): id, name, role, release date, strengths as `dim value keys`, `solo`, `skill`, `pop` and `win` (its pro pick rate is worked out from `pro.ts`). Refresh the game's content for its abilities and art. Give it two tips in `src/core/kb/tips.ts`, any pairs in `synergy.ts`, and pro picks in `pro.ts` once pros play it. Plays need nothing: their jobs go to whoever in the comp is best at them. `npm run check` tells you if anything's missing.
 
 **Change the map pool.** Set `pool: true` or `false` on the maps in `src/core/kb/maps.ts`, and update `PATCH` and `POOL_SINCE` (with the date of the next change in the comment). Pick rates in `agents.ts` and `pro.ts` name the patch and events they came from; update those comments when you update the numbers.
 
-**Add a map.** Add it to `DEFS` in `src/core/kb/maps.ts` with its sites, needs (as bumps over a side's usual needs), and `aka` for callouts players call something else. Refresh the game's content for its minimap, banner and callouts. Add its plays to `src/core/kb/plays.ts` (both sides, every site), its tips to `tips.ts` and its pro picks to `pro.ts` (the engine reads the map's pro role mix from them). The specs check each of these.
+**Add a map.** Add it to `DEFS` in `src/core/kb/maps.ts` with its sites, needs (as bumps over a side's usual needs), and `aka` for callouts players call something else. Refresh the game's content for its minimap, banner, callouts and floor, and move any callout the game places badly with `places`. Add its plays to `src/core/kb/plays.ts` (both sides, every site), its tips to `tips.ts` and its pro picks to `pro.ts` (the engine reads the map's pro role mix from them). The specs check each of these.
 
 **Add or change a play.** Plays are in `src/core/kb/plays.ts`, written as `jobs: route | what to do`, five steps a play (one per player), over the map's own callouts. The comment at the top of the file explains the format. A typo in a job or callout throws, so `npm test` catches it. Look at the play on the map's page in both themes: its routes are drawn on the minimap.
 
