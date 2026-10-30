@@ -543,7 +543,7 @@ function viewBox() {
   return [vx, vy, size];
 }
 
-/** Puts each name above its spot, or below, right or left when that would cover one already placed or a mark (`marks`, each `mark` across from its middle), just clear of the spot's dot (`dot` is its radius): the app's own rule. */
+/** Puts each name above its spot, or below, right or left when that would cover one already placed or a mark (`marks`, each reaching `mark` out from its middle), just clear of the spot's dot (`dot` is its radius): the app's own rule. */
 function placeLabels(spots, k, dot, marks = [], mark = 0) {
   const boxes = marks.map(([x, y]) => ({ l: x - mark, r: x + mark, t: y - mark, b: y + mark })), out = [], gap = 0.4 * k + dot;
   for (const s of spots) {

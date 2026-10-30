@@ -2,7 +2,7 @@
 
 What's planned, what the owner has approved, and what's done. Update it as work lands. Items marked **proposed** wait for the owner's OK before they're built. Small fixes don't need to be listed here.
 
-## 0.3.1: map accuracy (in progress)
+## 0.3.1: map accuracy (released 2026-10-30)
 
 The owner asked (30 October 2026) for a version about the maps only: everything on each minimap where it really is, nothing missing, and callout names that zoom with the map and sit close to their dots. The owner placed Abyss's and Ascent's callouts and marks by hand in the map editor, as the model for the rest.
 

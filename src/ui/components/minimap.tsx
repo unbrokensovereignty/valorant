@@ -105,7 +105,8 @@ export function Minimap({ map: id, routes = [], focus = -1, labels = 'routes', l
   const at = (name: string) => map.callouts.find((c) => c.name === name);
   const named = labels === 'all' ? map.callouts.map((c) => c.name) : labels === 'routes' ? [...new Set(routes.flatMap((r) => r.route))] : [];
   const spots = named.map((n) => at(n)).filter((c) => !!c);
-  // names grow with the map as it zooms, so they always cover the same share of it; marks and dots keep their size on screen
+  // names grow with the map as it zooms, so they always cover the same share of it; marks and dots
+  // keep their size on screen
   const k = scale, mark = 1 / z;
   const shown = layers.length ? featuresOf(map.id).filter((f) => layers.includes(FEATURE_KINDS.find((x) => x.kind === f.kind)!.layer)) : [];
 
@@ -223,8 +224,9 @@ const LABEL_GAP = 0.4;
 
 /**
  * Puts each name above its spot, or below, right or left when that would cover a name already
- * placed or a mark (`marks`, each `mark` across from its middle) (sizes in the map's 0 to 100
- * units, for 3-unit text times `k`), just clear of the spot's dot (`dot` is its radius, 0 without dots).
+ * placed or a mark (`marks`, each reaching `mark` out from its middle), just clear of the spot's dot
+ * (`dot` is its radius, 0 without dots). Sizes are in the map's 0 to 100 units, for 3-unit text
+ * times `k`.
  */
 function placeLabels(spots: readonly { text: string; x: number; y: number }[], k = 1, dot = 0, marks: readonly (readonly [number, number])[] = [], mark = 0): Label[] {
   const boxes = marks.map(([x, y]) => ({ l: x - mark, r: x + mark, t: y - mark, b: y + mark }));

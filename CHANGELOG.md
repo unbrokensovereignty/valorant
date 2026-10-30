@@ -2,7 +2,7 @@
 
 Every version of Playbook By Sovereign and what it changed.
 
-## 0.3.1 (in progress)
+## 0.3.1 (2026-10-30)
 
 - **Everything on the minimap where it really is.** Every map's ultimate orbs, ropes, doors, walls, ziplines and teleporters were placed again from both VALORANT wikis' interactive maps, which line up with the game's own minimaps, and checked by eye on each map. Corrode, Sunset and Summit now show their ultimate orbs, and many others moved onto their real spots, such as Haven's A Long orb and Icebox's B orb by B Green.
 - **What was missing.** Summit's three droppable walls and the silent drops on Lotus (A Top to A Drop) and Summit (B Tower to B Drop) have marks of their own. The ropes on Breeze (A Site up to A Bridge), Fracture (B Tower), Icebox (A Nest, both ends of A Site and B Site) and Summit (B Gym up to B Tower) are in, Split shows all four of its rope sets (into Mid Vent, on toward A Tower, between A Sewer and A Main, and up to B Tower) instead of one rope that isn't there, Bind shows its two exit doors, and Ascent the two mid panels between Mid Courtyard and Mid Link.
