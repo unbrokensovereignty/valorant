@@ -2,7 +2,7 @@
 
 Every version of Playbook By Sovereign and what it changed.
 
-## 0.3.0 (in progress)
+## 0.3.0 (2026-10-30)
 
 - **A better minimap.** On each map's page, zoom in with the buttons, the mouse wheel or a double click, drag to move around, and use the keyboard too: plus and minus zoom, the arrow keys move and 0 shows the whole map again. Callout names can be small, medium, large or extra large, and a dot marks the middle of each callout, which you can turn off. The plays' minimaps zoom and move the same way.
 - **Ultimate orbs and map features on the minimap.** The minimap now shows the ultimate orbs, and the doors, breakable walls, Bind's teleporters, Fracture's and Icebox's ziplines and the ropes, on any map that has them. Each is drawn with its own mark, and a list under the map says what each one is and where. Turn either off to see the plain map.
