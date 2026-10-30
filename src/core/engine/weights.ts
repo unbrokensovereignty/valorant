@@ -135,6 +135,14 @@ export const PLAN_NOTE = { need: 0.8, cover: 0.6, brings: 0.45, most: 3 };
 export const BELOW_NOTE = { part: 0.004, most: 3, gains: 2 };
 
 /**
+ * Map pick help (mappick.ts): up to `most` maps to play and `most` to ban, each with up to `why`
+ * reasons. A map is worth banning only when its fit is at least `gap` points below the best map's
+ * (and worth playing only when it's that far above the worst); maps all within `gap` of each other
+ * fit about the same.
+ */
+export const MAP_PICK = { most: 2, why: 2, gap: 3 };
+
+/**
  * How a comp's answers to the other team are told (kb/counters.ts, explain.ts): threats that go at
  * least `level` of the way are listed; a comp covering at least `answered` of what answers one has
  * the answer, below `little` it has little of it; and it names up to `by` agents who bring at least

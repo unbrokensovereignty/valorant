@@ -8,10 +8,11 @@ import { D, N, ROLE_OF, kitShare, modelFor, proMixOf, proShare, roleIndex, type 
 import { anyRoles, scoreTeam, searchTeams, TopK, walkTeams, type Rules } from '../../src/core/engine/search.ts';
 import { askFor, fillLikelihood, pickWeight, searchParties, type PartyRules } from '../../src/core/engine/party.ts';
 import { newQuery, placesTaken, sanitizeQuery, situationsOf, asksBest, nothingFixed, myPools, startingQuery, withMine, type Query } from '../../src/core/engine/query.ts';
-import { agentFitOf, fitOf, poolsFit, referenceFor, rulesOf, solve, teamFit } from '../../src/core/engine/plan.ts';
+import { agentFitOf, bestTeamFor, fitOf, poolsFit, referenceFor, rulesOf, solve, teamFit } from '../../src/core/engine/plan.ts';
+import { asksMapPicks, mapPicks } from '../../src/core/engine/mappick.ts';
 import { explainTeam } from '../../src/core/engine/explain.ts';
 import { UNSETTLED, unsureWords } from '../../src/core/engine/sure.ts';
-import { ROLE_COST, SURE, TIERS, tierOf } from '../../src/core/engine/weights.ts';
+import { MAP_PICK, ROLE_COST, SURE, TIERS, tierOf } from '../../src/core/engine/weights.ts';
 
 const at = (map: string, side: Situation['side'] = 'both', rank: Situation['rank'] = 'gold', sites: Situation['sites'] = []): Situation => ({ map, side, rank, sites });
 const ix = (id: string) => agentById(id)!.index;
@@ -454,5 +455,46 @@ describe('explanations', () => {
     eq(kitShare(hush, 1), 1);
     // (Radiant's answers take in a little of Immortal's games, where it costs next to nothing)
     ok(Math.abs(modelFor(at('haven', 'attack', 'radiant')).fitParts.rank[ix('hush')]!) < 1e-4, 'next to nothing at Radiant');
+  });
+});
+
+describe('map picks', () => {
+  const answersTo = (q: Query) => situationsOf(q).map((s) => solve(q, s, 3));
+  const fitOfAnswer = (a: ReturnType<typeof solve>) => a.comps[0]?.fit ?? -1;
+  spec('only a five-stack asking for its best map at one rank, with something chosen, gets them', () => {
+    const q = { ...newQuery('gold'), map: 'best', include: ['viper'] };
+    ok(asksMapPicks(q), 'a team with a must-play agent');
+    ok(!asksMapPicks({ ...q, include: [] }), 'nothing chosen: every map fits fully');
+    ok(!asksMapPicks({ ...q, party: 2 }), 'a duo can’t pick maps');
+    ok(!asksMapPicks({ ...q, rank: 'best' }), 'not across ranks');
+    ok(!asksMapPicks({ ...q, map: 'bind' }), 'not for one map');
+  });
+  spec('the maps to play are the best ones and the maps to ban the worst, each far enough apart, each with why', () => {
+    const q: Query = { ...newQuery('gold'), map: 'best', include: ['viper', 'cypher'] };
+    const answers = answersTo(q);
+    const fits = new Map(answers.map((a) => [a.situation.map, fitOfAnswer(a)]));
+    const top = Math.max(...fits.values()), bottom = Math.min(...fits.values());
+    const p = mapPicks(answers, q.newAgents);
+    eq(p.even, top - bottom < MAP_PICK.gap);
+    ok(p.play.length > 0 && p.play.length <= MAP_PICK.most && p.ban.length > 0 && p.ban.length <= MAP_PICK.most, 'both lists, not too long');
+    near(p.play[0]!.fit, top, 1e-9);
+    eq(p.ban[0]!.fit, bottom);
+    for (const x of p.play) ok(x.fit >= bottom + MAP_PICK.gap, `${x.map} is worth playing`);
+    for (const x of p.ban) ok(x.fit <= top - MAP_PICK.gap && !p.play.some((y) => y.map === x.map), `${x.map} is worth banning`);
+    for (const x of [...p.play, ...p.ban]) {
+      ok(x.why.length > 0 && x.why.length <= MAP_PICK.why, `${x.map} says why`);
+      eq(x.tier, tierOf(x.fit));
+      ok(x.team.includes('viper') && x.team.includes('cypher'), 'the comp keeps the must-play agents');
+      eq(x.best, bestTeamFor(modelFor({ map: x.map, side: 'both', rank: 'gold', sites: [], enemy: [] }), q.newAgents));
+    }
+  });
+  spec('a team that can play a map’s best comp hears so', () => {
+    const q: Query = { ...newQuery('gold'), map: 'best', exclude: ['sage'] };
+    const p = mapPicks(answersTo(q), q.newAgents);
+    for (const x of p.play) eq(x.lead !== '', [...x.best].sort().join() === [...x.team].sort().join());
+  });
+  spec('maps that all fit about the same give no picks', () => {
+    const q: Query = { ...newQuery('gold'), map: 'best' };
+    eq(mapPicks(answersTo(q), q.newAgents), { even: true, play: [], ban: [] });
   });
 });

@@ -7,7 +7,7 @@ What's planned, what the owner has approved, and what's done. Update it as work 
 The owner approved (30 October 2026) three things for this version, from the ideas below and what 0.2.5 taught: ranked win rates for each map, ratings that move steadily between neighboring ranks, and help picking a map. The owner then made the minimap the main focus: every callout on all 13 maps placed from several sources, a dot at the center of each callout (on by default), callout text that can be made bigger or smaller, zoom and pan, and optional layers for ultimate orbs and map features such as doors, breakable walls and Bind's teleporters.
 
 - **Planned:** steadier ratings first (the pro role mix and the second controller coming in at the same rank, and each rank taking in some of its neighbors' games), then the minimap, ranked win rates for each map (gathered on the owner's computer, since this one can't reach stats sites), and map pick help built on both. Then rounds of testing and fixing until two rounds in a row find nothing significant.
-- **Built so far:** steadier ratings between ranks.
+- **Built so far:** steadier ratings between ranks; the minimap (zoom and pan, callout name sizes and dots, every callout checked against the game's labels and other callout maps, and layers for ultimate orbs, doors, breakable walls, teleporters, ziplines and ropes); and map pick help (maps to play and to ban for a five-stack, with why).
 
 ## 0.2.5: game sense (released 2026-10-30)
 

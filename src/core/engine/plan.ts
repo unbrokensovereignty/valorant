@@ -16,18 +16,25 @@ import { AGENT_STRETCH, FIT_MID, tierOf } from './weights.ts';
 
 export interface Reference { best: number; mid: number }
 
-const refs = new Map<string, Reference>();
-/** The best and middle scores of all teams for a situation, the yardstick for fits. */
-export function referenceFor(m: Model, newAgents: boolean): Reference {
+const index = (id: string) => agentById(id)!.index;
+const idsOf = (xs: readonly number[]) => xs.map((i) => AGENTS[i]!.id);
+
+const refs = new Map<string, { ref: Reference; team: string[] }>();
+/** The best and middle scores of all teams for a situation, and the best team (agent ids). */
+function yardstick(m: Model, newAgents: boolean): { ref: Reference; team: string[] } {
   const key = `${situationKey(m.situation)}|${newAgents}`;
   const hit = refs.get(key);
   if (hit) return hit;
   const r = searchTeams(m, { include: [], roles: anyRoles(), allowed: (i) => newAgents || !AGENTS[i]!.estimate }, 1);
-  const ref = { best: r.best, mid: r.mid };
+  const out = { ref: { best: r.best, mid: r.mid }, team: idsOf(r.top[0]?.agents ?? []) };
   if (refs.size > 300) refs.clear();
-  refs.set(key, ref);
-  return ref;
+  refs.set(key, out);
+  return out;
 }
+/** The best and middle scores of all teams for a situation, the yardstick for fits. */
+export const referenceFor = (m: Model, newAgents: boolean): Reference => yardstick(m, newAgents).ref;
+/** The best possible team for a situation, the one with a fit of 100 (agent ids). */
+export const bestTeamFor = (m: Model, newAgents: boolean): string[] => yardstick(m, newAgents).team;
 
 /** A team score as a fit: 100 for the best possible team, 50 for the middle of all teams. */
 export function fitOf(score: number, ref: Reference): number {
@@ -102,8 +109,6 @@ export interface SituationAnswer {
   askFor?: { role: string; fit: number; chance: number }[];
 }
 
-const index = (id: string) => agentById(id)!.index;
-const idsOf = (xs: readonly number[]) => xs.map((i) => AGENTS[i]!.id);
 
 /**
  * Whether each player can take a different agent of `team` from their own pool (an empty pool

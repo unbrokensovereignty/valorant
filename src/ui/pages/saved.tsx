@@ -194,6 +194,7 @@ function Parties() {
               </div>
               <div class="row party-actions">
                 <Button size="sm" kind="soft" icon="planner" onClick={() => planWith({ party: sizeOf(p.players.length), pools: poolsOf(p) })}>Plan</Button>
+                {p.players.length === 5 && <Button size="sm" kind="quiet" icon="trophy" onClick={() => planWith({ party: 5, pools: poolsOf(p), map: 'best', side: 'both', sites: [] })}>Maps to play and ban</Button>}
                 <IconButton icon="edit" label={`Edit ${p.name}`} onClick={() => void editParty(p)} />
                 <IconButton icon="trash" label={`Delete ${p.name}`} onClick={() => void remove(p)} />
               </div>

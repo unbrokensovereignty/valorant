@@ -19,7 +19,7 @@ import { RANKS, rankOf } from '../../core/kb/ranks.ts';
 import { atRank, kitShare, proLean, winShare } from '../../core/engine/model.ts';
 import { SINCE_FROM, SINCE_MOVE } from '../../core/engine/since.ts';
 import { UNSETTLED } from '../../core/engine/sure.ts';
-import { FIT_MID, PRO_GAMES, SECOND_CONTROLLER, SURE, WIN_CAP, WIN_RANKS } from '../../core/engine/weights.ts';
+import { FIT_MID, MAP_PICK, PRO_GAMES, SECOND_CONTROLLER, SURE, WIN_CAP, WIN_RANKS } from '../../core/engine/weights.ts';
 import { tierWords } from '../planner/words.ts';
 import { fmtLongDay } from '../../core/dates.ts';
 import { listJoin } from '../../core/text.ts';
@@ -148,6 +148,7 @@ function Guide() {
         <section class="panel stack">
           <h2>The question</h2>
           <p><b>Map, side, sites and rank</b> describe the game you’re about to play. Choose “Best” for the side or “Find the best rank” and the Planner compares them all for you; leave the map open to plan across the pool ({plural(POOL.length, 'map')}), or turn on all {MAPS.length}.</p>
+          <p><b>Find the best map</b> ranks every map for your question. For a five-stack with agents, roles or a saved party chosen, it also says which maps to play and which to ban, as in Premier: up to {MAP_PICK.most} of each, each with why. A map to play says what your best comp there does well; a map to ban says where your best comp there falls furthest short of the best comp for the map, next to how it does on the others. A map is worth banning only when it fits at least {plural(MAP_PICK.gap, 'point')} below your best one, so when every map fits about the same, it says so. A five-player party on the Saved page has a button for this.</p>
           <p><b>Sites</b> narrow a plan to the sites you’ll play: say B and C on Haven to plan a hit or a hold there. Plays then come from those sites first.</p>
           <p><b>Must play</b> keeps agents in every comp. <b>Won’t play</b> leaves them out. <b>Roles</b> set how many of a role the team has, like two controllers or no sentinel.</p>
           <p><b>Their team</b> takes the other team’s agents, if you know them. Comps that answer them rank higher, and each comp says how it stands against them. Both teams can play the same agent, so these don’t limit your picks.</p>

@@ -356,12 +356,21 @@ export interface Below {
   gains: string[];
 }
 
+/** One part of the score by which one comp differs from another (see belowParts). */
+export interface BelowPart {
+  /** Which part: a strength's id, or 'pro', 'win', 'rank', 'pair' or 'roles'. */
+  key: string;
+  /** How much the part moves the score of `other` against `best` (below 0: `other` gives it up). */
+  size: number;
+  words: string;
+}
+
 /**
- * Why `other` scores below `best`, read off the parts of the score (see search.ts): each strength's
- * coverage, what pros pick here, ranked win rates, how the kits play at this rank, the pairs and the
- * role counts. Each part that moves the score at least BELOW_NOTE.part is a reason, the biggest first.
+ * The parts of the score (see search.ts) by which `other` differs from `best`, each at least
+ * BELOW_NOTE.part: each strength's coverage, what pros pick here, ranked win rates, how the kits
+ * play at this rank, the pairs and the role counts.
  */
-export function whyBelow(m: Model, best: readonly string[], other: readonly string[]): Below {
+export function belowParts(m: Model, best: readonly string[], other: readonly string[]): BelowPart[] {
   const agents = (ids: readonly string[]) => ids.map((id) => agentById(id)).filter((a): a is Agent => !!a);
   const A = agents(best), B = agents(other);
   const outs = A.filter((a) => !other.includes(a.id)), ins = B.filter((a) => !best.includes(a.id));
@@ -369,7 +378,7 @@ export function whyBelow(m: Model, best: readonly string[], other: readonly stri
   const verb = (list: readonly Agent[], one: string, many: string) => (list.length === 1 ? one : many);
   const rankName = rankOf(m.situation.rank).name;
   const map = mapById(m.situation.map);
-  const parts: { size: number; words: string }[] = [];
+  const parts: BelowPart[] = [];
   // each strength's coverage, as the score weighs it
   DIMS.forEach((d, j) => {
     const cover = (team: readonly Agent[]) => 1 - team.reduce((p, a) => p * m.miss[a.index * D + j]!, 1);
@@ -378,29 +387,38 @@ export function whyBelow(m: Model, best: readonly string[], other: readonly stri
     // named by the ability of the agent who brought (or brings) the most of it
     const from = (size < 0 ? outs : ins).map((a) => ({ a, v: 1 - m.miss[a.index * D + j]! })).sort((x, y) => y.v - x.v)[0];
     const by = from && from.v >= 0.3 ? ` (${abilityOf(m, from.a, d)})` : '';
-    parts.push({ size, words: `${size < 0 ? less(d) : more(d)}${by}` });
+    parts.push({ key: d, size, words: `${size < 0 ? less(d) : more(d)}${by}` });
   });
   const sum = (arr: Float64Array, team: readonly Agent[]) => team.reduce((t, a) => t + arr[a.index]!, 0);
   const pro = sum(m.fitParts.pro, ins) - sum(m.fitParts.pro, outs);
   const where = map ? `on ${map.name}` : 'across the pool';
-  if (Math.abs(pro) >= BELOW_NOTE.part) parts.push({ size: pro, words: `Pro teams pick ${pro < 0 ? names(outs) : names(ins)} more ${where}` });
+  if (Math.abs(pro) >= BELOW_NOTE.part) parts.push({ key: 'pro', size: pro, words: `Pro teams pick ${pro < 0 ? names(outs) : names(ins)} more ${where}` });
   const win = sum(m.fitParts.win, ins) - sum(m.fitParts.win, outs);
   if (Math.abs(win) >= BELOW_NOTE.part) {
     const who = win < 0 ? outs : ins;
-    parts.push({ size: win, words: `${names(who)} ${verb(who, 'wins', 'win')} more ranked games` });
+    parts.push({ key: 'win', size: win, words: `${names(who)} ${verb(who, 'wins', 'win')} more ranked games` });
   }
   const rank = sum(m.fitParts.rank, ins) - sum(m.fitParts.rank, outs);
   if (Math.abs(rank) >= BELOW_NOTE.part) {
-    parts.push({ size: rank, words: rank < 0 ? `${names(ins)} ${verb(ins, 'is', 'are')} harder to play well at ${rankName}` : `${names(ins)} ${verb(ins, 'is', 'are')} easier to play well at ${rankName}` });
+    parts.push({ key: 'rank', size: rank, words: rank < 0 ? `${names(ins)} ${verb(ins, 'is', 'are')} harder to play well at ${rankName}` : `${names(ins)} ${verb(ins, 'is', 'are')} easier to play well at ${rankName}` });
   }
   const pairs = (team: readonly Agent[]) => team.reduce((t, a, i) => t + team.slice(0, i).reduce((u, b) => u + m.pair[a.index * N + b.index]!, 0), 0);
   const pair = pairs(B) - pairs(A);
-  if (Math.abs(pair) >= BELOW_NOTE.part) parts.push({ size: pair, words: pair < 0 ? 'The agents work less well together' : 'The agents work better together' });
+  if (Math.abs(pair) >= BELOW_NOTE.part) parts.push({ key: 'pair', size: pair, words: pair < 0 ? 'The agents work less well together' : 'The agents work better together' });
   const roles = (team: readonly Agent[]) => ROLE_IDS.reduce((t, r, ri) => t + m.roleCost[ri * 5 + Math.min(4, team.filter((a) => a.role === r).length)]!, 0);
   const role = roles(B) - roles(A);
-  if (Math.abs(role) >= BELOW_NOTE.part) parts.push({ size: role, words: role < 0 ? `Its mix of roles suits ${map ? map.name : 'the situation'} less well` : `Its mix of roles suits ${map ? map.name : 'the situation'} better` });
+  if (Math.abs(role) >= BELOW_NOTE.part) parts.push({ key: 'roles', size: role, words: role < 0 ? `Its mix of roles suits ${map ? map.name : 'the situation'} less well` : `Its mix of roles suits ${map ? map.name : 'the situation'} better` });
+  return parts;
+}
+
+/**
+ * Why `other` scores below `best`: the parts of the score it gives up and gains (belowParts), the
+ * biggest first.
+ */
+export function whyBelow(m: Model, best: readonly string[], other: readonly string[]): Below {
+  const parts = belowParts(m, best, other);
   return {
-    out: outs.map((a) => a.id), in: ins.map((a) => a.id),
+    out: best.filter((id) => agentById(id) && !other.includes(id)), in: other.filter((id) => agentById(id) && !best.includes(id)),
     loses: parts.filter((p) => p.size < 0).sort((x, y) => x.size - y.size).slice(0, BELOW_NOTE.most).map((p) => p.words),
     gains: parts.filter((p) => p.size > 0).sort((x, y) => y.size - x.size).slice(0, BELOW_NOTE.gains).map((p) => p.words),
   };
