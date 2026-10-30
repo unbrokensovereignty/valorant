@@ -200,6 +200,23 @@ const capWith = (a: Agent, d: Dim, rules: readonly ParsedRule[]): number =>
   Math.max(0, Math.min(1, rules.reduce((v, r) => v + (r.bumps[d] ?? 0), a.caps[d])));
 
 const roleOfId = (id: string) => agentById(id)?.role;
+
+/**
+ * A map's pro role mix as a team at a rank should aim for it. Pro teams' second controller is
+ * teamwork, which counts only as far as a team plays its smokes together (`together`, see
+ * SECOND_CONTROLLER): below that, the mix leans toward one controller, and the place it frees is
+ * shared evenly by the other roles, since a team can fill it with whatever it plays best. Otherwise
+ * the mix would charge a team twice for playing one controller where pros play two, once for the
+ * controller and once for the role that takes the place.
+ */
+function mixAt(mix: Record<Role, number> | undefined, together: number): Record<Role, number> | undefined {
+  if (!mix || mix.controller <= 1 || together >= 1) return mix;
+  const spare = (mix.controller - 1) * (1 - together);
+  const out = { ...mix, controller: mix.controller - spare };
+  const others = ROLE_IDS.filter((r) => r !== 'controller');
+  for (const r of others) out[r] += spare / others.length;
+  return out;
+}
 /** How many of each role pro teams run on a map, on average (see proRoleMix in kb/pro.ts). */
 export const proMixOf = (map: string) => proRoleMix(map, roleOfId);
 
@@ -247,7 +264,7 @@ export function modelFor(s: Situation): Model {
   const pair = new Float64Array(N * N);
   const index = new Map(AGENTS.map((a) => [a.id, a.index]));
   // how far a team at this rank plays its smokes together: what two controllers need (SECOND_CONTROLLER)
-  const together = Math.min(1, rankT / rankOf(SECOND_CONTROLLER.until).t);
+  const together = Math.min(1, rankT / rankOf(SECOND_CONTROLLER.until).t) ** 2;
   for (const p of PAIRS) {
     const a = index.get(p.a), b = index.get(p.b);
     if (a === undefined || b === undefined) continue;
@@ -263,7 +280,7 @@ export function modelFor(s: Situation): Model {
   let mixed = 0;
   const lean = proLean(rankT);
   for (const m of maps) {
-    const mix = proRoleMix(m.id, roleOfId);
+    const mix = proRoleMix(m.id, roleOfId), aim = mixAt(mix, together);
     const share = proShare(m.id);
     if (mix) mixed++;
     ROLE_IDS.forEach((r, ri) => {
@@ -273,7 +290,7 @@ export function modelFor(s: Situation): Model {
       for (let c = 0; c < 5; c++) {
         const hard = sides.reduce((acc, side) => acc + ROLE_COST[r][side][c]!, 0) / sides.length;
         roleCost[ri * 5 + c]! += (c === 0 ? hard * (1 - relax) : hard) / maps.length;
-        if (mix) mixCost[ri * 5 + c]! -= (ROLE_MIX * lean * share * (c - mix[r]) ** 2) / maps.length;
+        if (aim) mixCost[ri * 5 + c]! -= (ROLE_MIX * lean * share * (c - aim[r]) ** 2) / maps.length;
       }
       if (mix) want[ri]! += mix[r];
     });

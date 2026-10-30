@@ -54,6 +54,15 @@ test('a saved plan keeps its comp, fit and note, and can be starred, renamed, de
   const again = page.getByRole('article', { name: 'Haven attack, default' });
   await expect(again.getByRole('textbox', { name: 'Note' })).toHaveValue('Jett ops from A Long.');
   await expect(again.getByRole('button', { name: 'Star' })).toHaveAttribute('aria-pressed', 'true');
+  // printed, it carries its name and note, and a play for each side
+  await page.evaluate(() => { window.print = () => {}; });
+  await again.getByRole('button', { name: 'Print' }).click();
+  const sheet = page.locator('#print-sheet');
+  await expect(sheet.locator('h1')).toHaveText('Haven attack, default');
+  await expect(sheet.locator('.sheet-own')).toHaveText('Jett ops from A Long.');
+  await expect(sheet.locator('h2').filter({ hasText: /^On attack: / })).toHaveCount(1);
+  await expect(sheet.locator('h2').filter({ hasText: /^On defense: / })).toHaveCount(1);
+  await page.evaluate(() => dispatchEvent(new Event('afterprint')));
   // Open in the Planner asks the same question again
   await again.getByRole('button', { name: 'Open in the Planner' }).click();
   await answered(page);

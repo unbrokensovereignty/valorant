@@ -3,14 +3,14 @@
  * cons and strengths), the plays it can run, and tips. A duo or trio's row shows your party first
  * and the best agents for your random teammates after it.
  */
-import { useState } from 'preact/hooks';
+import { useRef, useState } from 'preact/hooks';
 import { agentById } from '../../core/kb/agents.ts';
-import { mapById } from '../../core/kb/maps.ts';
+import { mapById, type Side } from '../../core/kb/maps.ts';
 import { DIM_INFO, ROLES } from '../../core/kb/roles.ts';
 import { againstWords, explainTeam, type AgainstRow, type StrengthRow } from '../../core/engine/explain.ts';
 import { modelFor } from '../../core/engine/model.ts';
 import type { CompAnswer, SituationAnswer } from '../../core/engine/plan.ts';
-import { playsFor } from '../../core/engine/plays.ts';
+import { playsFor, type FilledPlay } from '../../core/engine/plays.ts';
 import { partyOf, type PartySize, type Query } from '../../core/engine/query.ts';
 import { summaryText } from '../../core/engine/summary.ts';
 import { tipsFor } from '../../core/engine/tips.ts';
@@ -19,12 +19,13 @@ import { articleOf, capitalize } from '../../core/util.ts';
 import { AgentIcon } from '../art.tsx';
 import { Bar, Button, Tabs } from '../components/controls.tsx';
 import { prompt } from '../components/overlays.tsx';
-import { copyWithToast } from '../files.ts';
+import { copyWithToast, printSheet } from '../files.ts';
 import { Icon } from '../icons.tsx';
 import { data, go, safely, toast, useSettings } from '../state.ts';
 import { play } from '../sound.ts';
 import { tourHook } from '../tours/now.ts';
 import { PlaysPanel } from './plays.tsx';
+import { PlanSheet, type SheetParts } from './sheet.tsx';
 import { askedLine, askedTitle, howOften } from './words.ts';
 
 const nameOf = (id: string) => agentById(id)?.name ?? id;
@@ -78,9 +79,15 @@ export function CompRow({ c, i, ans, q, open, onToggle }: { c: CompAnswer; i: nu
 
 type Tab = 'why' | 'plays' | 'tips';
 
-/** A comp opened up: pros and cons, plays and tips, with Copy and (unless it's saved already) Save plan. */
-export function CompDetail({ c, i, ans, q, saveable = true }: { c: CompAnswer; i: number; ans: SituationAnswer; q: Query; saveable?: boolean }) {
+/**
+ * A comp opened up: pros and cons, plays and tips, with Copy, Print and (unless it's saved already)
+ * Save plan. A saved plan passes its name and note, for the printed sheet.
+ */
+export function CompDetail({ c, i, ans, q, saveable = true, plan }: { c: CompAnswer; i: number; ans: SituationAnswer; q: Query; saveable?: boolean; plan?: { name: string; note: string } }) {
   const [chosen, setTab] = useState<Tab>('why');
+  const numbers = useSettings().showNumbers;
+  // the play on show on the Plays tab for each side, and the team it was for: a copied or printed plan carries it
+  const shown = useRef<Partial<Record<Side, { team: string; f: FilledPlay }>>>({});
   // a tour step about the pros and cons or the strengths shows them
   const tab = tourHook.value === 'comp-reasons' || tourHook.value === 'comp-strengths' ? 'why' : chosen;
   const s = ans.situation;
@@ -94,19 +101,31 @@ export function CompDetail({ c, i, ans, q, saveable = true }: { c: CompAnswer; i
     if (saved) { play('saved'); toast(`Saved “${saved.name}”.`, { tone: 'good', undo: true, action: { label: 'Open', run: () => go('saved', saved.id) } }); }
     else if (saved === null) toast('There are too many saved plans. Delete some on the Saved page first.', { tone: 'bad' });
   };
-  const copy = () => {
+  /** The plan as copied or printed, with a play for each side: the one you chose on the Plays tab, or the best. */
+  const parts = (): SheetParts => {
     const map = mapById(s.map);
-    const side = s.side === 'both' ? 'attack' : s.side;
-    const best = map ? playsFor(c.team, map.id, side, s.sites)[0] : undefined;
+    const sides: Side[] = s.side === 'both' ? ['attack', 'defense'] : [s.side];
+    const plays = sides.map((side) => {
+      const seen = shown.current[side];
+      if (seen && seen.team === c.team.join() && (!map || seen.f.play.map === map.id)) return seen.f;
+      return map ? playsFor(c.team, map.id, side, s.sites)[0] : undefined;
+    }).filter((f) => !!f);
     const ask = asksFor(c, i, ans)[0];
-    void copyWithToast(summaryText({ title: `${askedTitle(s)} · ${askedLine({ ...q, rank: s.rank })}`, team: c.team, party: c.party, locked: q.locked, ask: ask && roleWord(ask.role), fit: c.fit, expected: c.expected, tier: c.tier, why, play: best, tips }), 'Copied the plan.');
+    const heading = askedTitle(s), line = askedLine({ ...q, rank: s.rank });
+    return {
+      title: `${heading} · ${line}`, heading, line, name: plan?.name, note: plan?.note, numbers,
+      team: c.team, party: c.party, locked: q.locked, ask: ask && roleWord(ask.role), fit: c.fit, expected: c.expected, tier: c.tier, why, plays, tips,
+    };
   };
+  const copy = () => void copyWithToast(summaryText(parts()), 'Copied the plan.');
+  const print = () => void printSheet(<PlanSheet p={parts()} />);
   return (
     <>
       <div class="row-between comp-tools" data-tour="comp-tools">
         <Tabs<Tab> label="About this comp" value={tab} onChange={setTab} tabs={[['why', 'Pros and cons'], ['plays', 'Plays'], ['tips', 'Tips']]} />
         <div class="row">
           <Button size="sm" icon="copy" onClick={copy}>Copy</Button>
+          <Button size="sm" icon="print" onClick={print}>Print</Button>
           {saveable && <Button size="sm" icon="bookmark" kind="soft" onClick={() => void save()}>Save plan</Button>}
         </div>
       </div>
@@ -127,7 +146,7 @@ export function CompDetail({ c, i, ans, q, saveable = true }: { c: CompAnswer; i
         {why.notes.map((n) => <p key={n} class="note"><Icon name="info" size={16} />{n}</p>)}
         <Strengths rows={why.strengths} />
       </>}
-      {tab === 'plays' && <PlaysPanel team={c.team} map={s.map} side={s.side} sites={s.sites} />}
+      {tab === 'plays' && <PlaysPanel team={c.team} map={s.map} side={s.side} sites={s.sites} onPick={(f) => { shown.current[f.play.side] = { team: c.team.join(), f }; }} />}
       {tab === 'tips' && (
         <ul class="tips">
           {tips.map((t) => <li key={t.about + t.text}><b>{t.about}</b><span>{t.text}</span></li>)}

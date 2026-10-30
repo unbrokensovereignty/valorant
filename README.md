@@ -6,7 +6,8 @@ Download `Playbook By Sovereign v0.2.0.html` from this repository and open it in
 
 ## What it does
 
-- **The Planner.** Tell it the map, side, sites and rank, and who you're queuing with: a five-stack, a trio or a duo. Add agents you must play or won't play, teammates who've already locked in, and how many of each role you want. Leave anything open, or ask for the best map, side or rank instead. You get the comps that fit best, each with a fit from 0 to 100 and a tier, its pros and cons for that situation, how it compares with what pro teams play, plays it can run with who does what on the minimap, and tips.
+- **The Planner.** Tell it the map, side, sites and rank, and who you're queuing with: a five-stack, a trio, a duo or solo. Add agents you must play or won't play, teammates who've already locked in, the other team's agents if you know them, and how many of each role you want. Leave anything open, or ask for the best map, side or rank instead. You get the comps that fit best, each with a fit from 0 to 100 and a tier, how it wins, its pros and cons for that situation, how it compares with what pro teams play, plays it can run with who does what on the minimap, and tips. Copy a plan into your team chat or print it on one sheet.
+- **How you play.** Your rank, how you queue and the agents you play, asked the first time it opens, so every plan starts from you.
 - **Rankings.** Tier lists of agents and comps for any map, side and rank, and a table of every agent on every map.
 - **Agents and Maps.** Every agent's kit, strengths, best maps and best partners; every map's sites, callouts, plays and best comps.
 - **Saved.** Keep plans you like, with a note, and your usual party with the agents each of you plays, so planning for it is one click.

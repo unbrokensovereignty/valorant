@@ -40,7 +40,7 @@ A question becomes one or more situations, each situation becomes a model, and t
 5. **Fits and tiers** (`plan.ts`). `solve` answers a question for one situation: the best comps or party picks, and how every agent ranks. Scores become fits against every possible team for the same situation (`referenceFor`): the best team is 100 and the middle one is 50, so a fit means the same on every map. An agent's fit comes from the best team it fits into, spread out by `AGENT_STRETCH`. `tierOf` turns a fit into S to D by the whole number shown. `teamFit` gives a saved team the same fit the answers gave it.
 6. **Reasons** (`explain.ts`). Pros, cons and notes in plain words, read off the same numbers as the score: the strengths the team covers and lacks for the situation, its pairs, its role counts, its rank fit, how close it is to a pro comp, and its thinnest spot. So the reasons always agree with the ranking.
 7. **Plays and tips** (`plays.ts`, `tips.ts`). A play's jobs go to the comp's agents so the team as a whole runs it as well as it can, and the play gets its own fit. Tips are picked for the map, side, team, rank and party.
-8. **Copy** (`summary.ts`) turns a plan into plain text for a chat.
+8. **Copy** (`summary.ts`) turns a plan into plain text for a chat. **Print** draws the same parts as one sheet of paper (`ui/planner/sheet.tsx`), through `printSheet` in `ui/files.ts`, which makes the sheet the only thing on the paper and gives it the light theme's colors.
 
 All of the engine's numbers are in `weights.ts`, each with a comment on what it does.
 

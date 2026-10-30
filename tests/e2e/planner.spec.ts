@@ -62,6 +62,51 @@ test('ask for a map, side and rank, and get comps with pros and cons, plays and 
   expect(errors).toEqual([]);
 });
 
+/** How many pages a PDF has. */
+const pages = (pdf: Buffer) => pdf.toString('latin1').match(/\/Type\s*\/Page[^s]/g)?.length ?? 0;
+
+test('a comp prints as one sheet, with the play chosen on its Plays tab, in light colors whatever the theme', async ({ page, browserName, errors }) => {
+  await page.addInitScript(() => { const w = window as unknown as { printed: number }; w.printed = 0; window.print = () => { w.printed++; }; });
+  await open(page, 'planner');
+  await chooseMap(page, 'Breeze');
+  await question(page).getByRole('group', { name: 'Side' }).getByRole('button', { name: 'Attack' }).click();
+  await question(page).getByRole('combobox', { name: 'Rank' }).selectOption({ label: 'Immortal' });
+  await settledAnswers(page, 'Immortal');
+  const first = comps(page).first();
+  const team = (await first.locator('.comp-names').textContent())!.split(', ');
+  // the second play, chosen on the Plays tab, is the one that prints
+  await first.getByRole('tab', { name: 'Plays' }).click();
+  const second = first.getByRole('listbox', { name: 'Plays on Breeze' }).getByRole('option').nth(1);
+  const play = (await second.locator('.play-name').textContent())!;
+  await second.click();
+  await first.getByRole('button', { name: 'Print' }).click();
+  await expect.poll(() => page.evaluate(() => (window as unknown as { printed: number }).printed)).toBe(1);
+  // on screen nothing changes; on paper the sheet is all there is
+  const sheet = page.locator('#print-sheet');
+  await expect(sheet).toBeHidden();
+  await page.emulateMedia({ media: 'print' });
+  await expect(sheet).toBeVisible();
+  await expect(page.locator('#app')).toBeHidden();
+  await expect(sheet.getByRole('heading', { level: 1 })).toHaveText('Breeze, attack');
+  await expect(sheet).toContainText('Immortal · five-stack');
+  for (const name of team) await expect(sheet.locator('.sheet-team')).toContainText(name);
+  await expect(sheet.locator('.sheet-plan')).toContainText('How it wins.');
+  await expect(sheet.getByRole('heading', { name: 'Pros' })).toBeVisible();
+  await expect(sheet.getByRole('heading', { name: `Play: ${play}`, exact: false })).toBeVisible();
+  await expect(sheet.locator('.minimap .route').first()).toBeAttached();
+  await expect(sheet.getByRole('heading', { name: 'Tips' })).toBeVisible();
+  // dark text on white paper, even in the dark theme
+  const ink = await sheet.locator('.sheet').evaluate((el) => getComputedStyle(el).color.match(/\d+/g)!.slice(0, 3).map(Number));
+  expect(Math.max(...ink)).toBeLessThan(90);
+  // on one page of A4 or Letter (only Chromium makes PDFs)
+  if (browserName === 'chromium') for (const format of ['A4', 'Letter']) expect(pages(await page.pdf({ format })), format).toBe(1);
+  // and once printing is done, it's put away
+  await page.emulateMedia({ media: 'screen' });
+  await page.evaluate(() => dispatchEvent(new Event('afterprint')));
+  await expect(sheet.locator('.sheet')).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
 test('must-play agents are in every comp, and role counts are kept', async ({ page, errors }) => {
   await open(page, 'planner');
   await chooseMap(page, 'Bind');

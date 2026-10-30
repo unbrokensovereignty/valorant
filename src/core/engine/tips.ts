@@ -11,7 +11,8 @@ import { AGENT_MAP_TIPS, AGENT_TIPS, ATTACK_TIPS, DEFENSE_TIPS, DOUBLE_TIPS, MAP
 import type { Situation } from './model.ts';
 import { partyOf, type PartySize } from './query.ts';
 
-export interface Tip { about: string; text: string }
+/** A tip and what it's about ("Haven, attack", "Gold" or an agent's name); an agent's own tip also has their id. */
+export interface Tip { about: string; text: string; agent?: string }
 
 const sideName = (s: Side) => SIDES.find((x) => x.id === s)!.name;
 
@@ -63,7 +64,7 @@ export function tipsFor(team: readonly string[], s: Situation, party: PartySize 
     // what the agent does on this map comes first, then what they do on this side anywhere
     const text = (map ? agentMapTip(a.id, map.id, s.side) : undefined)
       ?? (s.side === 'defense' ? DEFENSE_TIPS[a.id] : s.side === 'attack' ? ATTACK_TIPS[a.id] : undefined) ?? tips?.[0];
-    if (text) out.push({ about: a.name, text });
+    if (text) out.push({ about: a.name, text, agent: a.id });
   }
   const r = rankOf(s.rank);
   for (const text of RANK_TIPS[rankBand(r.t)].slice(0, 2)) out.push({ about: r.name, text });

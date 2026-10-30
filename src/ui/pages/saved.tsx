@@ -81,7 +81,7 @@ function PlanDetail({ p }: { p: SavedPlan }) {
         <textarea id={`note-${p.id}`} class="input" value={note} maxLength={LIMITS.note} rows={3}
           onInput={(e) => { const v = (e.target as HTMLTextAreaElement).value; setNote(v); safely(() => r.updatePlan(p.id, { note: v })); }} />
       </Field>
-      {filled && <CompDetail c={filled.c} i={0} ans={filled.ans} q={p.query} saveable={false} />}
+      {filled && <CompDetail c={filled.c} i={0} ans={filled.ans} q={p.query} saveable={false} plan={{ name: p.name, note }} />}
     </article>
   );
 }

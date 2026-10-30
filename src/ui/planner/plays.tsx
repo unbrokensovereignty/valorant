@@ -16,8 +16,11 @@ import { play } from '../sound.ts';
 
 const fitTone = (fit: number) => ({ 'Fits well': 'good', Works: undefined, 'A stretch': 'warn' } as const)[playFitLabel(fit)];
 
-/** Plays for a team on a map. With no map (any map), a map to look at is chosen here. */
-export function PlaysPanel({ team, map: mapId, side: sidePick, sites }: { team: readonly string[]; map: string; side: Side | 'both'; sites: readonly SiteId[] }) {
+/**
+ * Plays for a team on a map. With no map (any map), a map to look at is chosen here. `onPick` hears
+ * of the play on show, so a printed plan can carry the one you chose.
+ */
+export function PlaysPanel({ team, map: mapId, side: sidePick, sites, onPick }: { team: readonly string[]; map: string; side: Side | 'both'; sites: readonly SiteId[]; onPick?: (f: FilledPlay) => void }) {
   const [own, setOwn] = useState(POOL[0]!.id);
   const [sideOwn, setSide] = useState<Side>('attack');
   const map = mapById(mapId) ?? mapById(own)!;
@@ -26,6 +29,7 @@ export function PlaysPanel({ team, map: mapId, side: sidePick, sites }: { team: 
   const [pick, setPick] = useState(0);
   useEffect(() => setPick(0), [team.join(), map.id, side]);
   const chosen = list[Math.min(pick, list.length - 1)];
+  useEffect(() => { if (chosen) onPick?.(chosen); }, [chosen?.play.id]);
   return (
     <div class="plays">
       {(!mapById(mapId) || sidePick === 'both') && (

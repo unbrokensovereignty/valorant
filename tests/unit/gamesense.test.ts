@@ -21,7 +21,7 @@ const min = (tier: string) => TIERS.find((t) => t.id === tier)!.min;
 const SIDES: Side[] = ['attack', 'defense'];
 
 const answers = new Map<string, ReturnType<typeof solve>>();
-function answer(map: string, side: Side, rank: RankId) {
+function answer(map: string, side: Side | 'both', rank: RankId) {
   const key = `${map}|${side}|${rank}`;
   let a = answers.get(key);
   if (!a) answers.set(key, (a = solve({ ...newQuery(rank, true), map, side }, { map, side, rank, sites: [] }, 3)));
@@ -111,9 +111,10 @@ test('long walls are in the best comp on Breeze from Gold up, and on Icebox from
 
 test('an Operator sentinel stays a fair defense pick where pros mostly skip sentinels', () => {
   const problems: string[] = [];
-  // Breeze has the longest sightlines in the game; Chamber holds them and teleports out
-  // (at Radiant, where pro play counts most, a little lower)
-  for (const [rank, tier] of [['diamond', 'B'], ['immortal', 'B'], ['radiant', 'C']] as const) {
+  // Breeze has the longest sightlines in the game; Chamber holds them and teleports out (at Diamond,
+  // where his best comps are moving from one controller to the pros' two, and at Radiant, where pro
+  // play counts most, a little lower)
+  for (const [rank, tier] of [['gold', 'B'], ['diamond', 'C'], ['immortal', 'B'], ['radiant', 'C']] as const) {
     const f = fit('chamber', 'breeze', 'defense', rank);
     if (f < min(tier)) problems.push(`Chamber on Breeze defense at ${rank}: ${f.toFixed(0)}, below ${tier}`);
   }
@@ -156,8 +157,9 @@ test('a kit rule that names its abilities names ones the agent has, and the comp
 test('below Immortal one controller leads, since two pay off only when a team plays its smokes together', () => {
   const problems: string[] = [];
   const controllers = (team: readonly string[]) => team.filter((id) => agentById(id)!.role === 'controller').length;
-  // Lotus at Platinum: pro teams run Omen and Viper there, but a Platinum team gets more from one
-  for (const side of SIDES) {
+  // Lotus at Platinum: pro teams run Omen and Viper there, but a Platinum team gets more from one,
+  // on either side and for both (where a comp that plays both sides alike gains most)
+  for (const side of [...SIDES, 'both'] as const) {
     for (const c of answer('lotus', side, 'platinum').comps) if (controllers(c.team) !== 1) problems.push(`Lotus ${side} at Platinum: ${c.team.map(name).join(', ')}`);
   }
   // up to Gold everywhere; at Platinum nearly everywhere (a map pros always play with two, like
