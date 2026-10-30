@@ -6,7 +6,7 @@
 import { agentById, type Agent } from '../kb/agents.ts';
 import { abilityNames } from '../kb/kits.ts';
 import type { Side, SiteId } from '../kb/maps.ts';
-import { playsOn, type Job, type Play } from '../kb/plays.ts';
+import { isLowBuy, playsOn, type Job, type Play } from '../kb/plays.ts';
 import type { Dim } from '../kb/roles.ts';
 import { listJoin } from '../text.ts';
 
@@ -138,13 +138,16 @@ export function fillPlay(play: Play, team: readonly string[]): FilledPlay {
 /**
  * The plays a team can run on a map and side, best fit first. With sites, only plays for those
  * sites and plays for the whole map, the sites' own first (they're what was asked about); without,
- * site plays come before whole-map ones at equal fit.
+ * site plays come before whole-map ones at equal fit. These are the plays for a bought round; with
+ * `low`, the pistol-round and eco plays instead, whatever the sites (the round decides those).
  */
-export function playsFor(team: readonly string[], map: string, side: Side, sites: readonly SiteId[] = []): FilledPlay[] {
+export function playsFor(team: readonly string[], map: string, side: Side, sites: readonly SiteId[] = [], low = false): FilledPlay[] {
   const wide = (f: FilledPlay) => Number(!f.play.site);
-  return playsOn(map, side, sites)
+  const on = low ? [] : sites;
+  return playsOn(map, side, on)
+    .filter((p) => isLowBuy(p.kind) === low)
     .map((p) => fillPlay(p, team))
-    .sort((a, b) => (sites.length ? wide(a) - wide(b) : 0) || b.fit - a.fit || b.average - a.average || wide(a) - wide(b) || a.play.name.localeCompare(b.play.name));
+    .sort((a, b) => (on.length ? wide(a) - wide(b) : 0) || b.fit - a.fit || b.average - a.average || wide(a) - wide(b) || a.play.name.localeCompare(b.play.name));
 }
 
 /** A fit in words, for a play. */

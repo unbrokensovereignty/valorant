@@ -6,6 +6,7 @@
  */
 import { agentById } from '../../core/kb/agents.ts';
 import { spotName } from '../../core/kb/maps.ts';
+import { playTitle } from '../../core/kb/plays.ts';
 import { roleOf } from '../../core/kb/roles.ts';
 import { againstWords } from '../../core/engine/explain.ts';
 import { jobWords, playFitLabel, WEAK_JOB } from '../../core/engine/plays.ts';
@@ -88,7 +89,7 @@ export function PlanSheet({ p }: { p: SheetParts }) {
 
       {(p.plays ?? []).map((f) => (
         <section key={f.play.id} class="sheet-part sheet-play">
-          <h2>{p.plays!.length > 1 ? `On ${f.play.side}: ` : 'Play: '}{f.play.name} <span class="sheet-faint">· {playFitLabel(f.fit)}</span></h2>
+          <h2>{p.plays!.length > 1 ? `On ${f.play.side}: ` : 'Play: '}{playTitle(f.play)} <span class="sheet-faint">· {playFitLabel(f.fit)}</span></h2>
           <p class="sheet-about">{f.play.about}</p>
           <div class="sheet-play-grid">
             <Minimap map={f.play.map} routes={f.steps.map((s) => ({ route: s.route }))} label={`${f.play.name} on the minimap`} />

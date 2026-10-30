@@ -5,6 +5,7 @@
  */
 import { agentById } from '../kb/agents.ts';
 import { spotName } from '../kb/maps.ts';
+import { playTitle } from '../kb/plays.ts';
 import { listJoin } from '../text.ts';
 import { aWord } from '../util.ts';
 import { againstWords, type Explanation } from './explain.ts';
@@ -63,7 +64,7 @@ export function summaryText(p: SummaryParts): string {
   list('Notes', p.why.notes);
   for (const f of p.plays ?? []) {
     const side = p.plays!.length > 1 ? ` on ${f.play.side}` : '';
-    lines.push('', `Play${side}: ${f.play.name} (${playFitLabel(f.fit).toLowerCase()})`, f.play.about);
+    lines.push('', `Play${side}: ${playTitle(f.play)} (${playFitLabel(f.fit).toLowerCase()})`, f.play.about);
     f.steps.forEach((s, i) => {
       // "Omen (smokes with Dark Cover)"; a stand-in starts with its ability's own name
       const who = s.who.map((d) => `${name(d.id)} (${d.standIn ? jobWords(d) : jobWords(d).replace(/^\w/, (c) => c.toLowerCase())})`);

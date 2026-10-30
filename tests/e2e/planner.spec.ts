@@ -46,6 +46,9 @@ test('ask for a map, side and rank, and get comps with pros and cons, plays and 
   // its plays draw on the minimap, and every job goes to someone on the team
   await first.getByRole('tab', { name: 'Plays' }).click();
   await expect(first.locator('.minimap').first()).toBeVisible();
+  // the pistol-round and eco plays come apart from the rest, with what to buy
+  await first.getByRole('listbox', { name: 'Pistol and eco rounds' }).getByRole('option', { name: /^Pistol/ }).click();
+  await expect(first.getByRole('article', { name: /^Pistol round: / })).toContainText('Pistol round. The first round of each half');
   await first.getByRole('tab', { name: 'Tips' }).click();
   await expect(first.locator('.tips li').first()).toBeVisible();
   // another comp opens, and the first one closes

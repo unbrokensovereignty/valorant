@@ -129,7 +129,7 @@ test('a play gives each job to an agent with the tools for it, or says what stan
   const problems: string[] = [];
   for (const { s, team } of CASES) {
     if (s.map === 'any' || s.side === 'both') continue;
-    for (const p of playsFor(team, s.map, s.side)) for (const step of p.steps) for (const d of step.who) {
+    for (const p of [...playsFor(team, s.map, s.side), ...playsFor(team, s.map, s.side, [], true)]) for (const step of p.steps) for (const d of step.who) {
       const a = agentById(d.id)!;
       const words = jobWords(d);
       const first = Object.keys(JOB_SKILLS[d.job][0]!) as Dim[];

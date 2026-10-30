@@ -1,8 +1,8 @@
 import { describe, spec, eq, ok } from './harness.ts';
 import { AGENTS } from '../../src/core/kb/agents.ts';
 import { abilityOn } from '../../src/core/kb/kits.ts';
-import { MAPS, mapById } from '../../src/core/kb/maps.ts';
-import { JOBS, PLAYS, playsOn } from '../../src/core/kb/plays.ts';
+import { MAPS, POOL, mapById } from '../../src/core/kb/maps.ts';
+import { BUY_GUIDE, JOBS, PLAYS, isLowBuy, playTitle, playsOn, roundOf } from '../../src/core/kb/plays.ts';
 import { AGENT_TIPS, ATTACK_TIPS, DEFENSE_TIPS, MAP_TIPS, RANK_TIPS, PARTY_TIPS, DOUBLE_TIPS } from '../../src/core/kb/tips.ts';
 import { JOB_SKILLS, PLAY_FIT, fillPlay, jobSkill, playFitLabel, playsFor, WEAK_JOB } from '../../src/core/engine/plays.ts';
 import { agentTips, tipsFor } from '../../src/core/engine/tips.ts';
@@ -42,6 +42,24 @@ describe('plays', () => {
         for (const o of p.steps) if (o !== s) for (const c of o.route) ok(!on.includes(c), `${p.map}, ${p.name}: the smoke on ${c} is on a teammate’s way`);
       }
     }
+  });
+  spec('each map in the pool has a pistol-round and an eco play for each side, kept apart from the plays for a bought round', () => {
+    const team = ['omen', 'sova', 'jett', 'killjoy', 'breach'];
+    for (const m of POOL) {
+      for (const side of ['attack', 'defense'] as const) {
+        const low = playsFor(team, m.id, side, [], true);
+        ok(low.some((f) => f.play.kind === 'pistol') && low.some((f) => f.play.kind === 'eco'), `${m.name} ${side}: a pistol and an eco play`);
+        ok(low.every((f) => isLowBuy(f.play.kind)) && playsFor(team, m.id, side).every((f) => !isLowBuy(f.play.kind)), `${m.name} ${side}: kept apart`);
+        // the round decides them, not the site asked about
+        eq(playsFor(team, m.id, side, ['A'], true).length, low.length, `${m.name} ${side}: whatever the sites`);
+      }
+    }
+    for (const p of PLAYS.filter((x) => isLowBuy(x.kind))) {
+      ok(POOL.some((m) => m.id === p.map), `${p.map}, ${p.name}: a map in the pool`);
+      eq(playTitle(p), `${roundOf(p)!.name}: ${p.name}`);
+    }
+    eq(playTitle(playsOn('haven', 'attack', ['C']).find((p) => p.kind === 'hit')!), 'C hit down Long', 'a play for a bought round goes by its name');
+    for (const r of BUY_GUIDE) ok(plain(r.text) && plain(`${r.name}.`), `${r.name}: plain sentences`);
   });
   spec('only the chosen sites’ plays come, with the whole-map ones', () => {
     const c = playsOn('haven', 'attack', ['C']);

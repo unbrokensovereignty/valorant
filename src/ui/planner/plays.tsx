@@ -5,7 +5,7 @@
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import { agentById } from '../../core/kb/agents.ts';
 import { mapById, POOL, spotName, type Side, type SiteId } from '../../core/kb/maps.ts';
-import { KIND_NAMES } from '../../core/kb/plays.ts';
+import { KIND_NAMES, playTitle, roundOf } from '../../core/kb/plays.ts';
 import { JOB_NAMES, jobWords, playFitLabel, playsFor, WEAK_JOB, type FilledPlay } from '../../core/engine/plays.ts';
 import { listJoin } from '../../core/text.ts';
 import { AgentIcon } from '../art.tsx';
@@ -25,11 +25,20 @@ export function PlaysPanel({ team, map: mapId, side: sidePick, sites, onPick }: 
   const [sideOwn, setSide] = useState<Side>('attack');
   const map = mapById(mapId) ?? mapById(own)!;
   const side: Side = sidePick === 'both' ? sideOwn : sidePick;
-  const list = useMemo(() => playsFor(team, map.id, side, mapById(mapId) ? sites : []), [team.join(), map.id, side, sites.join()]);
+  // the plays for a bought round, then those for the pistol round and an eco
+  const [bought, low] = useMemo(() => [playsFor(team, map.id, side, mapById(mapId) ? sites : []), playsFor(team, map.id, side, [], true)], [team.join(), map.id, side, sites.join()]);
+  const list = [...bought, ...low];
   const [pick, setPick] = useState(0);
   useEffect(() => setPick(0), [team.join(), map.id, side]);
   const chosen = list[Math.min(pick, list.length - 1)];
   useEffect(() => { if (chosen) onPick?.(chosen); }, [chosen?.play.id]);
+  const rows = (fs: readonly FilledPlay[], from: number) => fs.map((f, i) => (
+    <button type="button" role="option" key={f.play.id} aria-selected={f === chosen} class="play-row" onClick={() => { play('tick'); setPick(from + i); }}>
+      <span class="play-kind">{KIND_NAMES[f.play.kind]}{f.play.site ? ` ${f.play.site}` : ''}</span>
+      <span class="play-name">{f.play.name}</span>
+      <Badge tone={fitTone(f.fit)}>{playFitLabel(f.fit)}</Badge>
+    </button>
+  ));
   return (
     <div class="plays">
       {(!mapById(mapId) || sidePick === 'both') && (
@@ -39,15 +48,11 @@ export function PlaysPanel({ team, map: mapId, side: sidePick, sites, onPick }: 
           {!mapById(mapId) && <span class="muted small">Plays are for one map; choose one to look at.</span>}
         </div>
       )}
-      <div class="play-list" role="listbox" aria-label={`Plays on ${map.name}`}>
-        {list.map((f, i) => (
-          <button type="button" role="option" key={f.play.id} aria-selected={f === chosen} class="play-row" onClick={() => { play('tick'); setPick(i); }}>
-            <span class="play-kind">{KIND_NAMES[f.play.kind]}{f.play.site ? ` ${f.play.site}` : ''}</span>
-            <span class="play-name">{f.play.name}</span>
-            <Badge tone={fitTone(f.fit)}>{playFitLabel(f.fit)}</Badge>
-          </button>
-        ))}
-      </div>
+      <div class="play-list" role="listbox" aria-label={`Plays on ${map.name}`}>{rows(bought, 0)}</div>
+      {low.length > 0 && <>
+        <h3 class="play-group" id={`low-${map.id}-${side}`}>Pistol and eco rounds</h3>
+        <div class="play-list" role="listbox" aria-labelledby={`low-${map.id}-${side}`}>{rows(low, bought.length)}</div>
+      </>}
       {chosen && <PlayCard f={chosen} key={chosen.play.id} />}
     </div>
   );
@@ -57,13 +62,14 @@ export function PlaysPanel({ team, map: mapId, side: sidePick, sites, onPick }: 
 export function PlayCard({ f }: { f: FilledPlay }) {
   const [focus, setFocus] = useState(-1);
   const map = mapById(f.play.map)!;
+  const round = roundOf(f.play);
   return (
-    <article class="play-card" aria-label={f.play.name}>
+    <article class="play-card" aria-label={playTitle(f.play)}>
       <div class="play-map">
         <Minimap map={map.id} routes={f.steps.map((s) => ({ route: s.route }))} focus={focus} onFocus={setFocus} label={`${f.play.name} on the ${map.name} minimap`} />
       </div>
       <div class="play-body">
-        <h3>{f.play.name}</h3>
+        <h3>{playTitle(f.play)}</h3>
         <p class="muted">{f.play.about}</p>
         <ol class="play-steps">
           {f.steps.map((s, i) => (
@@ -86,6 +92,7 @@ export function PlayCard({ f }: { f: FilledPlay }) {
             </li>
           ))}
         </ol>
+        {round && <p class="note"><Icon name="info" size={16} /><span><b>{round.name}.</b> {round.text}</span></p>}
         {f.weak.length > 0 && (
           <p class="play-note"><Icon name="info" size={16} />This comp is light on {listJoin([...new Set(f.weak.map((d) => JOB_NAMES[d.job].toLowerCase()))])} for this play; the steps marked with a warning are a stretch.</p>
         )}

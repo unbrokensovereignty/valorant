@@ -14,7 +14,7 @@ import { AGENTS, STATS_ON } from '../../core/kb/agents.ts';
 import { MAPS, PATCH, POOL, POOL_SINCE, mapById } from '../../core/kb/maps.ts';
 import { NEW_AGENTS } from '../../core/kb/new-agents.ts';
 import { PRO, PRO_MAPS_COUNTED, proKnown } from '../../core/kb/pro.ts';
-import { PLAYS } from '../../core/kb/plays.ts';
+import { BUY_GUIDE, PLAYS, isLowBuy } from '../../core/kb/plays.ts';
 import { RANKS, rankOf } from '../../core/kb/ranks.ts';
 import { kitShare, proLean } from '../../core/engine/model.ts';
 import { FIT_MID, PRO_GAMES, SECOND_CONTROLLER, WIN_CAP, WIN_RANKS } from '../../core/engine/weights.ts';
@@ -165,9 +165,13 @@ function Guide() {
         </section>
         <section class="panel stack">
           <h2>Plays</h2>
-          <p>Each map has plays for attack and defense ({plural(PLAYS.length, 'play')} in all): hits, splits, fakes, defaults, setups and retakes. A play has a job for each player, like smoking a choke, flashing the entry or watching the flank.</p>
+          <p>Each map has plays for attack and defense ({plural(PLAYS.filter((p) => !isLowBuy(p.kind)).length, 'play')} in all): hits, splits, fakes, defaults, setups and retakes. A play has a job for each player, like smoking a choke, flashing the entry or watching the flank. The {plural(POOL.length, 'map')} in the pool also have a play for the pistol round and one for an eco on each side ({plural(PLAYS.filter((p) => isLowBuy(p.kind)).length, 'play')}), listed under the others: with little to spend, close fights and playing together make up for what you can’t buy.</p>
           <p>The Planner gives each job to the agent on the team who does it best, and names the abilities they’d use. A play <b>fits well</b>, <b>works</b> or is <b>a stretch</b>, from how good the players are at their jobs; a warning sign marks a job nobody on the team is good at. A play with one of those never fits well, and with two it’s a stretch, so the plays your comp can run in full come first.</p>
           <p>The minimap draws each player’s route in their own color, along the corridors and through the doorways they’d really take. Point at a step, or Tab to it, to bring its route forward. A dashed start is the walk out of spawn, and a ring is a spot to hold.</p>
+          <h3>What to buy</h3>
+          <dl class="buy-guide">
+            {BUY_GUIDE.map((r) => <div key={r.id}><dt>{r.name}</dt><dd>{r.text}</dd></div>)}
+          </dl>
         </section>
         <section class="panel stack">
           <h2>Where the numbers come from</h2>
