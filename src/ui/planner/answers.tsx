@@ -18,6 +18,7 @@ import { go, useView } from '../state.ts';
 import { play } from '../sound.ts';
 import { tourOnComp } from '../tours/now.ts';
 import { CompRow, Fit, TeamIcons } from './comp.tsx';
+import { compareComps } from './compare.tsx';
 import { ask, bestOf, run } from './store.ts';
 import { askedLine, askedTitle, partyWord, situationWord } from './words.ts';
 
@@ -64,7 +65,10 @@ export function Answers() {
         </Empty>
       ) : tab === 'comps' ? (
         <ol class="comps">
-          {ans.comps.map((c, i) => <CompRow key={c.team.join()} c={c} i={i} ans={ans} q={r.query} open={open === i || (onComp && i === 0)} onToggle={() => setOpen(open === i ? -1 : i)} />)}
+          {ans.comps.map((c, i) => (
+            <CompRow key={c.team.join()} c={c} i={i} ans={ans} q={r.query} open={open === i || (onComp && i === 0)} onToggle={() => setOpen(open === i ? -1 : i)}
+              onCompare={r.query.party === 5 && ans.comps.length > 1 ? () => void compareComps(ans, i) : undefined} />
+          ))}
         </ol>
       ) : (
         <AgentList agents={ans.agents} plan={(id) => ask({ include: [...new Set([...r.query.include, id])].slice(0, r.query.party) }, true)}

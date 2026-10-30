@@ -183,7 +183,7 @@ function Guide() {
         <section class="panel stack">
           <h2>Your data</h2>
           <p>Everything stays on this computer, in this browser. Nothing is sent anywhere. Back up from <a href="#/settings/data">Settings → Your data</a> to move to another computer or keep a copy safe.</p>
-          <p><b>Copy</b> on a comp puts the plan into words you can paste into a chat with your team, and <b>Print</b> puts it on one sheet of paper: each agent with their tip, how the comp wins, its pros and cons, the play you chose on its Plays tab drawn on the minimap (one for each side when the plan is for both), and the other tips. A saved plan prints with its name and note. Almost anything can be undone with Ctrl Z. With Playbook open in two tabs, only one saves; the other follows it.</p>
+          <p><b>Copy</b> on a comp puts the plan into words you can paste into a chat with your team, and <b>Print</b> puts it on one sheet of paper: each agent with their tip, how the comp wins, its pros and cons, the play you chose on its Plays tab drawn on the minimap (one for each side when the plan is for both), and the other tips. A saved plan prints with its name and note. <b>Compare</b> sets a comp beside any other the Planner found for a five-stack: their fits, how each wins, their best plays, how well each covers what the situation needs, and where the lower one falls short or does better. Almost anything can be undone with Ctrl Z. With Playbook open in two tabs, only one saves; the other follows it.</p>
         </section>
       </div>
     </div>

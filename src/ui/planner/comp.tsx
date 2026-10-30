@@ -57,7 +57,7 @@ export function TeamIcons({ team, party = [], locked = [], size = 40 }: { team: 
   );
 }
 
-export function CompRow({ c, i, ans, q, open, onToggle }: { c: CompAnswer; i: number; ans: SituationAnswer; q: Query; open: boolean; onToggle: () => void }) {
+export function CompRow({ c, i, ans, q, open, onToggle, onCompare }: { c: CompAnswer; i: number; ans: SituationAnswer; q: Query; open: boolean; onToggle: () => void; onCompare?: () => void }) {
   const party = c.party;
   const names = party.length
     ? <><b>{listJoin(party.map(nameOf))}</b><span class="muted"> with {listJoin(c.team.filter((x) => !party.includes(x)).map(nameOf))}</span></>
@@ -72,7 +72,7 @@ export function CompRow({ c, i, ans, q, open, onToggle }: { c: CompAnswer; i: nu
         <Fit fit={c.fit} tier={c.tier} label={party.length ? `Fit among ${partyOf(party.length as PartySize).plural}` : 'Fit'} />
         <Icon name="chevron-down" size={18} class="comp-chev" />
       </button>
-      {open && <div class="comp-body" id={id}><CompDetail c={c} i={i} ans={ans} q={q} /></div>}
+      {open && <div class="comp-body" id={id}><CompDetail c={c} i={i} ans={ans} q={q} onCompare={onCompare} /></div>}
     </li>
   );
 }
@@ -80,10 +80,11 @@ export function CompRow({ c, i, ans, q, open, onToggle }: { c: CompAnswer; i: nu
 type Tab = 'why' | 'plays' | 'tips';
 
 /**
- * A comp opened up: pros and cons, plays and tips, with Copy, Print and (unless it's saved already)
- * Save plan. A saved plan passes its name and note, for the printed sheet.
+ * A comp opened up: pros and cons, plays and tips, with Copy, Print, Compare (when there's another
+ * comp to set it beside) and (unless it's saved already) Save plan. A saved plan passes its name and
+ * note, for the printed sheet.
  */
-export function CompDetail({ c, i, ans, q, saveable = true, plan }: { c: CompAnswer; i: number; ans: SituationAnswer; q: Query; saveable?: boolean; plan?: { name: string; note: string } }) {
+export function CompDetail({ c, i, ans, q, saveable = true, plan, onCompare }: { c: CompAnswer; i: number; ans: SituationAnswer; q: Query; saveable?: boolean; plan?: { name: string; note: string }; onCompare?: () => void }) {
   const [chosen, setTab] = useState<Tab>('why');
   const numbers = useSettings().showNumbers;
   // the play on show on the Plays tab for each side, and the team it was for: a copied or printed plan carries it
@@ -126,6 +127,7 @@ export function CompDetail({ c, i, ans, q, saveable = true, plan }: { c: CompAns
         <div class="row">
           <Button size="sm" icon="copy" onClick={copy}>Copy</Button>
           <Button size="sm" icon="print" onClick={print}>Print</Button>
+          {onCompare && <Button size="sm" icon="columns" onClick={onCompare}>Compare</Button>}
           {saveable && <Button size="sm" icon="bookmark" kind="soft" onClick={() => void save()}>Save plan</Button>}
         </div>
       </div>

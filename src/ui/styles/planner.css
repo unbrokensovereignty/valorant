@@ -190,6 +190,16 @@ html[data-motion='off'] .spinner { animation: none; border-color: var(--accent);
 .strength-table tbody th { font-weight: 650; white-space: nowrap; }
 .strength-table td:nth-child(3) { width: 22%; min-width: 80px; }
 .strength-table .by { color: var(--text2); }
+
+/* two comps side by side (planner/compare.tsx) */
+.compare-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; margin: 6px 0 14px; }
+.compare-col { display: grid; gap: 10px; align-content: start; padding: 12px; border: 1px solid var(--line); border-radius: var(--r); }
+.compare-col .select { width: 100%; }
+.compare-team { gap: 10px 14px; }
+.compare-plan { font-size: 0.92rem; }
+.compare-table td { width: 38%; }
+.compare-table td .bar { max-width: 220px; }
+.compare-table + .why-not, .compare-table + p { margin-top: 14px; }
 .need { color: var(--text2); white-space: nowrap; }
 
 .tips { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }

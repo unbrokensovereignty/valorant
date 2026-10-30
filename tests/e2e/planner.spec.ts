@@ -110,6 +110,31 @@ test('a comp prints as one sheet, with the play chosen on its Plays tab, in ligh
   expect(errors).toEqual([]);
 });
 
+test('two comps compare side by side: fits, how each wins, what each covers, and where the lower one falls short', async ({ page, errors }) => {
+  await open(page, 'planner');
+  await chooseMap(page, 'Lotus');
+  await question(page).getByRole('group', { name: 'Side' }).getByRole('button', { name: 'Defense' }).click();
+  await settledAnswers(page);
+  await comps(page).first().getByRole('button', { name: 'Compare' }).click();
+  const d = page.getByRole('dialog', { name: 'Compare comps' });
+  // the comp it opened from, beside the best other one
+  await expect(d.getByRole('combobox', { name: 'First comp' })).toHaveValue('0');
+  await expect(d.getByRole('combobox', { name: 'Second comp' })).toHaveValue('1');
+  for (const which of ['First comp', 'Second comp']) await expect(d.getByRole('region', { name: which })).toContainText('How it wins.');
+  await expect(d.getByRole('table')).toContainText('Smokes');
+  await d.getByRole('combobox', { name: 'Second comp' }).selectOption('4');
+  await expect(d.locator('.why-not')).toContainText(/^The second comp plays .+ instead of .+/);
+  await expect(d.locator('.why-not')).toContainText('Where it falls short');
+  const r = await new AxeBuilder({ page }).include('.dialog').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
+  expect(r.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`)).toEqual([]);
+  // the same comp on both sides says so
+  await d.getByRole('combobox', { name: 'Second comp' }).selectOption('0');
+  await expect(d).toContainText('Both sides show the same comp');
+  await page.keyboard.press('Escape');
+  await expect(d).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
 test('must-play agents are in every comp, and role counts are kept', async ({ page, errors }) => {
   await open(page, 'planner');
   await chooseMap(page, 'Bind');
