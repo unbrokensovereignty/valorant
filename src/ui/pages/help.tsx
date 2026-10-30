@@ -16,7 +16,7 @@ import { NEW_AGENTS } from '../../core/kb/new-agents.ts';
 import { PRO, PRO_MAPS_COUNTED, proKnown } from '../../core/kb/pro.ts';
 import { BUY_GUIDE, PLAYS, isLowBuy } from '../../core/kb/plays.ts';
 import { RANKS, rankOf } from '../../core/kb/ranks.ts';
-import { kitShare, proLean } from '../../core/engine/model.ts';
+import { atRank, kitShare, proLean, winShare } from '../../core/engine/model.ts';
 import { SINCE_FROM, SINCE_MOVE } from '../../core/engine/since.ts';
 import { UNSETTLED } from '../../core/engine/sure.ts';
 import { FIT_MID, PRO_GAMES, SECOND_CONTROLLER, SURE, WIN_CAP, WIN_RANKS } from '../../core/engine/weights.ts';
@@ -112,16 +112,17 @@ const rankAt = (t: number) => RANKS.reduce((best, r) => (Math.abs(r.t - t) < Mat
 /** How a rank changes the answers, in words built from the engine's own numbers. */
 function RankHelp() {
   const known = AGENTS.filter((a) => !a.estimate);
-  const atIron = (a: (typeof known)[number]) => kitShare(a, 0);
+  const atIron = (a: (typeof known)[number]) => atRank('iron', (t) => kitShare(a, t));
+  const atTop = (a: (typeof known)[number]) => atRank('radiant', (t) => kitShare(a, t));
   const hardest = known.reduce((x, y) => (atIron(y) < atIron(x) ? y : x));
   const easiest = known.reduce((x, y) => (atIron(y) > atIron(x) ? y : x));
   const [iron, radiant] = [RANKS[0]!, RANKS[RANKS.length - 1]!];
   return (
     <section class="panel stack">
       <h2>How your rank changes the answers</h2>
-      <p><b>Kits.</b> A hard kit, or one that needs the team to play around it, is worth less until players have learned it. At {iron.name} a team gets about {about(atIron(hardest))} of {hardest.name}’s kit and {about(atIron(easiest))} of {easiest.name}’s; at {radiant.name} it gets all of every kit. Gun play counts the same at every rank.</p>
-      <p><b>Ranked results.</b> Agents who win more ranked games fit a little better, and those who win fewer a little worse. Most of those games are played between {rankAt(WIN_RANKS.from)} and {rankAt(WIN_RANKS.to)}, so win rates count in full there, {pct(WIN_RANKS.iron)} as much at {iron.name} and {pct(WIN_RANKS.radiant)} at {radiant.name}. Only {WIN_CAP} points either side of 50% count, since a win rate says who plays an agent as well as how strong the agent is.</p>
-      <p><b>Pro play.</b> What pro teams pick on a map, and how many of each role they run there, counts {pct(proLean(0))} as much at {iron.name} as at {radiant.name}, {pct(proLean(rankOf('gold').t))} at {rankOf('gold').name} and {pct(proLean(rankOf('diamond').t))} at {rankOf('diamond').name}, rising fastest near the top. A map with fewer than {PRO_GAMES.full} pro games behind it counts less{PRO_GAMES.dated < 1 ? ', and so does one whose numbers are from an earlier year' : ''}.</p>
+      <p><b>Kits.</b> A hard kit, or one that needs the team to play around it, is worth less until players have learned it. At {iron.name} a team gets about {about(atIron(hardest))} of {hardest.name}’s kit and {about(atIron(easiest))} of {easiest.name}’s; at {radiant.name} it gets {about(atTop(hardest)) === '100%' ? 'all of every kit' : `at least ${about(atTop(hardest))} of every kit`}. Gun play counts the same at every rank.</p>
+      <p><b>Ranked results.</b> Agents who win more ranked games fit a little better, and those who win fewer a little worse. Most of those games are played between {rankAt(WIN_RANKS.from)} and {rankAt(WIN_RANKS.to)}, so win rates count most there, {pct(atRank('iron', winShare) / atRank('gold', winShare))} as much at {iron.name} and {pct(atRank('radiant', winShare) / atRank('gold', winShare))} at {radiant.name}. Only {WIN_CAP} points either side of 50% count, since a win rate says who plays an agent as well as how strong the agent is.</p>
+      <p><b>Pro play.</b> What pro teams pick on a map, and how many of each role they run there, counts {pct(atRank('iron', proLean))} as much at {iron.name} as at {radiant.name}, {pct(atRank('gold', proLean))} at {rankOf('gold').name}, {pct(atRank('diamond', proLean))} at {rankOf('diamond').name} and {pct(atRank('immortal', proLean))} at {rankOf('immortal').name}. A map with fewer than {PRO_GAMES.full} pro games behind it counts less{PRO_GAMES.dated < 1 ? ', and so does one whose numbers are from an earlier year' : ''}.</p>
     </section>
   );
 }

@@ -48,7 +48,7 @@ export const KIT_RULES: readonly KitRule[] = [
     why: 'Hush’s Telekinesis works switches from range, so she can work {map}’s doors from cover to slow a push or open a retake path.',
   },
   {
-    agent: 'hush', space: 'tight', caps: 'disrupt +.15; clear +.1; entry +.05',
+    agent: 'hush', space: 'tight', caps: 'disrupt +.2; clear +.1; entry +.05',
     why: 'Hush’s Displacement concusses anyone it pulls into a wall, and {map}’s tight spaces are full of them, so she can pull a defender out of a close corner before the team swings it.',
   },
   {
@@ -73,7 +73,7 @@ export const KIT_RULES: readonly KitRule[] = [
     why: 'Raze’s Blast Pack jumps reach Split’s high ground, A Tower and B Tower, faster than the ropes.',
   },
   {
-    agent: 'breach', space: 'tight', caps: 'clear +.1; disrupt +.05; flash +.05',
+    agent: 'breach', space: 'tight', caps: 'clear +.15; disrupt +.05; flash +.05',
     why: 'Breach’s stuns and flashes go through walls, which works best on {map}’s narrow ways in.',
   },
   {

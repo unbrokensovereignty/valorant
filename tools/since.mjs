@@ -31,12 +31,9 @@ const run = promisify(execFile);
  * The ids are the reasons whyOf in since.ts words; an edit that no longer finds its text stops the tool.
  */
 const CHANGES = [
-  { id: 'k', edits: [['core/engine/model.ts', 'const rules = AGENTS.map((a) => rulesFor(a.id, map.id, side, sites));', 'const rules = AGENTS.map((): ParsedRule[] => []);']] },
-  { id: 'c', edits: [['core/engine/model.ts', /const together = .*;/, 'const together = 1;']] },
-  { id: 'm', edits: [['core/engine/weights.ts', 'export const ROLE_MIX = 0.08;', 'export const ROLE_MIX = 0.15;']] },
-  // each agent whose numbers changed is also undone on their own (n-<id>), to tell whose moved a tier
-  { id: 'n', edits: [['core/kb/agents.ts']] },
-  { id: 'w', edits: [['core/engine/weights.ts', 'wall: [0.75, 1.15]', 'wall: [0.6, 1.15]']] },
+  { id: 'r', edits: [['core/engine/weights.ts', 'export const RANK_NEAR = 0.25;', 'export const RANK_NEAR = 0;']] },
+  { id: 'p', edits: [['core/engine/weights.ts', "power: 2, until: 'immortal' }", "power: 2, until: 'radiant' }"]] },
+  { id: 'k', edits: [['core/kb/kitfit.ts']] },
 ];
 
 /** The situations, as Rankings asks them. */

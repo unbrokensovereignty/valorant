@@ -16,10 +16,9 @@
 import { AGENTS, agentById, earlyStats, type Agent } from '../kb/agents.ts';
 import { POOL } from '../kb/maps.ts';
 import { proKnown } from '../kb/pro.ts';
-import { rankOf } from '../kb/ranks.ts';
 import { listJoin } from '../text.ts';
 import { whereWords } from './explain.ts';
-import { proLean, proShare, winShare, type Model, type Situation } from './model.ts';
+import { atRank, proLean, proShare, winShare, type Model, type Situation } from './model.ts';
 import { AGENT_STRETCH, FIT, FIT_MID, SURE, WIN_CAP } from './weights.ts';
 
 export type DoubtWhy = 'early' | 'pro' | 'kit';
@@ -29,13 +28,13 @@ export interface Unsure { by: number; why: DoubtWhy[] }
 
 /** The parts of an agent's own score in a situation that rest on very little, each as far as it could be off, in score points. */
 export function doubtsOf(m: Model, a: Agent): { why: DoubtWhy; by: number }[] {
-  const s = m.situation, rankT = rankOf(s.rank).t;
+  const s = m.situation;
   const out: { why: DoubtWhy; by: number }[] = [];
-  if (earlyStats(a)) out.push({ why: 'early', by: FIT.win * winShare(rankT) * WIN_CAP });
+  if (earlyStats(a)) out.push({ why: 'early', by: FIT.win * atRank(s.rank, winShare) * WIN_CAP });
   if (!proKnown(a)) {
     const maps = s.map === 'any' ? POOL.map((x) => x.id) : [s.map];
     const share = maps.reduce((acc, x) => acc + proShare(x), 0) / maps.length;
-    out.push({ why: 'pro', by: FIT.pro * proLean(rankT) * SURE.pro * share });
+    out.push({ why: 'pro', by: FIT.pro * atRank(s.rank, proLean) * SURE.pro * share });
   }
   if (earlyStats(a)) out.push({ why: 'kit', by: SURE.kit * Math.hypot(...m.kit[a.index]!.map((k) => k.gain)) });
   return out.filter((x) => x.by > 0);

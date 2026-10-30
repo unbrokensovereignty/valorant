@@ -49,10 +49,21 @@ export const FIT = { pro: 0.07, solo: 0.06, skill: 0.01, win: 0.004 };
 
 /**
  * How the pull toward pro play grows with rank: `low` of the full pull at Iron, rising with the
- * rank's place (0 Iron to 1 Radiant, kb/ranks.ts) to the power `power`, so it stays small through
- * the middle ranks and grows fast from Diamond up. The same goes for each map's pro role mix.
+ * rank's place on the way up to `until` (kb/ranks.ts) to the power `power`, so it stays small through
+ * the middle ranks, grows fast from Diamond up and is full from `until`. The same goes for each map's
+ * pro role mix. `until` is where a second controller stops costing (SECOND_CONTROLLER), so the pros'
+ * role mix and their second controller come in together: when they came in at different ranks, the
+ * best comps at Immortal took the pros' two controllers but kept the sentinel they play without,
+ * a team neither ranked players nor pros play, and ratings jumped there and back.
  */
-export const PRO_RISE = { low: 0.1, power: 2 };
+export const PRO_RISE: { low: number; power: number; until: RankId } = { low: 0.1, power: 2, until: 'immortal' };
+
+/**
+ * Ranked games are played with and against players of the ranks next to yours, so each rank's
+ * answers take in this share of each neighboring rank's (Iron and Radiant, with one neighbor, keep
+ * the rest for themselves). It also keeps a rating from jumping between two ranks and back.
+ */
+export const RANK_NEAR = 0.25;
 
 /**
  * Pro numbers from fewer than this many maps of play pull less, in proportion, but never under

@@ -11,7 +11,7 @@ import { rankOf } from '../kb/ranks.ts';
 import { DIMS, DIM_INFO, ROLE_IDS, roleOf, type Dim, type Role } from '../kb/roles.ts';
 import { pairOf } from '../kb/synergy.ts';
 import { listJoin } from '../text.ts';
-import { D, N, kitShare, needsFor, viaIn, type Model, type Situation } from './model.ts';
+import { D, N, atRank, kitShare, needsFor, viaIn, type Model, type Situation } from './model.ts';
 import { BELOW_NOTE, KIT_NOTE, KIT_RULE_NOTE, MIX_NOTE, PLAN_NOTE, SECOND_CONTROLLER, THREAT_NOTE, WIN_NOTE } from './weights.ts';
 import { ruleWhy } from '../kb/kitfit.ts';
 import { threatLine } from '../kb/counters.ts';
@@ -255,7 +255,7 @@ export function explainTeam(m: Model, ids: readonly string[]): Explanation {
   let hard: Agent[] = [];
   if (t <= KIT_NOTE.upTo) {
     // how much of each kit's utility a team at this rank gets (gun play aside), as the score counts it
-    const kit = (a: Agent) => kitShare(a, t);
+    const kit = (a: Agent) => atRank(s.rank, (x) => kitShare(a, x));
     hard = team.filter((a) => kitShare(a, 0) < KIT_NOTE.hard && !a.estimate).sort((x, y) => kit(x) - kit(y));
     const pct = (a: Agent) => Math.round(kit(a) * 20) * 5;
     const shares = new Set(hard.map(pct)).size === 1 ? `about ${pct(hard[0]!)}% of each kit` : `${listJoin(hard.map((a) => `about ${pct(a)}% of ${a.name}’s`))} kits`;

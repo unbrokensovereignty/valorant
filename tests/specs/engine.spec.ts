@@ -452,6 +452,7 @@ describe('explanations', () => {
     const hush = agentById('hush')!;
     ok(kitShare(hush, 0) < 0.75, 'a team at Iron gets less of her kit');
     eq(kitShare(hush, 1), 1);
-    eq(modelFor(at('haven', 'attack', 'radiant')).fitParts.rank[ix('hush')], 0);
+    // (Radiant's answers take in a little of Immortal's games, where it costs next to nothing)
+    ok(Math.abs(modelFor(at('haven', 'attack', 'radiant')).fitParts.rank[ix('hush')]!) < 1e-4, 'next to nothing at Radiant');
   });
 });

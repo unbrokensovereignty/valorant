@@ -2,6 +2,10 @@
 
 Every version of Playbook By Sovereign and what it changed.
 
+## 0.3.0 (in progress)
+
+- **Steadier ratings from rank to rank.** A rating no longer drops away at one rank and comes back at the next: on Bind, Hush, Yoru and Raze used to fall a tier or two at Immortal between Ascendant and Radiant, because the best comps there took the pros' two controllers but kept the sentinel pros play without. Pro teams' role mix now comes in at the same rank as their second controller, in full from Immortal, and each rank's answers take in some of the games at the ranks next to it, since ranked lobbies mix neighboring ranks. Hush's Displacement and Breach's Aftershock count for a little more on tight maps.
+
 ## 0.2.5 (2026-10-30)
 
 - **Kits by map.** A kit now counts for more or less depending on the map, side and site, for the reasons a coach would give, and a comp's pros and cons say why. Hush's Telekinesis works Lotus's and Ascent's doors from range, which makes her one of the best duelists on Lotus attack; Displacement only concusses enemies pulled into a wall, so she's better on tight maps than on open ones. Raze's, Breach's and Phoenix's utility needs corners, Cypher's Trapwires and Deadlock's Barrier Mesh need chokes, Sova's darts see little in walled-in sites, Brimstone's smokes don't reach across Breeze or Abyss, and a trap on one of Bind's teleporter exits catches whoever comes through.

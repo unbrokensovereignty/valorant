@@ -2,6 +2,13 @@
 
 What's planned, what the owner has approved, and what's done. Update it as work lands. Items marked **proposed** wait for the owner's OK before they're built. Small fixes don't need to be listed here.
 
+## 0.3.0: picking the map, and a better minimap (approved, in progress)
+
+The owner approved (30 October 2026) three things for this version, from the ideas below and what 0.2.5 taught: ranked win rates for each map, ratings that move steadily between neighboring ranks, and help picking a map. The owner then made the minimap the main focus: every callout on all 13 maps placed from several sources, a dot at the center of each callout (on by default), callout text that can be made bigger or smaller, zoom and pan, and optional layers for ultimate orbs and map features such as doors, breakable walls and Bind's teleporters.
+
+- **Planned:** steadier ratings first (the pro role mix and the second controller coming in at the same rank, and each rank taking in some of its neighbors' games), then the minimap, ranked win rates for each map (gathered on the owner's computer, since this one can't reach stats sites), and map pick help built on both. Then rounds of testing and fixing until two rounds in a row find nothing significant.
+- **Built so far:** steadier ratings between ranks.
+
 ## 0.2.5: game sense (released 2026-10-30)
 
 The owner asked for game sense above all: what the app says should match what a pro would recommend for the inputs, with thought behind the numbers, not just numbers, and a lot of time spent improving, testing and fixing the information and the engine's inconsistencies. The example: agent ratings should follow how a kit plays on each map and side (Hush strong on Lotus attack, working the doors from range), not only win rates. Feedback relayed during the work: a double controller shouldn't lead Lotus at Platinum, duos and trios should be shown picks for their random teammates, All ranks should go, the first launch should ask how you play, and minimaps should be accurate. The owner added "Against a known team" and the printable plan sheet to this version.
@@ -24,8 +31,6 @@ The owner asked (29 October 2026) for the next version to make the engine and th
 
 1. **How well you play each agent.** Say how well you play each of your agents (or just your mains), and the Planner leans toward comps you can actually play. The agents you play already count (0.2.5); this would weigh them by how well.
 2. **More fakes.** More fake plays for each map (there are hits, splits, defaults, setups, a retake for every site, and pistol and eco plays on the pool's maps now).
-3. **Map pick help.** For a team choosing which map to play or ban, the maps its usual comps and agents fit best and worst, with why.
-4. **Ranked win rates for each map.** Win rates count across all maps now; numbers for each map would let an agent who wins more on one map count for more there. It needs per-map numbers from a stats site, gathered on a computer that can reach one.
 
 ## 0.1.5: Hush and a tidier layout (released 2026-10-29)
 
