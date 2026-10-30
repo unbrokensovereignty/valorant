@@ -92,7 +92,7 @@ export function PlanSheet({ p }: { p: SheetParts }) {
           <h2>{p.plays!.length > 1 ? `On ${f.play.side}: ` : 'Play: '}{playTitle(f.play)} <span class="sheet-faint">· {playFitLabel(f.fit)}</span></h2>
           <p class="sheet-about">{f.play.about}</p>
           <div class="sheet-play-grid">
-            <Minimap map={f.play.map} routes={f.steps.map((s) => ({ route: s.route }))} label={`${f.play.name} on the minimap`} />
+            <Minimap map={f.play.map} plain routes={f.steps.map((s) => ({ route: s.route }))} label={`${f.play.name} on the minimap`} />
             <ol class="sheet-steps">
               {f.steps.map((s, i) => (
                 <li key={i}>

@@ -9,7 +9,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { solve, teamFit } from '../../src/core/engine/plan.ts';
 import { newQuery } from '../../src/core/engine/query.ts';
-import { D, kitShare, modelFor, viaIn, type Situation } from '../../src/core/engine/model.ts';
+import { D, atRank, kitShare, modelFor, viaIn, type Situation } from '../../src/core/engine/model.ts';
 import { explainTeam } from '../../src/core/engine/explain.ts';
 import { KIT_NOTE, tierOf, TIERS } from '../../src/core/engine/weights.ts';
 import { AGENTS, agentById, type Agent } from '../../src/core/kb/agents.ts';
@@ -176,7 +176,7 @@ function untrue(s: Situation, team: readonly string[]): string[] {
     // the practice a kit takes, as the score counts it
     if (/takes? practice to play well/.test(line)) {
       for (const a of agents.filter((x) => line.split(' take')[0]!.includes(x.name))) {
-        const k = kitShare(a, t);
+        const k = atRank(s.rank, (x) => kitShare(a, x));
         if (kitShare(a, 0) >= KIT_NOTE.hard || t > KIT_NOTE.upTo) no(`${a.name} isn’t one of the hard kits, keeping ${pct(100 * k)} of it`);
         if (!line.includes(`about ${Math.round(k * 20) * 5}% of ${line.includes('of each kit') ? 'each kit' : `${a.name}’s`}`)) no(`${a.name} keeps about ${Math.round(k * 20) * 5}%`);
       }

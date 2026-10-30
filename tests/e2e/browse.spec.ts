@@ -39,35 +39,39 @@ test('Rankings: tier lists move with the rank, comps open, and the by-map table 
 });
 
 test(`Rankings and an agent’s page mark the tiers that moved since ${SINCE_FROM}, and say why`, async ({ page, errors }) => {
-  await open(page, 'rankings');
-  await page.getByRole('combobox', { name: 'Map' }).selectOption({ label: 'Lotus' });
-  await page.getByRole('group', { name: 'Side' }).getByRole('button', { name: 'Attack' }).click();
-  await page.getByRole('combobox', { name: 'Rank' }).selectOption({ label: 'Platinum' });
-  await expect(page.locator('.rank-where')).toHaveText('Lotus, attack, Platinum');
-  // one controller now leads Lotus at Platinum: Viper drops, with why in her tooltip and her name for screen readers
-  const viper = page.locator('.tier-agent', { hasText: 'Viper' });
-  await expect(viper.locator('.since-down')).toBeVisible();
-  await expect(viper).toHaveAccessibleName(new RegExp(`^Viper \\(down from S since ${SINCE_FROM.replaceAll('.', '\\.')}\\)`));
-  await expect(viper).toHaveAttribute('data-tip', /second controller/);
-  await viper.focus();
+  // at Immortal, where the pros' role mix now comes in with their second controller
+  await open(page, 'rankings', { setup: true });
+  const setup = page.getByRole('dialog', { name: 'Welcome to Playbook' });
+  await setup.getByRole('combobox', { name: 'Your rank' }).selectOption({ label: 'Immortal' });
+  await setup.getByRole('button', { name: 'Done' }).click();
+  await expect(setup).toHaveCount(0);
+  await page.getByRole('combobox', { name: 'Map' }).selectOption({ label: 'Bind' });
+  await page.getByRole('group', { name: 'Side' }).getByRole('button', { name: 'Both sides' }).click();
+  await expect(page.locator('.rank-where')).toHaveText('Bind, both sides, Immortal');
+  // comps built like the pros' now lead Bind at Immortal: Raze rises, with why in her tooltip and her name for screen readers
+  const raze = page.locator('.tier-agent', { hasText: 'Raze' });
+  await expect(raze.locator('.since-up')).toBeVisible();
+  await expect(raze).toHaveAccessibleName(new RegExp(`^Raze \\(up from A since ${SINCE_FROM.replaceAll('.', '\\.')}\\)`));
+  await expect(raze).toHaveAttribute('data-tip', /role mix pro teams play on Bind/);
+  await raze.focus();
   await page.keyboard.press('Shift+Tab');
   await page.keyboard.press('Tab');
-  await expect(page.getByRole('tooltip')).toContainText('second controller');
+  await expect(page.getByRole('tooltip')).toContainText('role mix pro teams play on Bind');
   // every move, with why, once for those that moved together
   const moves = page.getByRole('button', { name: /moved a tier since/ });
   await expect(moves).toHaveAttribute('aria-expanded', 'false');
   await moves.click();
   await expect(moves).toHaveAttribute('aria-expanded', 'true');
-  await expect(page.locator('#since-moves')).toContainText('Telekinesis');
-  await expect(page.locator('#since-moves')).toContainText('counts for less as a second');
+  await expect(page.locator('#since-moves')).toContainText('Yoru');
+  await expect(page.locator('#since-moves')).toContainText('in full from Immortal');
   const a11y = await new AxeBuilder({ page }).include('.since-list').include('.tier-list').withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
   expect(a11y.violations.map((v) => v.id)).toEqual([]);
-  // Viper's page marks Diamond, where a second controller costs a comp now
-  await go(page, 'agents/viper');
+  // Raze's page marks Bind among her best maps at your rank
+  await go(page, 'agents/raze');
   await expect(page.getByLabel('Working it out')).toHaveCount(0, { timeout: 20_000 });
-  const diamond = page.locator('.by-rank-cell', { hasText: 'Diamond' });
-  await expect(diamond.locator('.since-down')).toBeVisible();
-  await expect(diamond).toHaveAttribute('data-tip', new RegExp(`^Down from S since ${SINCE_FROM.replaceAll('.', '\\.')}: A second controller`));
+  const bind = page.locator('.best-maps .list-row', { hasText: 'Bind' });
+  await expect(bind.locator('.since-up')).toBeVisible();
+  await expect(bind).toHaveAttribute('data-tip', new RegExp(`^Up from A since ${SINCE_FROM.replaceAll('.', '\\.')}: The role mix pro teams play on Bind`));
   expect(errors).toEqual([]);
 });
 
@@ -124,17 +128,45 @@ test('Agents: each agent’s page has the kit, strengths, best maps and partners
   expect(errors).toEqual([]);
 });
 
-test('Maps: the minimap’s callouts can be hidden, and each side has its tips, best comps and plays', async ({ page, errors }) => {
+test('Maps: the minimap zooms and moves, its callouts can be hidden, and each side has its tips, best comps and plays', async ({ page, errors }) => {
   await open(page, 'maps');
   await expect(page.getByRole('heading', { name: 'In the pool' })).toBeVisible();
   await page.getByRole('button', { name: /^Ascent/ }).click();
   await expect(page.locator('main h1')).toHaveText('Ascent');
-  const map = page.getByRole('img', { name: /^Minimap of Ascent/ });
-  await expect(map).toHaveAccessibleName('Minimap of Ascent with callouts');
+  const map = page.getByRole('group', { name: /^Minimap of Ascent/ });
+  await expect(map).toHaveAccessibleName(/^Minimap of Ascent with callouts\. Zoom with plus and minus/);
   await expect(map.locator('.minimap-label').first()).toBeVisible();
+  // a dot on every callout, on by default
+  const dots = map.locator('.minimap-dot');
+  await expect(dots).toHaveCount(await map.locator('.minimap-label').count());
+  await page.locator('label.toggle', { hasText: 'Dots on callouts' }).click();
+  await expect(dots).toHaveCount(0);
+  await page.locator('label.toggle', { hasText: 'Dots on callouts' }).click();
+  await expect(dots.first()).toBeVisible();
+  // the names grow with their size
+  const label = map.locator('.minimap-label').first();
+  const before = (await label.boundingBox())!.height;
+  await page.getByRole('group', { name: 'Callout name size' }).getByRole('button', { name: 'Extra large' }).click();
+  await expect.poll(async () => (await label.boundingBox())!.height).toBeGreaterThan(before * 1.3);
+  await page.getByRole('group', { name: 'Callout name size' }).getByRole('button', { name: 'Medium' }).click();
+  // zoom with the buttons and the keys, move with the arrows, and back out
+  const stage = map.locator('.minimap-stage');
+  await page.getByRole('button', { name: 'Zoom in' }).first().click();
+  await expect(map).toHaveClass(/zoomed/);
+  await map.focus();
+  await page.keyboard.press('0');
+  await expect(map).not.toHaveClass(/zoomed/);
+  await page.keyboard.press('+');
+  await page.keyboard.press('+');
+  await expect(map).toHaveClass(/zoomed/);
+  const at = await stage.getAttribute('style');
+  await page.keyboard.press('ArrowRight');
+  await expect.poll(() => stage.getAttribute('style')).not.toBe(at);
+  await page.getByRole('button', { name: 'Show the whole map' }).first().click();
+  await expect(map).not.toHaveClass(/zoomed/);
   await page.locator('label.toggle', { hasText: 'Show callouts' }).click();
   await expect(page.getByRole('switch', { name: 'Show callouts' })).not.toBeChecked();
-  await expect(map).toHaveAccessibleName('Minimap of Ascent');
+  await expect(map).toHaveAccessibleName(/^Minimap of Ascent\. /);
   await expect(map.locator('.minimap-label')).toHaveCount(0);
   await expect(page.getByRole('list', { name: 'Tips for attack' })).toBeVisible();
   await expect(page.locator('.comps > li')).toHaveCount(5, { timeout: 20_000 });

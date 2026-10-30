@@ -5,7 +5,9 @@
 import { useState } from 'preact/hooks';
 import { PageHead } from '../shell.tsx';
 import { Badge, Button, Empty, Segmented, Toggle } from '../components/controls.tsx';
-import { Minimap } from '../components/minimap.tsx';
+import { FeatureSwatch, featureKindsOn, Minimap, TEXT_SIZES, useMapView, type TextSize } from '../components/minimap.tsx';
+import { featuresOf } from '../../core/kb/features.ts';
+import { sideShare } from '../../core/kb/mapwins.ts';
 import { Icon } from '../icons.tsx';
 import { AgentIcon, MapThumb } from '../art.tsx';
 import { go, useSettings, useView } from '../state.ts';
@@ -110,6 +112,13 @@ function HowItPlays({ m }: { m: MapInfo }) {
   );
 }
 
+/** Which side wins more of the rounds on a map in ranked: "Defense wins about 54% of them". */
+function sideWords(m: MapInfo): string {
+  const def = Math.round(sideShare(m.id, 'defense')! * 100);
+  if (def === 50) return 'About even between the sides';
+  return def > 50 ? `Defense wins about ${def}% of them` : `Attack wins about ${100 - def}% of them`;
+}
+
 function BestComps({ m, side, rank, newAgents }: { m: MapInfo; side: Side; rank: RankId; newAgents: boolean }) {
   const [open, setOpen] = useState(-1);
   const ans = answerFor({ map: m.id, side, rank, sites: [] }, newAgents);
@@ -134,11 +143,50 @@ function Plays({ m, side, rank, newAgents }: { m: MapInfo; side: Side; rank: Ran
   );
 }
 
+/** How the minimap shows: callouts and their dots, the names' size, and the layers this map has, with a legend. */
+function MapViewControls({ m, names, setNames }: { m: MapInfo; names: boolean; setNames: (v: boolean) => void }) {
+  const view = useMapView();
+  const has = (layer: 'orbs' | 'features') => featureKindsOn(m.id, [layer]).length > 0;
+  const marked = featuresOf(m.id).filter((f) => (f.kind === 'orb' ? view.orbs : view.features));
+  const legend = featureKindsOn(m.id, [...(view.orbs ? ['orbs' as const] : []), ...(view.features ? ['features' as const] : [])]);
+  return (
+    <div class="stack map-view" data-tour="map-view">
+      <div class="row wrap map-view-toggles">
+        <Toggle checked={names} onChange={setNames} label="Show callouts" />
+        <Toggle checked={view.dots} onChange={view.setDots} disabled={!names} label="Dots on callouts" />
+        {has('orbs') && <Toggle checked={view.orbs} onChange={view.setOrbs} label="Ultimate orbs" />}
+        {has('features') && <Toggle checked={view.features} onChange={view.setFeatures} label="Doors, walls and more" />}
+      </div>
+      <div class="row wrap">
+        <span class="small muted">Callout names</span>
+        <Segmented<TextSize> label="Callout name size" value={view.text} onChange={view.setText} options={TEXT_SIZES.map(([id, name]) => [id, <><span class={`size-${id}`} aria-hidden="true">A</span><span class="visually-hidden">{name}</span></>] as const)} />
+      </div>
+      {legend.length > 0 && (
+        <ul class="plain-list row wrap map-legend" aria-label="What the marks mean">
+          {legend.map((k) => <li key={k.kind} class="row"><FeatureSwatch kind={k.kind} /><span class="small">{k.name}</span></li>)}
+        </ul>
+      )}
+      {marked.length > 0 && (
+        <details class="map-marks">
+          <summary class="small">What’s marked on {m.name}</summary>
+          <ul class="plain-list stack map-marks-list">
+            {marked.map((f) => <li key={f.about} class="row small"><FeatureSwatch kind={f.kind} /><span>{f.about}.</span></li>)}
+          </ul>
+        </details>
+      )}
+      {view.orbs && !has('orbs') && <p class="small muted">Ultimate orbs aren’t marked on {m.name} yet.</p>}
+      <p class="small muted">Scroll or use the buttons to zoom, and drag to move around. Point at a mark to see what it is.</p>
+    </div>
+  );
+}
+
 function MapPage({ m }: { m: MapInfo }) {
   const s = useSettings();
   const [side, setSide] = useView<Side>('maps.side', 'attack', (v) => v === 'attack' || v === 'defense');
   const [names, setNames] = useView<string>('maps.names', 'yes', (v) => v === 'yes' || v === 'no');
   const rank = s.defaultRank as RankId;
+  const view = useMapView();
+  const layers = [...(view.orbs ? ['orbs' as const] : []), ...(view.features ? ['features' as const] : [])];
   const tips = MAP_TIPS[m.id]?.[side] ?? [];
   const agentTips = mapAgentTips(m.id).filter((t) => !t.side || t.side === side);
   return (
@@ -152,9 +200,9 @@ function MapPage({ m }: { m: MapInfo }) {
       <div class="map-detail">
         <div class="stack">
           <div class="map-big" data-tour="map-minimap">
-            <Minimap map={m.id} labels={names === 'yes' ? 'all' : 'none'} label={`Minimap of ${m.name}${names === 'yes' ? ' with callouts' : ''}`} />
+            <Minimap map={m.id} zoomable labels={names === 'yes' ? 'all' : 'none'} layers={layers} label={`Minimap of ${m.name}${names === 'yes' ? ' with callouts' : ''}`} />
           </div>
-          <Toggle checked={names === 'yes'} onChange={(v) => setNames(v ? 'yes' : 'no')} label="Show callouts" />
+          <MapViewControls m={m} names={names === 'yes'} setNames={(v) => setNames(v ? 'yes' : 'no')} />
         </div>
         <div class="stack">
           <section class="panel stack" data-tour="map-wins">
@@ -166,6 +214,7 @@ function MapPage({ m }: { m: MapInfo }) {
                 return [<dt key={sd + 't'}>{sd === 'attack' ? 'Attack' : 'Defense'} needs</dt>, <dd key={sd + 'd'}>{extra.length ? listJoin(extra.map((d) => DIM_INFO[d].name.toLowerCase())) : 'The usual mix'}</dd>];
               })}
               <dt>Controllers</dt><dd>{Math.round(proMixOf(m.id)?.controller ?? 1) >= 2 ? 'Pros usually run two' : 'Pros usually run one'}</dd>
+              {sideShare(m.id, 'defense') !== undefined && <><dt>Ranked rounds</dt><dd>{sideWords(m)}</dd></>}
             </dl>
           </section>
           <section class="panel stack">

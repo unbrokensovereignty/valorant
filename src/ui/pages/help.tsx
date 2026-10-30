@@ -13,18 +13,26 @@ import { openWhatsNew } from '../components/whatsnew.tsx';
 import { AGENTS, STATS_ON } from '../../core/kb/agents.ts';
 import { MAPS, PATCH, POOL, POOL_SINCE, mapById } from '../../core/kb/maps.ts';
 import { NEW_AGENTS } from '../../core/kb/new-agents.ts';
+import { MAP_WINS } from '../../core/kb/mapwins.ts';
 import { PRO, PRO_MAPS_COUNTED, proKnown } from '../../core/kb/pro.ts';
 import { BUY_GUIDE, PLAYS, isLowBuy } from '../../core/kb/plays.ts';
 import { RANKS, rankOf } from '../../core/kb/ranks.ts';
-import { kitShare, proLean } from '../../core/engine/model.ts';
+import { atRank, kitShare, proLean, winShare } from '../../core/engine/model.ts';
 import { SINCE_FROM, SINCE_MOVE } from '../../core/engine/since.ts';
 import { UNSETTLED } from '../../core/engine/sure.ts';
-import { FIT_MID, PRO_GAMES, SECOND_CONTROLLER, SURE, WIN_CAP, WIN_RANKS } from '../../core/engine/weights.ts';
+import { FIT_MID, MAP_PICK, MAP_WIN, PRO_GAMES, SECOND_CONTROLLER, SURE, WIN_CAP, WIN_RANKS } from '../../core/engine/weights.ts';
 import { tierWords } from '../planner/words.ts';
 import { fmtLongDay } from '../../core/dates.ts';
 import { listJoin } from '../../core/text.ts';
 import { plural } from '../../core/util.ts';
 import type { PageProps } from './index.ts';
+
+/** When the numbers for each map were taken: "taken map by map between October 4, 2026 and October 30, 2026", or the one day. */
+function mapWinDates(): string {
+  const days = Object.values(MAP_WINS).map((m) => m.on).sort();
+  const first = days[0]!, last = days[days.length - 1]!;
+  return first === last ? `as of ${fmtLongDay(first)}` : `taken map by map between ${fmtLongDay(first)} and ${fmtLongDay(last)}`;
+}
 
 type Tab = 'guide' | 'tours' | 'keys' | 'about';
 
@@ -112,16 +120,17 @@ const rankAt = (t: number) => RANKS.reduce((best, r) => (Math.abs(r.t - t) < Mat
 /** How a rank changes the answers, in words built from the engine's own numbers. */
 function RankHelp() {
   const known = AGENTS.filter((a) => !a.estimate);
-  const atIron = (a: (typeof known)[number]) => kitShare(a, 0);
+  const atIron = (a: (typeof known)[number]) => atRank('iron', (t) => kitShare(a, t));
+  const atTop = (a: (typeof known)[number]) => atRank('radiant', (t) => kitShare(a, t));
   const hardest = known.reduce((x, y) => (atIron(y) < atIron(x) ? y : x));
   const easiest = known.reduce((x, y) => (atIron(y) > atIron(x) ? y : x));
   const [iron, radiant] = [RANKS[0]!, RANKS[RANKS.length - 1]!];
   return (
     <section class="panel stack">
       <h2>How your rank changes the answers</h2>
-      <p><b>Kits.</b> A hard kit, or one that needs the team to play around it, is worth less until players have learned it. At {iron.name} a team gets about {about(atIron(hardest))} of {hardest.name}’s kit and {about(atIron(easiest))} of {easiest.name}’s; at {radiant.name} it gets all of every kit. Gun play counts the same at every rank.</p>
-      <p><b>Ranked results.</b> Agents who win more ranked games fit a little better, and those who win fewer a little worse. Most of those games are played between {rankAt(WIN_RANKS.from)} and {rankAt(WIN_RANKS.to)}, so win rates count in full there, {pct(WIN_RANKS.iron)} as much at {iron.name} and {pct(WIN_RANKS.radiant)} at {radiant.name}. Only {WIN_CAP} points either side of 50% count, since a win rate says who plays an agent as well as how strong the agent is.</p>
-      <p><b>Pro play.</b> What pro teams pick on a map, and how many of each role they run there, counts {pct(proLean(0))} as much at {iron.name} as at {radiant.name}, {pct(proLean(rankOf('gold').t))} at {rankOf('gold').name} and {pct(proLean(rankOf('diamond').t))} at {rankOf('diamond').name}, rising fastest near the top. A map with fewer than {PRO_GAMES.full} pro games behind it counts less{PRO_GAMES.dated < 1 ? ', and so does one whose numbers are from an earlier year' : ''}.</p>
+      <p><b>Kits.</b> A hard kit, or one that needs the team to play around it, is worth less until players have learned it. At {iron.name} a team gets about {about(atIron(hardest))} of {hardest.name}’s kit and {about(atIron(easiest))} of {easiest.name}’s; at {radiant.name} it gets {about(atTop(hardest)) === '100%' ? 'all of every kit' : `at least ${about(atTop(hardest))} of every kit`}. Gun play counts the same at every rank.</p>
+      <p><b>Ranked results.</b> Agents who win more ranked games fit a little better, and those who win fewer a little worse. Most of those games are played between {rankAt(WIN_RANKS.from)} and {rankAt(WIN_RANKS.to)}, so win rates count most there, {pct(atRank('iron', winShare) / atRank('gold', winShare))} as much at {iron.name} and {pct(atRank('radiant', winShare) / atRank('gold', winShare))} at {radiant.name}. Only {WIN_CAP} points either side of 50% count, since a win rate says who plays an agent as well as how strong the agent is. An agent who wins more or fewer games on one map than on the others gets that counted there too, but only as far as it’s more than chance: most of the difference between maps is chance even over thousands of games, so it takes {MAP_WIN.games.toLocaleString('en-US')} games on a map to count half of it.</p>
+      <p><b>Pro play.</b> What pro teams pick on a map, and how many of each role they run there, counts {pct(atRank('iron', proLean))} as much at {iron.name} as at {radiant.name}, {pct(atRank('gold', proLean))} at {rankOf('gold').name}, {pct(atRank('diamond', proLean))} at {rankOf('diamond').name} and {pct(atRank('immortal', proLean))} at {rankOf('immortal').name}. A map with fewer than {PRO_GAMES.full} pro games behind it counts less{PRO_GAMES.dated < 1 ? ', and so does one whose numbers are from an earlier year' : ''}.</p>
     </section>
   );
 }
@@ -147,6 +156,7 @@ function Guide() {
         <section class="panel stack">
           <h2>The question</h2>
           <p><b>Map, side, sites and rank</b> describe the game you’re about to play. Choose “Best” for the side or “Find the best rank” and the Planner compares them all for you; leave the map open to plan across the pool ({plural(POOL.length, 'map')}), or turn on all {MAPS.length}.</p>
+          <p><b>Find the best map</b> ranks every map for your question. For a five-stack with agents, roles or a saved party chosen, it also says which maps to play and which to ban, as in Premier: up to {MAP_PICK.most} of each, each with why. Each reason compares the map with the others: a map to play says where your best comp there comes closer to the best comp for the map than it does elsewhere, and a map to ban where it falls further short. A map is worth banning only when it fits at least {plural(MAP_PICK.gap, 'point')} below your best one, so when every map fits about the same, it says so. A five-player party on the Saved page has a button for this.</p>
           <p><b>Sites</b> narrow a plan to the sites you’ll play: say B and C on Haven to plan a hit or a hold there. Plays then come from those sites first.</p>
           <p><b>Must play</b> keeps agents in every comp. <b>Won’t play</b> leaves them out. <b>Roles</b> set how many of a role the team has, like two controllers or no sentinel.</p>
           <p><b>Their team</b> takes the other team’s agents, if you know them. Comps that answer them rank higher, and each comp says how it stands against them. Both teams can play the same agent, so these don’t limit your picks.</p>
@@ -172,6 +182,7 @@ function Guide() {
           <p>Each map has plays for attack and defense ({plural(PLAYS.filter((p) => !isLowBuy(p.kind)).length, 'play')} in all): hits, splits, fakes, defaults, setups and retakes. A play has a job for each player, like smoking a choke, flashing the entry or watching the flank. The {plural(POOL.length, 'map')} in the pool also have a play for the pistol round and one for an eco on each side ({plural(PLAYS.filter((p) => isLowBuy(p.kind)).length, 'play')}), listed under the others: with little to spend, close fights and playing together make up for what you can’t buy.</p>
           <p>The Planner gives each job to the agent on the team who does it best, and names the abilities they’d use. A play <b>fits well</b>, <b>works</b> or is <b>a stretch</b>, from how good the players are at their jobs; a warning sign marks a job nobody on the team is good at. A play with one of those never fits well, and with two it’s a stretch, so the plays your comp can run in full come first.</p>
           <p>The minimap draws each player’s route in their own color, along the corridors and through the doorways they’d really take. Point at a step, or Tab to it, to bring its route forward. A dashed start is the walk out of spawn, and a ring is a spot to hold.</p>
+          <p>Every minimap zooms and moves: use the plus and minus buttons, the mouse wheel or a double click to zoom, drag it around, or use the keyboard (plus and minus, the arrow keys, and 0 for the whole map). On a map’s page you can choose how big the callout names are, turn the dot at the middle of each callout on or off, and show or hide the ultimate orbs and the doors, walls, teleporters, ziplines and ropes. <b>What’s marked</b> under the map says what each one is.</p>
           <h3>What to buy</h3>
           <dl class="buy-guide">
             {BUY_GUIDE.map((r) => <div key={r.id}><dt>{r.name}</dt><dd>{r.text}</dd></div>)}
@@ -185,7 +196,7 @@ function Guide() {
         </section>
         <section class="panel stack">
           <h2>Where the numbers come from</h2>
-          <p>Playbook knows {plural(AGENTS.length, 'agent')} and {plural(MAPS.length, 'map')}, as of patch {PATCH}. Each agent’s strengths are judged from their kit and how they’re played. Pick rates in ranked come from metabot.gg, and win rates from metabot.gg and winio.ai, across all ranks as of {fmtLongDay(STATS_ON)}. Pro picks come from vlr.gg: Champions 2026 for the maps it played and Masters Santiago 2026 for the rest, {PRO_MAPS_COUNTED} maps in all{dated.length ? `; ${listJoin(dated)} weren’t played at this year’s events, so their numbers are from the year before` : ''}. The map pool is the one since {fmtLongDay(POOL_SINCE)}.</p>
+          <p>Playbook knows {plural(AGENTS.length, 'agent')} and {plural(MAPS.length, 'map')}, as of patch {PATCH}. Each agent’s strengths are judged from their kit and how they’re played. Pick rates in ranked come from metabot.gg, and win rates from metabot.gg and winio.ai, across all ranks as of {fmtLongDay(STATS_ON)}. Win rates on each map, and the rounds each side wins there, come from metabot.gg too ({mapWinDates()}). Pro picks come from vlr.gg: Champions 2026 for the maps it played and Masters Santiago 2026 for the rest, {PRO_MAPS_COUNTED} maps in all{dated.length ? `; ${listJoin(dated)} weren’t played at this year’s events, so their numbers are from the year before` : ''}. The map pool is the one since {fmtLongDay(POOL_SINCE)}.</p>
           {latest.length > 0 && <p>{listJoin(latest)} came out after those events, so pro play doesn’t count for or against {listJoin(latest)} yet, and the pick rate in ranked is from the first days of play (op.gg).</p>}
           {fresh.length > 0 && <p>{listJoin(fresh)} {fresh.length === 1 ? 'is' : 'are'} too new for real numbers, so the scores are early estimates from the kit that was shown. Leave {listJoin(fresh)} out of a question under Options, or out of every new one in <a href="#/settings/includeNew">Settings → Planner</a>.</p>}
           <p>Playbook works offline, so it doesn’t fetch match stats while you use it; a new version brings new numbers.</p>

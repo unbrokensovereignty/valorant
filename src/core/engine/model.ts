@@ -7,12 +7,13 @@
 import { AGENTS, agentById, earlyStats, type Agent } from '../kb/agents.ts';
 import { MAPS, POOL, mapById, parseNeeds, type MapInfo, type Side, type SiteId } from '../kb/maps.ts';
 import { PRO, proKnown, proPick, proRoleMix } from '../kb/pro.ts';
-import { rankOf, type RankId } from '../kb/ranks.ts';
+import { RANKS, rankOf, type RankId } from '../kb/ranks.ts';
 import { DIMS, ROLE_IDS, type Dim, type Role } from '../kb/roles.ts';
 import { PAIRS } from '../kb/synergy.ts';
 import { rulesFor, type ParsedRule } from '../kb/kitfit.ts';
 import { THREATS, type Threat } from '../kb/counters.ts';
-import { BASE, BY_RANK, EXEC, FIT, NEW_WIN_SHARE, PAIR_STEP, PRO_GAMES, PRO_RISE, ROLE_COST, ROLE_MIX, SECOND_CONTROLLER, WIN_CAP, WIN_RANKS } from './weights.ts';
+import { MAP_WINS } from '../kb/mapwins.ts';
+import { BASE, BY_RANK, EXEC, FIT, MAP_WIN, NEW_WIN_SHARE, PAIR_STEP, PRO_GAMES, PRO_RISE, RANK_NEAR, ROLE_COST, ROLE_MIX, SECOND_CONTROLLER, WIN_CAP, WIN_RANKS } from './weights.ts';
 
 export type MapPick = string; // a map id, or 'any'
 export type SidePick = Side | 'both';
@@ -71,7 +72,18 @@ export interface Model {
 
 export interface ThreatAt { threat: Threat; level: number; who: string[] }
 
-const t = (rank: RankId) => rankOf(rank).t;
+/**
+ * The places on the climb (0 Iron to 1 Radiant) whose games a rank's answers take in, each with its
+ * share: the rank's own and its neighbors' (RANK_NEAR).
+ */
+export function rankMix(rank: RankId): readonly (readonly [t: number, share: number])[] {
+  const at = RANKS.findIndex((r) => r.id === rank);
+  const near = [RANKS[at - 1], RANKS[at + 1]].filter((r) => !!r).map((r) => [r.t, RANK_NEAR] as const);
+  return [[rankOf(rank).t, 1 - RANK_NEAR * near.length], ...near];
+}
+
+/** Something that changes with the rank's place on the climb, as a rank's answers count it (rankMix). */
+export const atRank = (rank: RankId, f: (rankT: number) => number): number => rankMix(rank).reduce((acc, [t, w]) => acc + w * f(t), 0);
 
 /**
  * How much of a strength a team at rank `rankT` gets out of an agent, as a share (see EXEC):
@@ -102,8 +114,11 @@ export function needsFor(map: MapInfo, side: Side, sites: readonly SiteId[]): Re
   return out;
 }
 
-/** How much a rank leans on pro play, from PRO_RISE.low at Iron to 1 at Radiant. */
-export const proLean = (rankT: number): number => PRO_RISE.low + (1 - PRO_RISE.low) * rankT ** PRO_RISE.power;
+/** How much a rank leans on pro play, from PRO_RISE.low at Iron to 1 from PRO_RISE.until up. */
+export const proLean = (rankT: number): number => PRO_RISE.low + (1 - PRO_RISE.low) * Math.min(1, rankT / rankOf(PRO_RISE.until).t) ** PRO_RISE.power;
+
+/** How far a team at rank `rankT` plays its smokes together, which two controllers need (SECOND_CONTROLLER). */
+export const togetherAt = (rankT: number): number => Math.min(1, rankT / rankOf(SECOND_CONTROLLER.until).t) ** PRO_RISE.power;
 
 /** How much a map's pro numbers count: less for a small sample or an earlier year's play (PRO_GAMES). */
 export function proShare(map: string): number {
@@ -124,8 +139,39 @@ export function winShare(rankT: number): number {
   return 1 - (1 - radiant) * ((rankT - to) / (1 - to));
 }
 
-/** How far an agent's ranked win rate is from 50%, in points, as far as it counts (WIN_CAP, NEW_WIN_SHARE). */
-export const winEdge = (a: Agent): number => Math.max(-WIN_CAP, Math.min(WIN_CAP, a.win - 50)) * (earlyStats(a) ? NEW_WIN_SHARE : 1);
+/**
+ * How much better (or worse) than usual each agent does on each map in ranked, in points of win
+ * rate, as far as it's more than chance (MAP_WIN): mapWin[map][agent id].
+ */
+const mapWin: Record<string, Record<string, number>> = (() => {
+  // each map's rates moved so its average game is won 50%, as the overall rates are
+  const moved = Object.entries(MAP_WINS).map(([map, m]) => {
+    const rows = Object.entries(m.agents);
+    const games = rows.reduce((t, [, [, n]]) => t + n, 0);
+    const mean = rows.reduce((t, [, [w, n]]) => t + w * n, 0) / games;
+    return [map, rows.map(([id, [w, n]]) => [id, w - mean + 50, n] as const)] as const;
+  });
+  // and each agent's rate across all the maps
+  const all = new Map<string, { won: number; games: number }>();
+  for (const [, rows] of moved) for (const [id, w, n] of rows) {
+    const x = all.get(id) ?? { won: 0, games: 0 };
+    all.set(id, { won: x.won + w * n, games: x.games + n });
+  }
+  return Object.fromEntries(moved.map(([map, rows]) => [map, Object.fromEntries(rows.map(([id, w, n]) => {
+    const x = all.get(id)!;
+    return [id, (w - x.won / x.games) * (n / (n + MAP_WIN.games))];
+  }))]));
+})();
+
+/** How much better (or worse) than usual an agent does on a map in ranked, in points of win rate (0 without numbers). */
+export const mapWinOf = (map: string, id: string): number => mapWin[map]?.[id] ?? 0;
+
+/**
+ * How far an agent's ranked win rate is from 50%, in points, as far as it counts (WIN_CAP,
+ * NEW_WIN_SHARE): on `map`, with how much better or worse than usual they do there.
+ */
+export const winEdge = (a: Agent, map?: string): number =>
+  Math.max(-WIN_CAP, Math.min(WIN_CAP, a.win - 50 + (map ? mapWinOf(map, a.id) : 0))) * (earlyStats(a) ? NEW_WIN_SHARE : 1);
 
 /** The agent fit parts for one map and rank. */
 function agentFit(a: Agent, map: string, rankT: number): { pro: number; rank: number; win: number } {
@@ -134,7 +180,7 @@ function agentFit(a: Agent, map: string, rankT: number): { pro: number; rank: nu
   // and an agent pros haven't had the chance to pick isn't pulled either way by pro play
   const pro = proKnown(a) ? FIT.pro * proLean(rankT) * proCurve(proPick(map, a.id)) * proShare(map) : 0;
   const rank = (1 - rankT) * (FIT.solo * (a.solo - 0.55) - FIT.skill * (a.skill - 0.5));
-  const win = FIT.win * winShare(rankT) * winEdge(a);
+  const win = FIT.win * winShare(rankT) * winEdge(a, map);
   return { pro, rank, win };
 }
 
@@ -230,14 +276,14 @@ export function modelFor(s: Situation): Model {
   if (hit) return hit;
   const maps = s.map === 'any' ? POOL : [mapById(s.map) ?? MAPS[0]!];
   const sides: Side[] = s.side === 'both' ? ['attack', 'defense'] : [s.side];
-  const rankT = t(s.rank);
   const weight = new Float64Array(D), pro = new Float64Array(N), rank = new Float64Array(N), win = new Float64Array(N);
-  const parts = maps.length * sides.length;
   const miss = new Float64Array(N * D);
   const kit: { rule: ParsedRule; gain: number }[][] = AGENTS.map(() => []);
   const threats: ThreatAt[] = [];
-  for (const m of maps) {
+  // each map and side, at the rank and its neighbors (rankMix), each counting for its share
+  for (const [rankT, rankShare] of rankMix(s.rank)) for (const m of maps) {
     for (const side of sides) {
+      const parts = (maps.length * sides.length) / rankShare;
       const one = single(m, side, s.map === 'any' ? [] : s.sites, rankT, s.enemy ?? []);
       for (const x of one.threats) {
         const had = threats.find((y) => y.threat === x.threat);
@@ -264,7 +310,7 @@ export function modelFor(s: Situation): Model {
   const pair = new Float64Array(N * N);
   const index = new Map(AGENTS.map((a) => [a.id, a.index]));
   // how far a team at this rank plays its smokes together: what two controllers need (SECOND_CONTROLLER)
-  const together = Math.min(1, rankT / rankOf(SECOND_CONTROLLER.until).t) ** 2;
+  const together = atRank(s.rank, togetherAt);
   for (const p of PAIRS) {
     const a = index.get(p.a), b = index.get(p.b);
     if (a === undefined || b === undefined) continue;
@@ -278,7 +324,7 @@ export function modelFor(s: Situation): Model {
   // the hard rules for role counts (ROLE_COST), and straying from each map's pro role mix (ROLE_MIX)
   const roleCost = new Float64Array(ROLES_N * 5), want = new Float64Array(ROLES_N), mixCost = new Float64Array(ROLES_N * 5), relaxed = new Float64Array(ROLES_N);
   let mixed = 0;
-  const lean = proLean(rankT);
+  const lean = atRank(s.rank, proLean);
   for (const m of maps) {
     const mix = proRoleMix(m.id, roleOfId), aim = mixAt(mix, together);
     const share = proShare(m.id);

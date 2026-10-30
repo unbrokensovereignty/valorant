@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import type { Page } from '@playwright/test';
-import { expect, open, overlaps, reload, saved, tabTo, test } from './app.ts';
+import { expect, open, overlaps, reload, saved, still, tabTo, test } from './app.ts';
 
 const answers = (page: Page) => page.locator('.answers:not(.stale)');
 const comps = (page: Page) => page.locator('.comps > li');
@@ -9,6 +9,8 @@ const question = (page: Page) => page.getByRole('region', { name: 'Your situatio
 /** Picks a map in the map dialog. */
 async function chooseMap(page: Page, name: string) {
   await page.getByRole('button', { name: /^Map: .*\. Change$/ }).click();
+  // the dialog rises in: a click while it moves can miss its option
+  await still(page);
   await page.getByRole('listbox', { name: 'Maps' }).getByRole('option', { name: new RegExp(`^${name}`) }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
 }
@@ -223,6 +225,34 @@ test('a duo finds its best map: the maps are ranked and each one opens its picks
   // the agents tab ranks every agent for the situation
   await page.getByRole('tab', { name: 'Agents' }).click();
   expect(await page.locator('.agent-row').count()).toBeGreaterThanOrEqual(25);
+  expect(errors).toEqual([]);
+});
+
+test('a team finds the maps to play and to ban, each with why, and each opens its comps', async ({ page, errors }) => {
+  test.setTimeout(90_000);
+  await open(page, 'planner');
+  await chooseMap(page, 'Find the best map');
+  await settledAnswers(page);
+  // with nothing chosen every map fits fully, so there's nothing to pick between
+  await expect(page.locator('[data-tour="map-picks"]')).toHaveCount(0);
+  await chooseAgents(page, 'Agents the team must play', ['Harbor', 'Killjoy']);
+  await settledAnswers(page, 'with Harbor and Killjoy');
+  const picks = page.getByRole('region', { name: 'Maps to play and to ban' });
+  await expect(picks).toBeVisible();
+  const play = picks.locator('.map-picks-col').first().locator('.map-pick'), ban = picks.locator('.map-picks-col.ban .map-pick');
+  await expect(play).toHaveCount(2);
+  expect(await ban.count()).toBeGreaterThanOrEqual(1);
+  for (const li of [...await play.all(), ...await ban.all()]) expect(await li.locator('.map-pick-why li').count()).toBeGreaterThanOrEqual(1);
+  // a map to ban shows the team's best comp there next to the best comp for the map
+  await expect(ban.first().locator('.team-icons')).toHaveCount(2);
+  // choosing a map shows its comps, and the best map in the list is the first to play
+  const options = page.getByRole('listbox', { name: 'Situations, best first' }).getByRole('option');
+  const first = (await play.first().locator('.map-pick-name b').textContent())!;
+  await expect(options.first()).toContainText(first);
+  const name = (await ban.first().locator('.map-pick-name b').textContent())!;
+  await ban.first().locator('.map-pick-head').click();
+  await expect(answers(page).locator('h2.answers-sub')).toHaveText(name);
+  await expect(page.getByRole('listbox', { name: 'Situations, best first' }).getByRole('option', { selected: true })).toContainText(name);
   expect(errors).toEqual([]);
 });
 

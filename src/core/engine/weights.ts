@@ -49,10 +49,21 @@ export const FIT = { pro: 0.07, solo: 0.06, skill: 0.01, win: 0.004 };
 
 /**
  * How the pull toward pro play grows with rank: `low` of the full pull at Iron, rising with the
- * rank's place (0 Iron to 1 Radiant, kb/ranks.ts) to the power `power`, so it stays small through
- * the middle ranks and grows fast from Diamond up. The same goes for each map's pro role mix.
+ * rank's place on the way up to `until` (kb/ranks.ts) to the power `power`, so it stays small through
+ * the middle ranks, grows fast from Diamond up and is full from `until`. The same goes for each map's
+ * pro role mix. `until` is where a second controller stops costing (SECOND_CONTROLLER), so the pros'
+ * role mix and their second controller come in together: when they came in at different ranks, the
+ * best comps at Immortal took the pros' two controllers but kept the sentinel they play without,
+ * a team neither ranked players nor pros play, and ratings jumped there and back.
  */
-export const PRO_RISE = { low: 0.1, power: 2 };
+export const PRO_RISE: { low: number; power: number; until: RankId } = { low: 0.1, power: 2, until: 'immortal' };
+
+/**
+ * Ranked games are played with and against players of the ranks next to yours, so each rank's
+ * answers take in this share of each neighboring rank's (Iron and Radiant, with one neighbor, keep
+ * the rest for themselves). It also keeps a rating from jumping between two ranks and back.
+ */
+export const RANK_NEAR = 0.25;
 
 /**
  * Pro numbers from fewer than this many maps of play pull less, in proportion, but never under
@@ -73,6 +84,15 @@ export const ROLE_MIX = 0.08;
  * and fade in a straight line to `iron` of that at Iron and to `radiant` at Radiant.
  */
 export const WIN_RANKS = { iron: 0.5, from: 0.25, to: 0.625, radiant: 0.2 };
+
+/**
+ * Ranked win rates on each map (kb/mapwins.ts). An agent's rate on a map, moved so the map's average
+ * game is won 50%, counts as far as it differs from their rate across all the maps, and only for the
+ * share games / (games + `games`) of that difference: with fewer games than that, most of it is
+ * chance. (Across the maps, the differences beyond chance come to about a third of a point for the
+ * agents with thousands of games, so it takes this many to trust half of one.)
+ */
+export const MAP_WIN = { games: 15000 };
 
 /** A win rate also says who plays the agent, so only this many points either side of 50% count. */
 export const WIN_CAP = 3;
@@ -122,6 +142,14 @@ export const PLAN_NOTE = { need: 0.8, cover: 0.6, brings: 0.45, most: 3 };
  * gains are said.
  */
 export const BELOW_NOTE = { part: 0.004, most: 3, gains: 2 };
+
+/**
+ * Map pick help (mappick.ts): up to `most` maps to play and `most` to ban, each with up to `why`
+ * reasons. A map is worth banning only when its fit is at least `gap` points below the best map's
+ * (and worth playing only when it's that far above the worst); maps all within `gap` of each other
+ * fit about the same.
+ */
+export const MAP_PICK = { most: 2, why: 2, gap: 3 };
 
 /**
  * How a comp's answers to the other team are told (kb/counters.ts, explain.ts): threats that go at

@@ -66,7 +66,7 @@ export function PlayCard({ f }: { f: FilledPlay }) {
   return (
     <article class="play-card" aria-label={playTitle(f.play)}>
       <div class="play-map">
-        <Minimap map={map.id} routes={f.steps.map((s) => ({ route: s.route }))} focus={focus} onFocus={setFocus} label={`${f.play.name} on the ${map.name} minimap`} />
+        <Minimap map={map.id} zoomable routes={f.steps.map((s) => ({ route: s.route }))} focus={focus} onFocus={setFocus} label={`${f.play.name} on the ${map.name} minimap`} />
       </div>
       <div class="play-body">
         <h3>{playTitle(f.play)}</h3>

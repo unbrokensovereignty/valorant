@@ -17,6 +17,14 @@ export interface VersionNotes { version: string; items: readonly NewThing[] }
 /** Newest first. */
 export const WHATS_NEW: readonly VersionNotes[] = [
   {
+    version: '0.3.0',
+    items: [
+      { icon: 'map', title: 'A better minimap', text: 'Zoom in, drag it around and choose how big the callout names are, with a dot at the middle of each callout. Every callout was checked against the game’s own labels, and the ultimate orbs, doors, walls, teleporters and ziplines can be shown.', page: 'maps/bind' },
+      { icon: 'trophy', title: 'Maps to play and to ban', text: 'A five-stack that asks for its best map sees which maps to play and which to ban, each with why. A five-player party on the Saved page has a button for it.', page: 'saved/parties' },
+      { icon: 'target', title: 'Steadier ratings, win rates by map', text: 'Ratings move steadily between neighboring ranks, and ranked win rates count map by map, as far as they’re more than chance. Each map’s page says which side wins more rounds.', page: 'rankings' },
+    ],
+  },
+  {
     version: '0.2.5',
     items: [
       { icon: 'map', title: 'Kits by map and side', text: 'A kit counts for more or less on each map and side, for the reasons a coach would give, like Hush working Lotus’s doors from range. Each map’s page says how it plays.', page: 'maps/lotus' },

@@ -124,6 +124,31 @@ test('an answer that looks wrong is flagged with a note, kept on the Saved page 
   expect(errors).toEqual([]);
 });
 
+test('a five-player party finds the maps to play and to ban', async ({ page, errors }) => {
+  await open(page, 'saved/parties');
+  await page.getByRole('button', { name: 'Make a party' }).first().click();
+  const dialog = page.getByRole('dialog', { name: 'Make a party' });
+  await dialog.getByRole('textbox', { name: 'Name', exact: true }).fill('Premier team');
+  await dialog.getByRole('group', { name: 'Party size' }).getByRole('button', { name: 'Five-stack' }).click();
+  const pools: string[][] = [['Jett', 'Raze'], ['Omen', 'Brimstone'], ['Sova', 'Skye'], ['Killjoy', 'Cypher'], ['Sage', 'KAY/O']];
+  for (const [i, agents] of pools.entries()) {
+    await dialog.locator('.party-player').nth(i).getByRole('button', { name: /: choose$/ }).click();
+    const picker = page.getByRole('dialog').last();
+    for (const a of agents) await picker.getByRole('button', { name: a, exact: true }).click();
+    await picker.getByRole('button', { name: 'Done' }).click();
+  }
+  await dialog.getByRole('button', { name: 'Make the party' }).click();
+  await page.locator('.party-row').filter({ hasText: 'Premier team' }).getByRole('button', { name: 'Maps to play and ban' }).click();
+  await answered(page);
+  await expect(page.locator('.answers h2').first()).toHaveText('Best maps for you');
+  const picks = page.getByRole('region', { name: 'Maps to play and to ban' });
+  await expect(picks).toBeVisible();
+  await expect(page.getByText('Only agents Premier team plays')).toBeVisible();
+  expect(await picks.locator('.map-pick').count()).toBeGreaterThanOrEqual(2);
+  expect(await a11y(page, '.map-picks')).toEqual([]);
+  expect(errors).toEqual([]);
+});
+
 test('a party plans with the agents each player plays, and says when they can’t make a comp', async ({ page, errors }) => {
   await open(page, 'saved/parties');
   await page.getByRole('button', { name: 'Make a party' }).first().click();
@@ -142,6 +167,8 @@ test('a party plans with the agents each player plays, and says when they can’
   await expect(page.getByRole('dialog')).toHaveCount(0);
   const party = page.locator('.party-row').filter({ hasText: 'Friday trio' });
   await expect(party).toContainText('Trio');
+  // only a five-stack picks and bans maps
+  await expect(party.getByRole('button', { name: 'Maps to play and ban' })).toHaveCount(0);
   await party.getByRole('button', { name: 'Plan' }).click();
   await answered(page);
   await expect(page.getByText('Only agents Friday trio plays')).toBeVisible();

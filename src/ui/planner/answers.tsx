@@ -9,6 +9,7 @@ import { whyBelow } from '../../core/engine/explain.ts';
 import { modelFor, type Situation } from '../../core/engine/model.ts';
 import { teamFit, type AgentAnswer, type SituationAnswer } from '../../core/engine/plan.ts';
 import { asksBest, nothingFixed, partyOf, type Query } from '../../core/engine/query.ts';
+import { asksMapPicks } from '../../core/engine/mappick.ts';
 import { unsureWords } from '../../core/engine/sure.ts';
 import { tierOf } from '../../core/engine/weights.ts';
 import { listJoin } from '../../core/text.ts';
@@ -21,6 +22,7 @@ import { play } from '../sound.ts';
 import { tourOnComp } from '../tours/now.ts';
 import { CompRow, Fit, TeamIcons } from './comp.tsx';
 import { compareComps } from './compare.tsx';
+import { MapPicks } from './mappicks.tsx';
 import { ask, bestOf, run } from './store.ts';
 import { askedLine, askedTitle, edgeWords, partyWord, situationWord } from './words.ts';
 
@@ -56,6 +58,8 @@ export function Answers() {
         </div>
         {r.status === 'working' && <span class="row muted small"><span class="spinner" aria-hidden="true" />Updating</span>}
       </header>
+
+      {asksMapPicks(r.query) && r.status === 'done' && <MapPicks answers={answers} newAgents={r.query.newAgents} onPick={(i) => { setPick(i); setOpen(0); }} />}
 
       {vary.length > 0 && <Situations answers={answers} vary={vary} pick={pick} setPick={(i) => { setPick(i); setOpen(0); }} same={nothingFixed(r.query)} />}
 

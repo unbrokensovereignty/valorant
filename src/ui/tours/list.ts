@@ -118,7 +118,7 @@ const BROWSE: Tour = {
     { target: 'agent-by-rank', side: 'left', title: 'By rank', text: 'The agent’s tier at every rank. Click a rank to plan with the agent there.' },
     { target: 'agent-partners', side: 'left', title: 'Partners', text: 'Who the agent works well with, and who gets in their way.' },
     { page: 'maps', target: 'map-group', side: 'below', title: 'Every map', text: 'The maps in the pool come first, then the rest.' },
-    { page: `maps/${TOUR_MAP}`, target: 'map-minimap', side: 'right', title: 'Callouts', text: 'The minimap with its callouts. Turn them off to test yourself.' },
+    { page: `maps/${TOUR_MAP}`, target: 'map-minimap', side: 'right', title: 'Callouts', text: 'The minimap with its callouts. Zoom in, drag it around, show the ultimate orbs and doors, or turn the callouts off to test yourself.' },
     { target: 'map-wins', side: 'left', title: 'What wins here', text: 'What the map asks for on each side, and how many controllers pro teams run on it.' },
     { target: 'map-best', side: 'above', title: 'Best comps and plays', text: 'Below are tips for the side you pick, the best comps at your usual rank, and set plays to run with them.' },
   ],

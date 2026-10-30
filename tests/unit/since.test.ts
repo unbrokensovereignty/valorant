@@ -41,7 +41,7 @@ test('since.gen.ts covers every situation Rankings shows, and every mark reads',
       if (!AGENTS.some((a) => a.id === id)) problems.push(`${k}: no agent "${id}"`);
       if (!tiers.includes(from!)) problems.push(`${k} ${id}: no tier "${from}"`);
       // one change, two of them, another agent's numbers, or several
-      if (!/^([kcmnw]{1,2}|n[+-][a-z]+|\+)$/.test(why!)) problems.push(`${k} ${id}: can't read why "${why}"`);
+      if (!/^([rpkn]{1,2}|n[+-][a-z]+|\+)$/.test(why!)) problems.push(`${k} ${id}: can't read why "${why}"`);
       const other = /^n[+-]([a-z]+)$/.exec(why!)?.[1];
       if (other && !REVIEWED[other]) problems.push(`${k} ${id}: ${other}’s numbers didn’t change, says REVIEWED`);
     }
@@ -77,26 +77,17 @@ test('every move says why, in a sentence that fits the move', () => {
   none(problems);
 });
 
-test('the big moves since 0.2.0 say what a coach would', () => {
+test('the big moves since 0.2.5 say what a coach would', () => {
   const why = (map: string, side: SidePick, rank: RankId, id: string) => {
     const s: Situation = { map, side, rank, sites: [] };
     const a = answerOf(s).agents.find((x) => x.id === id)!;
     return sinceOf(s, a);
   };
-  // Lotus at Platinum: one controller now, so Viper drops as a second one and a duelist takes the place
-  const viper = why('lotus', 'attack', 'platinum', 'viper');
-  assert.ok(viper && !viper.up, 'Viper drops on Lotus attack at Platinum');
-  assert.match(viper.why, /second controller/);
-  // Hush works Lotus's doors from range
-  const hush = why('lotus', 'attack', 'platinum', 'hush');
-  assert.ok(hush?.up, 'Hush rises on Lotus attack at Platinum');
-  assert.match(hush.why, /Telekinesis/);
-  // Brimstone's smokes don't reach across Breeze
-  const brim = why('breeze', 'both', 'gold', 'brimstone');
-  assert.ok(brim && !brim.up, 'Brimstone drops on Breeze at Gold');
-  assert.match(brim.why, /Sky Smoke/);
-  // sentinels where pros mostly play without one no longer drop to the bottom on defense
-  const chamber = why('split', 'defense', 'immortal', 'chamber');
-  assert.ok(chamber?.up, 'Chamber rises on Split defense at Immortal');
-  assert.match(chamber.why, /role mix/);
+  // Bind at Immortal: the pros' two controllers and two duelists come in together, so Hush, Yoru
+  // and Raze no longer drop there between Ascendant and Radiant
+  for (const id of ['hush', 'yoru', 'raze']) {
+    const m = why('bind', 'both', 'immortal', id);
+    assert.ok(m?.up, `${id} rises on Bind at Immortal`);
+    assert.match(m.why, /role mix pro teams play on Bind/);
+  }
 });

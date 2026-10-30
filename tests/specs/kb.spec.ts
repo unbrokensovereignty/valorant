@@ -3,6 +3,7 @@ import { AGENTS, agentById, isNew, parseCaps } from '../../src/core/kb/agents.ts
 import { kitOf, abilityOn, abilityNames, plainText, textParts } from '../../src/core/kb/kits.ts';
 import { MAPS, MECHANICS, POOL, mapById, parseNeeds, calloutLabel } from '../../src/core/kb/maps.ts';
 import { hasFloor, onFloor, walk, type Spot } from '../../src/core/kb/floor.ts';
+import { FEATURES, FEATURE_KINDS } from '../../src/core/kb/features.ts';
 import { PLAYS } from '../../src/core/kb/plays.ts';
 import { AGENT_MAP_TIPS, MAP_TIPS } from '../../src/core/kb/tips.ts';
 import { PRO, PRO_MAPS_COUNTED, RECORDED, proKnown, proOverall, proPick, proRoleMix } from '../../src/core/kb/pro.ts';
@@ -10,6 +11,7 @@ import { PAIRS, pairOf } from '../../src/core/kb/synergy.ts';
 import { RANKS } from '../../src/core/kb/ranks.ts';
 import { DIMS, DIM_INFO, ROLE_IDS } from '../../src/core/kb/roles.ts';
 import { NEW_AGENTS } from '../../src/core/kb/new-agents.ts';
+import { MAP_WINS, sideShare } from '../../src/core/kb/mapwins.ts';
 import { inUse } from '../../src/core/settings.ts';
 
 describe('agents', () => {
@@ -120,6 +122,23 @@ describe('maps', () => {
       for (const c of m.callouts) ok(onFloor(m.id, [c.x, c.y]), `${m.name}: ${c.name} is on the floor, not in a wall`);
     }
   });
+  spec('every orb and feature on a minimap stands on the floor, and each map’s doors, teleporters and the rest are marked', () => {
+    const kindOf: Record<string, string> = { doors: 'door', teleporters: 'teleporter', ropes: 'rope', ziplines: 'zipline', breakable: 'breakable' };
+    for (const [id, fs] of Object.entries(FEATURES)) {
+      const m = mapById(id);
+      ok(!!m, `${id} is a map`);
+      for (const f of fs) {
+        ok(FEATURE_KINDS.some((k) => k.kind === f.kind), `${id}: ${f.kind} is a kind the legend knows`);
+        ok(f.about.length > 10 && !f.about.endsWith('.'), `${id}: “${f.about}” says what it is, without a full stop`);
+        if (f.to) ok(f.kind === 'teleporter' || f.kind === 'zipline' || f.kind === 'rope', `${id}: only teleporters, ziplines and ropes have two ends`);
+        if (f.kind === 'teleporter' || f.kind === 'zipline') ok(!!f.to, `${id}: a ${f.kind} has two ends`);
+        for (const s of [f.at, ...(f.to ? [f.to] : [])]) ok(onFloor(id, s), `${id}: ${f.about} is on the floor`);
+      }
+      const orbs = fs.filter((f) => f.kind === 'orb').length;
+      ok(orbs === 0 || orbs === (id === 'fracture' ? 4 : 2), `${id}: two ultimate orbs (four on Fracture), or none marked`);
+    }
+    for (const m of MAPS) for (const x of m.mechanics ?? []) ok((FEATURES[m.id] ?? []).some((f) => f.kind === kindOf[x.id]), `${m.name}: its ${x.id} are marked on the minimap`);
+  });
   spec('every route in a play keeps to the floor, and goes no long way round', () => {
     const length = (ps: readonly Spot[]) => ps.slice(1).reduce((t, q, k) => t + Math.hypot(q[0] - ps[k]![0], q[1] - ps[k]![1]), 0);
     for (const p of PLAYS) {
@@ -216,6 +235,23 @@ describe('pro play', () => {
       ok(Number.isInteger(r.maps) && Number.isInteger(r.won) && r.won >= 0 && r.won <= r.maps && r.maps >= 1, `${r.agents.join(', ')}: ${r.won} of ${r.maps}`);
       ok(r.event.length > 0);
     }
+  });
+});
+
+describe('ranked play by map', () => {
+  spec('every map’s numbers are for a known map and known agents, with sensible rates and games', () => {
+    for (const [map, m] of Object.entries(MAP_WINS)) {
+      ok(mapById(map), `${map} is a map`);
+      ok(/^\d{4}-\d{2}-\d{2}$/.test(m.on), `${map} has a date`);
+      ok(m.attack > 40 && m.attack < 60 && m.defense > 40 && m.defense < 60, `${map}’s sides are near even`);
+      eq(Math.round((sideShare(map, 'attack')! + sideShare(map, 'defense')!) * 1e9) / 1e9, 1);
+      ok(Object.keys(m.agents).length >= 25, `${map} has most agents`);
+      for (const [id, [win, games]] of Object.entries(m.agents)) {
+        ok(agentById(id), `${id} on ${map} is an agent`);
+        ok(win >= 0 && win <= 100 && Number.isInteger(games) && games > 0, `${id} on ${map}: ${win}% of ${games}`);
+      }
+    }
+    eq(sideShare('icebox', 'attack'), undefined);
   });
 });
 

@@ -8,7 +8,7 @@ import { solve } from '../../src/core/engine/plan.ts';
 import { newQuery } from '../../src/core/engine/query.ts';
 import { explainTeam } from '../../src/core/engine/explain.ts';
 import { modelFor } from '../../src/core/engine/model.ts';
-import type { RankId } from '../../src/core/kb/ranks.ts';
+import { RANK_IDS, type RankId } from '../../src/core/kb/ranks.ts';
 import { TIERS } from '../../src/core/engine/weights.ts';
 import { agentById } from '../../src/core/kb/agents.ts';
 import { abilityNames } from '../../src/core/kb/kits.ts';
@@ -203,5 +203,36 @@ test('a duo or trio is shown with the best agents for its random teammates, arou
       if (controllers(c.team) !== 1) problems.push(`${include.map(name).join(' and ')} on ${m.name} at ${rank}: ${c.team.map(name).join(', ')}`);
     }
   }
+  none(problems);
+});
+
+test('a rating moves steadily from rank to rank, without jumping away and back', () => {
+  // A coach's advice changes gradually as you climb: an agent who fits well at Ascendant and at
+  // Radiant shouldn't drop two tiers at Immortal in between. Each rank's answers take in some of the
+  // games at the ranks next to it (RANK_NEAR), and pro teams' role mix comes in at the same rank as
+  // their second controller (PRO_RISE), so the best comps change shape once on the way up.
+  const problems: string[] = [];
+  const order = TIERS.map((t) => t.id);
+  let wobbles = 0;
+  for (const map of ['any', ...MAPS.map((m) => m.id)]) {
+    for (const side of ['attack', 'defense', 'both'] as const) {
+      const byAgent = new Map<string, { fit: number; tier: string }[]>();
+      for (const rank of RANK_IDS) for (const x of answer(map, side, rank).agents) byAgent.set(x.id, [...(byAgent.get(x.id) ?? []), x]);
+      for (const [id, path] of byAgent) {
+        for (let i = 1; i + 1 < path.length; i++) {
+          const [a, b, c] = [path[i - 1]!, path[i]!, path[i + 1]!];
+          const down = a.fit - b.fit, up = c.fit - b.fit;
+          if (Math.sign(down) !== Math.sign(up) || Math.min(Math.abs(down), Math.abs(up)) < 8) continue;
+          wobbles++;
+          // never more than a big step away and back, nor two tiers away and back
+          if (Math.min(Math.abs(down), Math.abs(up)) >= 12.5 || Math.min(Math.abs(order.indexOf(a.tier) - order.indexOf(b.tier)), Math.abs(order.indexOf(c.tier) - order.indexOf(b.tier))) >= 2) {
+            problems.push(`${name(id)} on ${map} ${side}: ${path.map((x) => x.fit.toFixed(0)).join(' ')} (at ${RANK_IDS[i]})`);
+          }
+        }
+      }
+    }
+  }
+  // and only a handful of smaller ones, where the best comps change shape
+  if (wobbles > 6) problems.push(`${wobbles} ratings step away by 8 or more and back`);
   none(problems);
 });
