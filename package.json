@@ -15,7 +15,9 @@
     "e2e": "npm run build && playwright test",
     "check": "npm run typecheck && npm run lint && npm test && npm run build",
     "art": "node tools/prepare-art.mjs",
-    "fetch-art": "node tools/fetch-art.mjs"
+    "fetch-art": "node tools/fetch-art.mjs",
+    "map-editor": "node --experimental-strip-types --disable-warning=ExperimentalWarning tools/map-editor.mjs",
+    "map-edits": "node --experimental-strip-types --disable-warning=ExperimentalWarning tools/map-edits.mjs"
   },
   "dependencies": {
     "@preact/signals": "^2.11.2",
