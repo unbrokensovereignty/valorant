@@ -12,14 +12,15 @@ import { modelFor } from '../../core/engine/model.ts';
 import type { CompAnswer, SituationAnswer } from '../../core/engine/plan.ts';
 import { playsFor, type FilledPlay } from '../../core/engine/plays.ts';
 import { partyOf, type PartySize, type Query } from '../../core/engine/query.ts';
-import { summaryText } from '../../core/engine/summary.ts';
+import { fitWords, summaryText } from '../../core/engine/summary.ts';
 import { tipsFor } from '../../core/engine/tips.ts';
 import { listJoin } from '../../core/text.ts';
 import { articleOf, capitalize } from '../../core/util.ts';
 import { AgentIcon } from '../art.tsx';
-import { Bar, Button, Tabs } from '../components/controls.tsx';
+import { Bar, Button, IconButton, Tabs } from '../components/controls.tsx';
 import { prompt } from '../components/overlays.tsx';
 import { copyWithToast, printSheet } from '../files.ts';
+import { flagAnswer } from '../flags.ts';
 import { Icon } from '../icons.tsx';
 import { data, go, safely, toast, useSettings } from '../state.ts';
 import { play } from '../sound.ts';
@@ -119,6 +120,11 @@ export function CompDetail({ c, i, ans, q, saveable = true, plan, onCompare }: {
     };
   };
   const copy = () => void copyWithToast(summaryText(parts()), 'Copied the plan.');
+  // the question as it stands for this situation, as a saved plan keeps it
+  const flag = () => void flagAnswer({
+    query: { ...q, map: s.map, side: s.side, rank: s.rank, sites: [...s.sites] }, team: c.team, agent: '',
+    shown: `${fitWords(c)}, tier ${c.tier}${saveable ? `, number ${i + 1} of ${ans.comps.length}` : ''}`,
+  }, 'this comp');
   const print = () => void printSheet(<PlanSheet p={parts()} />);
   return (
     <>
@@ -129,6 +135,7 @@ export function CompDetail({ c, i, ans, q, saveable = true, plan, onCompare }: {
           <Button size="sm" icon="print" onClick={print}>Print</Button>
           {onCompare && <Button size="sm" icon="columns" onClick={onCompare}>Compare</Button>}
           {saveable && <Button size="sm" icon="bookmark" kind="soft" onClick={() => void save()}>Save plan</Button>}
+          <IconButton icon="flag" label="This looks wrong" size="sm" onClick={flag} />
         </div>
       </div>
       {tab === 'why' && <>

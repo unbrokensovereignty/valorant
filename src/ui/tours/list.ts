@@ -128,7 +128,7 @@ const SAVED: Tour = {
   id: 'saved', name: 'Saved and settings', group: 'pages', page: 'saved',
   blurb: 'Saved plans, parties, and making Playbook yours.',
   steps: [
-    { target: 'saved-tabs', side: 'below', title: 'Plans and parties', text: 'A saved plan keeps its comp, plays and tips, and a note of your own, like who plays what.' },
+    { target: 'saved-tabs', side: 'below', title: 'Plans, parties and flags', text: 'A saved plan keeps its comp, plays and tips, and a note of your own, like who plays what. Flagged keeps the answers you marked as looking wrong, with why.' },
     { page: 'saved/parties', target: 'party-make', side: 'below', title: 'Your party', text: 'Save the people you queue with and the agents each of you plays. Plans for the party then give each player one of their own agents.' },
     { page: 'settings', target: 'settings-section-you', side: 'left', title: 'You', text: 'Your rank, how you queue and the agents you play. The Planner and Rankings start from here.' },
     { target: 'settings-section-planner', side: 'left', title: 'The Planner', text: 'How many comps to show, and whether fits show as numbers.' },

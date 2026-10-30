@@ -13,6 +13,7 @@ import { tierOf } from '../../core/engine/weights.ts';
 import { listJoin } from '../../core/text.ts';
 import { AgentIcon, MapThumb, RoleIcon } from '../art.tsx';
 import { Button, Empty, Segmented, Tabs } from '../components/controls.tsx';
+import { flagAnswer } from '../flags.ts';
 import { Icon } from '../icons.tsx';
 import { go, useView } from '../state.ts';
 import { play } from '../sound.ts';
@@ -72,7 +73,11 @@ export function Answers() {
         </ol>
       ) : (
         <AgentList agents={ans.agents} plan={(id) => ask({ include: [...new Set([...r.query.include, id])].slice(0, r.query.party) }, true)}
-          versus={r.query.party === 5 ? { ans, newAgents: r.query.newAgents } : undefined} />
+          versus={r.query.party === 5 ? { ans, newAgents: r.query.newAgents } : undefined}
+          flag={(a, k) => {
+            const s = ans.situation;
+            void flagAnswer({ query: { ...r.query, map: s.map, side: s.side, rank: s.rank, sites: [...s.sites] }, team: [], agent: a.id, shown: `Fit ${Math.round(a.fit)}, tier ${a.tier}, number ${k} of ${ans.agents.length}` }, `${agentById(a.id)?.name ?? a.id}’s rating`);
+          }} />
       )}
     </div>
   );
@@ -120,8 +125,9 @@ function Situations({ answers, vary, pick, setPick, same }: { answers: readonly 
 /**
  * Agents ranked for the situation, with a role filter; each opens to the best comp it fits into
  * and, given the situation's answer (`versus`, for a five-stack), why that comp ranks below the best.
+ * With `flag`, an agent whose rating looks wrong can be flagged.
  */
-export function AgentList({ agents, plan, versus }: { agents: readonly AgentAnswer[]; plan?: (id: string) => void; versus?: { ans: SituationAnswer; newAgents: boolean } }) {
+export function AgentList({ agents, plan, versus, flag }: { agents: readonly AgentAnswer[]; plan?: (id: string) => void; versus?: { ans: SituationAnswer; newAgents: boolean }; flag?: (a: AgentAnswer, rank: number) => void }) {
   const [role, setRole] = useView<Role | 'all'>('planner.role', 'all', (v) => v === 'all' || ROLES.some((r) => r.id === v));
   const [open, setOpen] = useState('');
   const shown = agents.filter((a) => role === 'all' || agentById(a.id)?.role === role);
@@ -148,6 +154,7 @@ export function AgentList({ agents, plan, versus }: { agents: readonly AgentAnsw
                   <div class="row wrap">
                     {plan && <Button size="sm" kind="soft" icon="planner" onClick={() => plan(a.id)}>Plan with {ag.name}</Button>}
                     <Button size="sm" kind="quiet" iconRight="arrow-right" onClick={() => go('agents', a.id)}>About {ag.name}</Button>
+                    {flag && <Button size="sm" kind="quiet" icon="flag" onClick={() => flag(a, agents.indexOf(a) + 1)}>This looks wrong</Button>}
                   </div>
                 </div>
               )}

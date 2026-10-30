@@ -136,7 +136,7 @@ function Guide() {
           <li><b>Ask a question</b> on the Planner: a map, your side, your rank and who you’re queuing with. Leave any of them open, or ask for the best one.</li>
           <li><b>Read the answers:</b> the comps that fit best, each with how it wins, its pros and cons, the plays it can run on the map, and tips. Under Agents, open any agent to see why their best comp ranks below the best one.</li>
           <li><b>Look things up</b> on Rankings (tier lists of agents and comps), Agents (kits, strengths and partners) and Maps (sites, callouts and plays).</li>
-          <li><b>Save</b> a plan you like, and your usual party with the agents each of you plays, so they’re a click away next time.</li>
+          <li><b>Save</b> a plan you like (or copy or print it), and your usual party with the agents each of you plays, so they’re a click away next time.</li>
         </ol>
         <p>Playbook starts from how you play: your rank, how you queue and the agents you play. It asks when you first open it, and you can change any of it in <a href="#/settings/you">Settings → You</a>. Every plan then gives you one of your agents, Rankings marks them with a star, and Home shows how each fits at your rank.</p>
         <p class="muted">Rather be shown? <a href="#/help/tours">Tours</a> walk you through each page on the real screens.</p>
@@ -174,6 +174,12 @@ function Guide() {
           </dl>
         </section>
         <section class="panel stack">
+          <h2>Using an answer</h2>
+          <p><b>Copy</b> on a comp puts the plan into words you can paste into a chat with your team, and <b>Print</b> puts it on one sheet of paper: each agent with their tip, how the comp wins, its pros and cons, the play you chose on its Plays tab drawn on the minimap (one for each side when the plan is for both), and the other tips. A saved plan prints with its name and note.</p>
+          <p><b>Compare</b> sets a comp beside any other the Planner found for a five-stack: their fits, how each wins, their best plays, how well each covers what the situation needs, and where the lower one falls short or does better.</p>
+          <p>When a comp or an agent’s rating looks wrong to you, the flag beside it (<b>This looks wrong</b>) keeps a short note of why, with the question and what Playbook showed. Your notes are on the Saved page under Flagged, ready to copy, and go into backups, so they can be checked and fixed.</p>
+        </section>
+        <section class="panel stack">
           <h2>Where the numbers come from</h2>
           <p>Playbook knows {plural(AGENTS.length, 'agent')} and {plural(MAPS.length, 'map')}, as of patch {PATCH}. Each agent’s strengths are judged from their kit and how they’re played. Pick rates in ranked come from metabot.gg, and win rates from metabot.gg and winio.ai, across all ranks as of {fmtLongDay(STATS_ON)}. Pro picks come from vlr.gg: Champions 2026 for the maps it played and Masters Santiago 2026 for the rest, {PRO_MAPS_COUNTED} maps in all{dated.length ? `; ${listJoin(dated)} weren’t played at this year’s events, so their numbers are from the year before` : ''}. The map pool is the one since {fmtLongDay(POOL_SINCE)}.</p>
           {latest.length > 0 && <p>{listJoin(latest)} came out after those events, so pro play doesn’t count for or against {listJoin(latest)} yet, and the pick rate in ranked is from the first days of play (op.gg).</p>}
@@ -183,7 +189,7 @@ function Guide() {
         <section class="panel stack">
           <h2>Your data</h2>
           <p>Everything stays on this computer, in this browser. Nothing is sent anywhere. Back up from <a href="#/settings/data">Settings → Your data</a> to move to another computer or keep a copy safe.</p>
-          <p><b>Copy</b> on a comp puts the plan into words you can paste into a chat with your team, and <b>Print</b> puts it on one sheet of paper: each agent with their tip, how the comp wins, its pros and cons, the play you chose on its Plays tab drawn on the minimap (one for each side when the plan is for both), and the other tips. A saved plan prints with its name and note. <b>Compare</b> sets a comp beside any other the Planner found for a five-stack: their fits, how each wins, their best plays, how well each covers what the situation needs, and where the lower one falls short or does better. Almost anything can be undone with Ctrl Z. With Playbook open in two tabs, only one saves; the other follows it.</p>
+          <p>Almost anything can be undone with Ctrl Z. With Playbook open in two tabs, only one saves; the other follows it.</p>
         </section>
       </div>
     </div>
@@ -209,7 +215,7 @@ function About() {
           <dt>Version</dt><dd>{__APP_VERSION__}</dd>
           <dt>Game data</dt><dd>Patch {PATCH}</dd>
           <dt>Saving to</dt><dd>{storage}{tabRole.value === 'reader' ? ' (read-only in this tab)' : ''}</dd>
-          <dt>Stored</dt><dd>{plural(r.plans().length, 'saved plan')} · {plural(r.parties().length, 'party', 'parties')} · {plural(r.themes().length, 'theme')} of your own</dd>
+          <dt>Stored</dt><dd>{plural(r.plans().length, 'saved plan')} · {plural(r.parties().length, 'party', 'parties')} · {plural(r.flags().length, 'flagged answer')} · {plural(r.themes().length, 'theme')} of your own</dd>
         </dl>
         <div class="row wrap">
           <Button icon="sparkle" onClick={() => void openWhatsNew()}>What’s new</Button>

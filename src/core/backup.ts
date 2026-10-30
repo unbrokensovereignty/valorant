@@ -1,9 +1,9 @@
 /**
- * Backup files: everything you've saved (settings, themes, plans and parties) as one JSON file,
+ * Backup files: everything you've saved (settings, themes, plans, parties and flags) as one JSON file,
  * and reading one back. Whatever a file holds goes through the same sanitizers as stored data,
  * so a damaged or hand-edited file can't break anything.
  */
-import { sanitizeParty, sanitizePlan, type Party, type SavedPlan } from './saved.ts';
+import { sanitizeFlags, sanitizeParty, sanitizePlan, type Flag, type Party, type SavedPlan } from './saved.ts';
 import { sanitizeSettings, type Settings } from './settings.ts';
 import { MAX_THEMES, sanitizeTheme, type ThemePicks } from './theme.ts';
 import { isRecord } from './util.ts';
@@ -13,6 +13,7 @@ export interface BackupData {
   themes: ThemePicks[];
   plans: SavedPlan[];
   parties: Party[];
+  flags: Flag[];
 }
 
 /** What the file says it is. */
@@ -20,7 +21,7 @@ export const BACKUP_KIND = 'playbook-backup';
 /** The file layout's own number (not the app's version): raised only if the layout ever changes. */
 export const BACKUP_FORMAT = 1;
 
-export const emptyBackup = (): BackupData => ({ settings: {}, themes: [], plans: [], parties: [] });
+export const emptyBackup = (): BackupData => ({ settings: {}, themes: [], plans: [], parties: [], flags: [] });
 
 export function backupText(d: BackupData, appVersion: string, now = new Date()): string {
   return JSON.stringify({ kind: BACKUP_KIND, format: BACKUP_FORMAT, app: appVersion, saved: now.toISOString(), ...d }, null, 1);
@@ -45,11 +46,12 @@ export function readBackup(text: string): ReadResult {
       themes: unique(list(x.themes, sanitizeTheme).filter((t) => !!t.id)).slice(0, MAX_THEMES),
       plans: unique(list(x.plans, (p) => sanitizePlan(p))),
       parties: unique(list(x.parties, (p) => sanitizeParty(p))),
+      flags: sanitizeFlags(x.flags),
     },
   };
 }
 
-/** A backup merged into what's here: the newer of two copies of a plan or party wins, and settings from the backup fill in. */
+/** A backup merged into what's here: the newer of two copies of a plan or party wins, flags from both are kept, and settings from the backup fill in. */
 export function mergeBackup(here: BackupData, from: BackupData): BackupData {
   const merge = <T extends { id: string; updated: number }>(a: T[], b: T[]): T[] => {
     const out = new Map(a.map((x) => [x.id, x]));
@@ -58,10 +60,10 @@ export function mergeBackup(here: BackupData, from: BackupData): BackupData {
   };
   const themes = new Map(here.themes.map((t) => [t.id, t]));
   for (const t of from.themes) if (!themes.has(t.id) && themes.size < MAX_THEMES) themes.set(t.id, t);
-  return { settings: { ...from.settings, ...here.settings }, themes: [...themes.values()], plans: merge(here.plans, from.plans), parties: merge(here.parties, from.parties) };
+  return { settings: { ...from.settings, ...here.settings }, themes: [...themes.values()], plans: merge(here.plans, from.plans), parties: merge(here.parties, from.parties), flags: sanitizeFlags([...here.flags, ...from.flags]) };
 }
 
-/** How much a backup holds, in words: "4 plans, 1 party and 2 themes". */
-export function countsOf(d: BackupData): { plans: number; parties: number; themes: number } {
-  return { plans: d.plans.length, parties: d.parties.length, themes: d.themes.length };
+/** How much a backup holds. */
+export function countsOf(d: BackupData): { plans: number; parties: number; themes: number; flags: number } {
+  return { plans: d.plans.length, parties: d.parties.length, themes: d.themes.length, flags: d.flags.length };
 }
