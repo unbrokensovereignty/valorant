@@ -32,6 +32,7 @@ npx playwright test # browser tests on the built file, light and dark (build fir
 node tools/build.mjs --preview --out <file>   # a build that keeps its data apart from the real app's
 npm run fetch-art -- <folder> && npm run art -- <folder>   # refresh agents, abilities, maps and art from the game's content
 node --experimental-strip-types tools/since.mjs <commit>    # the tiers that moved since the release at <commit>, and why
+node --experimental-strip-types tools/patch.mjs [<commit>]  # after refreshing the game's content: what changed since a release, as a checklist
 ```
 
 In a cloud container, Chromium is usually preinstalled: don't run `playwright install` there. If Playwright can't find its browser, point it at the one that's there with `PW_CHROMIUM=/opt/pw-browsers/chromium npx playwright test`.
