@@ -27,13 +27,15 @@ export const SPACE_INFO: Record<Space, { name: string; blurb: string }> = {
 };
 
 /** Things on a map that change how a round is played, and that some kits use (kb/kitfit.ts). */
-export type Mechanic = 'doors' | 'teleporters' | 'ropes' | 'ziplines' | 'breakable';
+export type Mechanic = 'doors' | 'autodoors' | 'teleporters' | 'ropes' | 'ziplines' | 'breakable' | 'walls';
 export const MECHANICS: Record<Mechanic, { name: string; blurb: string }> = {
   doors: { name: 'Doors', blurb: 'Doors worked by a switch, which open, shut or turn and can be heard across the map.' },
+  autodoors: { name: 'Automatic doors', blurb: 'Doors that open by themselves, loudly, for anyone who comes near, so a push through them is heard.' },
   teleporters: { name: 'Teleporters', blurb: 'One-way teleporters that move a player between sites in a moment, with a sound both teams hear.' },
   ropes: { name: 'Ropes', blurb: 'Ropes up to high ground, which a player climbs slowly and in the open.' },
   ziplines: { name: 'Ziplines', blurb: 'Ziplines that carry a player across a gap; the player can shoot while riding.' },
-  breakable: { name: 'Breakable walls', blurb: 'Walls or doors that can be shot or blown open, which opens a new way in for the rest of the round.' },
+  breakable: { name: 'Breakable walls', blurb: 'Walls, doors, panels or glass that can be shot or blown open, which opens a new way in or a new line to shoot through for the rest of the round.' },
+  walls: { name: 'Droppable walls', blurb: 'Walls that drop when their switch is shot, which shuts a way through for the rest of the round.' },
 };
 
 export interface SiteDef {
@@ -79,6 +81,7 @@ export const POOL_SINCE = '2026-10-13';
 const DEFS: readonly MapDef[] = [
   {
     id: 'abyss', name: 'Abyss', pool: true, space: 'open',
+    mechanics: [{ id: 'breakable', about: 'Both ends of A Vent are shut by doors that stop bullets until they’re broken, which opens the vent between mid and A Tower for the rest of the round.' }],
     about: 'An open map with no walls at its edges: fall off and you die. Long sightlines, a contested mid and two wide sites.',
     keys: 'Information and long walls. Pros run Sova with two controllers, often Harbor and Astra.',
     needs: { both: 'wall +.6; smoke +.15; recon +.35; mobility +.1; angles +.4', attack: 'entry +.1', defense: 'anchor +.1; retake +.1' },
@@ -90,7 +93,7 @@ const DEFS: readonly MapDef[] = [
   },
   {
     id: 'ascent', name: 'Ascent', pool: false, space: 'mixed',
-    mechanics: [{ id: 'doors', about: 'Each site has a door that a switch shuts or opens, so one way onto that site can be closed for a while.' }],
+    mechanics: [{ id: 'doors', about: 'Each site has a door that a switch shuts or opens, so one way onto that site can be closed for a while.' }, { id: 'breakable', about: 'Panels on the two walls between Mid Courtyard and Mid Link stop bullets until broken, and the glass in A Window breaks at the first shot.' }],
     about: 'A classic two-site map won in mid: control Market and Catwalk and both sites open up. Doors on each site can be shut.',
     keys: 'Mid control with information and an Operator: pros always play Omen and Sova, often with Chamber.',
     needs: { both: 'recon +.3; smoke +.1; duel +.15; angles +.4', attack: 'flash +.1', defense: 'anchor +.2; retake +.1; angles +.2' },
@@ -116,7 +119,7 @@ const DEFS: readonly MapDef[] = [
   },
   {
     id: 'breeze', name: 'Breeze', pool: false, space: 'open',
-    mechanics: [{ id: 'breakable', about: 'Mid Wood Doors can be shot open, which opens a quicker way through mid.' }],
+    mechanics: [{ id: 'autodoors', about: 'A door at the mid end of Mid Hall opens by itself, loudly, for anyone or anything that comes near, from either side.' }],
     about: 'A huge, open map with very long sightlines and wide sites. Crossing open ground is the whole fight.',
     keys: 'Long walls and an Operator: Viper is close to a must, with Sova for information.',
     needs: { both: 'wall +1; smoke +.15; duel +.3; recon +.25; mobility +.2; flank +.1; angles +.6', defense: 'anchor +.15' },
@@ -140,7 +143,7 @@ const DEFS: readonly MapDef[] = [
   },
   {
     id: 'fracture', name: 'Fracture', pool: false, space: 'mixed',
-    mechanics: [{ id: 'ziplines', about: 'A zipline joins the two attacker sides across the map, so attackers can switch ends quickly.' }],
+    mechanics: [{ id: 'ziplines', about: 'Two one-way ziplines under Defender Side Spawn join the two attacker sides, so attackers can switch ends quickly.' }, { id: 'autodoors', about: 'A Door, between A Hall and A Main, opens by itself, loudly, when anyone comes near.' }],
     about: 'Attackers spawn on both ends and can hit a site from two sides at once; defenders start in the middle.',
     keys: 'Stuns and flank watch: Breach, Brimstone and a sentinel who covers the back.',
     needs: { both: 'flank +.35; disrupt +.25; clear +.15; smoke +.1; mobility +.15; angles -.3', defense: 'stall +.2; retake +.15; recon +.15; flank +.2' },
@@ -165,7 +168,7 @@ const DEFS: readonly MapDef[] = [
   },
   {
     id: 'icebox', name: 'Icebox', pool: false, space: 'mixed',
-    mechanics: [{ id: 'ziplines', about: 'Ziplines on both sites let players reach high spots fast.' }],
+    mechanics: [{ id: 'ziplines', about: 'A zipline crosses A Site from A Nest, so players reach the far side of the site fast.' }],
     about: 'Vertical sites full of boxes and ziplines, with long open lanes into each site.',
     keys: 'Long walls and an Operator, with information to clear the many high spots.',
     needs: { both: 'wall +.8; recon +.25; duel +.2; clear +.15; angles +.4', attack: 'postplant +.2', defense: 'anchor +.15' },
@@ -202,7 +205,7 @@ const DEFS: readonly MapDef[] = [
   },
   {
     id: 'split', name: 'Split', pool: false, space: 'tight',
-    mechanics: [{ id: 'ropes', about: 'Ropes lead up to high ground on each site (A Tower and B Tower, both called Heaven), which defenders use to hold from above.' }],
+    mechanics: [{ id: 'ropes', about: 'Ropes lead from mid up into Mid Vent and on toward A Tower (Heaven), between A Sewer and A Main, and from B Site up to B Tower (Heaven), which defenders use to hold from above.' }],
     about: 'Tight, vertical sites with ropes up to high ground, and a mid that leads to both. Chokes everywhere.',
     keys: 'Smokes and clearing: Viper and Omen together, with Neon to take space and Fade for information.',
     needs: { both: 'clear +.3; smoke +.25; disrupt +.15; flank +.2; wall +.4; recon +.1; angles -.5', defense: 'stall +.15' },
@@ -215,6 +218,7 @@ const DEFS: readonly MapDef[] = [
   },
   {
     id: 'summit', name: 'Summit', pool: true, space: 'mixed',
+    mechanics: [{ id: 'walls', about: 'Three walls, on A between A Art and A Garden, in mid between Mid Window and Mid Bottom, and on B between B Tower and B Site, drop when their switch is shot and stay shut for the rest of the round.' }],
     about: 'A newer two-site map with a wide mid around Mid Fountain and Mid Tiles; both sites have lots of cover.',
     keys: 'Fast entry and information: Neon and Fade are the pro picks, with Chamber holding angles.',
     needs: { both: 'entry +.15; recon +.25; duel +.15; wall +.15; mobility +.1; angles +.4', defense: 'stall +.15' },

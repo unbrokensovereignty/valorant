@@ -56,7 +56,8 @@ test('moves go into places, a move back to the game’s spot leaves places, and 
   assert.match(out.featuresTs, /\{ kind: 'orb', at: \[0\.5, 0\.25\], about: 'Ultimate orb in A Main' \},/);
   assert.match(out.featuresTs, /\{ kind: 'door', at: \[0\.4, 0\.4\], about: 'A test door, it’s by mid' \},/, 'without the full stop');
   assert.doesNotMatch(out.featuresTs, /Glass pane in A Window/);
-  assert.ok(out.featuresTs.includes("  bind: [\n    { kind: 'orb', at: [0.85, 0.46]"), 'the other maps are left as they were');
+  const bindOrb = FEATURES['bind']![0]!.at;
+  assert.ok(out.featuresTs.includes(`  bind: [\n    { kind: 'orb', at: [${bindOrb[0]}, ${bindOrb[1]}]`), 'the other maps are left as they were');
   assert.equal(out.done.length, 2);
   assert.deepEqual(out.todo, []);
 });

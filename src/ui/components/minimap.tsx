@@ -199,7 +199,9 @@ function FeatureMark({ kind, x, y, size }: { kind: FeatureKind; x: number; y: nu
     case 'orb': return <path d={`M${x} ${y - s}L${x + s} ${y}L${x} ${y + s}L${x - s} ${y}Z`} class="feature-mark" style={{ strokeWidth: `${0.35 * size}px` }} />;
     case 'door': return <rect x={x - s} y={y - s * 0.45} width={2 * s} height={s * 0.9} rx={0.2 * size} class="feature-mark" style={{ strokeWidth: `${0.35 * size}px` }} />;
     case 'breakable': return <path d={`M${x - s} ${y - s * 0.4}l${s * 0.6} ${s * 0.8}l${s * 0.5} ${-s * 0.8}l${s * 0.5} ${s * 0.8}l${s * 0.4} ${-s * 0.8}`} class="feature-mark open" style={{ strokeWidth: `${0.5 * size}px` }} />;
+    case 'wall': return <rect x={x - s * 1.1} y={y - s * 0.28} width={2.2 * s} height={s * 0.56} class="feature-mark" style={{ strokeWidth: `${0.35 * size}px` }} />;
     case 'teleporter': return <circle cx={x} cy={y} r={s * 0.85} class="feature-mark ring" style={{ strokeWidth: `${0.5 * size}px` }} />;
+    case 'drop': return <path d={`M${x - s * 0.9} ${y - s * 0.6}L${x + s * 0.9} ${y - s * 0.6}L${x} ${y + s * 0.8}Z`} class="feature-mark" style={{ strokeWidth: `${0.35 * size}px` }} />;
     default: return <circle cx={x} cy={y} r={s * 0.5} class="feature-mark" style={{ strokeWidth: `${0.35 * size}px` }} />;
   }
 }

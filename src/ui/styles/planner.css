@@ -264,6 +264,8 @@ html[data-motion='off'] .spinner { animation: none; border-color: var(--accent);
 .feature.orb { --f: #F2C14E; }
 .feature.door { --f: #6FC3FF; }
 .feature.breakable { --f: #FF8A65; }
+.feature.wall { --f: #F48FB1; }
+.feature.drop { --f: #80DEEA; }
 .feature.teleporter { --f: #C792EA; }
 .feature.rope, .feature.zipline { --f: #8BE28B; }
 .feature-mark { fill: var(--f); stroke: rgba(10, 12, 16, 0.9); }

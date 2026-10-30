@@ -123,7 +123,7 @@ describe('maps', () => {
     }
   });
   spec('every orb and feature on a minimap stands on the floor, and each map’s doors, teleporters and the rest are marked', () => {
-    const kindOf: Record<string, string> = { doors: 'door', teleporters: 'teleporter', ropes: 'rope', ziplines: 'zipline', breakable: 'breakable' };
+    const kindOf: Record<string, string> = { doors: 'door', teleporters: 'teleporter', ropes: 'rope', ziplines: 'zipline', breakable: 'breakable', walls: 'wall', autodoors: 'door' };
     for (const [id, fs] of Object.entries(FEATURES)) {
       const m = mapById(id);
       ok(!!m, `${id} is a map`);

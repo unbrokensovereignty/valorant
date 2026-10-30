@@ -10,7 +10,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const KINDS = ['orb', 'door', 'breakable', 'teleporter', 'rope', 'zipline'];
+const KINDS = ['orb', 'door', 'breakable', 'wall', 'teleporter', 'rope', 'zipline', 'drop'];
 const r3 = (v) => Math.round(Math.min(1, Math.max(0, Number(v))) * 1000) / 1000;
 const isSpot = (v) => Array.isArray(v) && v.length === 2 && v.every((n) => typeof n === 'number' && Number.isFinite(n));
 const close = (a, b) => Math.abs(a[0] - b[0]) <= 0.0005 && Math.abs(a[1] - b[1]) <= 0.0005;
