@@ -82,7 +82,7 @@ const DEFS: readonly MapDef[] = [
     about: 'An open map with no walls at its edges: fall off and you die. Long sightlines, a contested mid and two wide sites.',
     keys: 'Information and long walls. Pros run Sova with two controllers, often Harbor and Astra.',
     needs: { both: 'wall +.6; smoke +.15; recon +.35; mobility +.1; angles +.4', attack: 'entry +.1', defense: 'anchor +.1; retake +.1' },
-    places: { 'A Bridge': [0.465, 0.041], 'A Link': [0.299, 0.273], 'A Lobby': [0.802, 0.244], 'A Main': [0.63, 0.114], 'A Secret': [0.183, 0.262], 'A Security': [0.257, 0.104], 'A Site': [0.415, 0.097], 'A Tower': [0.487, 0.255], 'A Vent': [0.471, 0.361], 'Attacker Side Spawn': [0.835, 0.485], 'B Danger': [0.625, 0.94], 'B Link': [0.307, 0.659], 'B Lobby': [0.823, 0.793], 'B Main': [0.618, 0.749], 'B Nest': [0.67, 0.899], 'B Site': [0.363, 0.904], 'B Tower': [0.277, 0.808], 'Defender Side Spawn': [0.07, 0.448], 'Mid Bend': [0.636, 0.634], 'Mid Bottom': [0.646, 0.514], 'Mid Catwalk': [0.539, 0.451], 'Mid Library': [0.449, 0.523], 'Mid Top': [0.305, 0.435] },
+    places: { 'A Bridge': [0.467, 0.041], 'A Link': [0.299, 0.273], 'A Lobby': [0.793, 0.244], 'A Main': [0.63, 0.114], 'A Secret': [0.189, 0.202], 'A Security': [0.257, 0.104], 'A Site': [0.424, 0.097], 'A Tower': [0.487, 0.255], 'A Vent': [0.471, 0.361], 'Attacker Side Spawn': [0.839, 0.485], 'B Danger': [0.556, 0.972], 'B Link': [0.307, 0.659], 'B Lobby': [0.823, 0.793], 'B Main': [0.618, 0.749], 'B Nest': [0.674, 0.904], 'B Site': [0.363, 0.904], 'B Tower': [0.283, 0.798], 'Defender Side Spawn': [0.07, 0.448], 'Mid Bend': [0.582, 0.637], 'Mid Bottom': [0.662, 0.533], 'Mid Catwalk': [0.539, 0.451], 'Mid Library': [0.453, 0.532], 'Mid Top': [0.318, 0.439] },
     sites: [
       { id: 'A', about: 'A large site reached from A Main and A Lobby, overlooked by A Tower and the bridge, with A Secret and A Security behind it.', needs: { both: 'recon +.15', attack: 'flash +.1' } },
       { id: 'B', about: 'Reached down B Main past B Danger and B Nest; B Tower looks over the site and B Link joins it to mid.', needs: { both: 'wall +.2', attack: 'postplant +.1' } },
@@ -95,7 +95,7 @@ const DEFS: readonly MapDef[] = [
     keys: 'Mid control with information and an Operator: pros always play Omen and Sova, often with Chamber.',
     needs: { both: 'recon +.3; smoke +.1; duel +.15; angles +.4', attack: 'flash +.1', defense: 'anchor +.2; retake +.1; angles +.2' },
     aka: { 'A Tree': 'Tree', 'A Rafters': 'Heaven', 'Mid Bottom': 'Mid', 'Mid Courtyard': 'Mid' },
-    places: { 'A Site': [0.311, 0.148], 'B Lobby': [0.57, 0.71], 'B Site': [0.272, 0.793], 'Mid Market': [0.3, 0.545] },
+    places: { 'A Lobby': [0.602, 0.264], 'A Rafters': [0.249, 0.149], 'A Site': [0.311, 0.149], 'A Tree': [0.395, 0.295], 'A Window': [0.247, 0.284], 'A Wine': [0.486, 0.065], 'B Lobby': [0.561, 0.71], 'B Main': [0.398, 0.706], 'B Site': [0.272, 0.793], 'Defender Side Spawn': [0.126, 0.441], 'Mid Bottom': [0.401, 0.496], 'Mid Catwalk': [0.524, 0.411], 'Mid Courtyard': [0.497, 0.494], 'Mid Cubby': [0.464, 0.336], 'Mid Link': [0.524, 0.586], 'Mid Market': [0.302, 0.559], 'Mid Pizza': [0.308, 0.451] },
     sites: [
       { id: 'A', about: 'Entered through A Main (from A Lobby) or from mid through A Garden and Tree; A Rafters (Heaven) and A Wine overlook it.', needs: { both: 'clear +.1', attack: 'smoke +.1' } },
       { id: 'B', about: 'Entered through B Main or from mid through Market; B Boat House sits at the back of a deep site.', needs: { both: 'disrupt +.1', defense: 'stall +.1' } },

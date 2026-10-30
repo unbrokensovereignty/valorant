@@ -541,16 +541,16 @@ function viewBox() {
   return [vx, vy, size];
 }
 
-/** Puts each name above its spot, or below, right or left when that would cover one already placed: the app's own rule. */
-function placeLabels(spots, k, dots) {
-  const boxes = [], out = [], gap = dots ? 0.6 * k : 0;
+/** Puts each name above its spot, or below, right or left when that would cover one already placed, just clear of the spot's dot (`dot` is its radius): the app's own rule. */
+function placeLabels(spots, k, dot) {
+  const boxes = [], out = [], gap = 0.4 * k + dot;
   for (const s of spots) {
     const w = (s.text.length * 1.6 + 1) * k, h = 3.4 * k;
     const tries = [
-      { ...s, x: s.x, y: s.y - 2.4 * k - gap, anchor: 'middle' },
-      { ...s, x: s.x, y: s.y + 4.6 * k + gap, anchor: 'middle' },
-      { ...s, x: s.x + 2.4 * k + gap, y: s.y + 1 * k, anchor: 'start' },
-      { ...s, x: s.x - 2.4 * k - gap, y: s.y + 1 * k, anchor: 'end' },
+      { ...s, x: s.x, y: s.y - gap, anchor: 'middle' },
+      { ...s, x: s.x, y: s.y + 2.2 * k + gap, anchor: 'middle' },
+      { ...s, x: s.x + gap, y: s.y + 1.1 * k, anchor: 'start' },
+      { ...s, x: s.x - gap, y: s.y + 1.1 * k, anchor: 'end' },
     ];
     const boxOf = (t) => { const l = t.anchor === 'middle' ? t.x - w / 2 : t.anchor === 'start' ? t.x : t.x - w; return { l, r: l + w, t: t.y - h + 0.6 * k, b: t.y + 0.6 * k }; };
     const free = tries.find((t) => { const b = boxOf(t); return !boxes.some((o) => b.l < o.r && b.r > o.l && b.t < o.b && b.b > o.t); }) || tries[0];
@@ -577,7 +577,7 @@ function renderMarks() {
   const m = mapOf(view.map), s = cur(), o = ORIG[view.map];
   const [vx, vy, size] = viewBox();
   svg.setAttribute('viewBox', `${vx} ${vy} ${size} ${size}`);
-  const mk = 1 / z, k = TEXT_SIZES.find((t) => t[0] === view.text)[2] / z;
+  const mk = 1 / z, k = TEXT_SIZES.find((t) => t[0] === view.text)[2];
   const origOf = new Map([...o.callouts, ...o.features].map((x) => [x.uid, x]));
   let h = '', hits = '';
   // where things were
@@ -620,7 +620,7 @@ function renderMarks() {
     hits += `<circle cx="${x}" cy="${y}" r="${1.8 * mk}" fill="transparent" class="hit" data-uid="${c.uid}" data-end="at"><title>${esc(c.name)}</title></circle>`;
   }
   if (view.names) {
-    const labels = placeLabels(s.callouts.map((c) => ({ uid: c.uid, text: shortName(c.name.trim() || 'Unnamed'), x: c.at[0] * 100, y: c.at[1] * 100 })), k, view.dots);
+    const labels = placeLabels(s.callouts.map((c) => ({ uid: c.uid, text: shortName(c.name.trim() || 'Unnamed'), x: c.at[0] * 100, y: c.at[1] * 100 })), k, view.dots ? 0.55 * mk : 0);
     for (const l of labels) {
       h += `<text x="${l.x}" y="${l.y}" text-anchor="${l.anchor}" class="lbl${sel === l.uid ? ' sel' : ''}" data-uid="${l.uid}" data-end="at" style="font-size:${3 * k}px;stroke-width:${0.7 * k}px">${esc(l.text)}</text>`;
     }
@@ -1130,7 +1130,7 @@ $('#png').addEventListener('click', async () => {
   if (view.names) {
     ctx.font = `600 ${3 * k * u}px 'Atkinson Hyperlegible Next', system-ui, sans-serif`;
     ctx.lineJoin = 'round';
-    for (const l of placeLabels(s.callouts.map((cl) => ({ text: shortName(cl.name.trim() || 'Unnamed'), x: cl.at[0] * 100, y: cl.at[1] * 100 })), k, view.dots)) {
+    for (const l of placeLabels(s.callouts.map((cl) => ({ text: shortName(cl.name.trim() || 'Unnamed'), x: cl.at[0] * 100, y: cl.at[1] * 100 })), k, view.dots ? 0.6 : 0)) {
       ctx.textAlign = l.anchor === 'middle' ? 'center' : l.anchor === 'start' ? 'left' : 'right';
       ctx.lineWidth = 0.7 * k * u; ctx.strokeStyle = 'rgba(10,12,16,0.85)'; ctx.strokeText(l.text, X(l.x / 100), X(l.y / 100));
       ctx.fillStyle = '#F4F6F8'; ctx.fillText(l.text, X(l.x / 100), X(l.y / 100));

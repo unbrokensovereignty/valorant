@@ -31,11 +31,11 @@ export const FEATURE_KINDS: readonly { kind: FeatureKind; name: string; layer: '
 
 export const FEATURES: Record<string, readonly MapFeature[]> = {
   ascent: [
-    { kind: 'orb', at: [0.49, 0.24], about: 'Ultimate orb in A Main' },
-    { kind: 'orb', at: [0.41, 0.74], about: 'Ultimate orb in B Main' },
-    { kind: 'door', at: [0.39, 0.24], about: 'A door, between A Link and the site: a switch by it shuts or opens it, and it breaks after enough damage' },
-    { kind: 'door', at: [0.3, 0.605], about: 'B door, between Mid Market and the site: a switch in the site shuts or opens it, and it breaks after enough damage' },
-    { kind: 'breakable', at: [0.255, 0.31], about: 'Glass pane in A Window, looking into A Garden: it breaks at the first shot' },
+    { kind: 'orb', at: [0.478, 0.265], about: 'Ultimate orb in A Main' },
+    { kind: 'orb', at: [0.381, 0.747], about: 'Ultimate orb in B Main' },
+    { kind: 'door', at: [0.396, 0.235], about: 'A door, between A Link and the site: a switch by it shuts or opens it, and it breaks after enough damage' },
+    { kind: 'door', at: [0.288, 0.598], about: 'B door, between Mid Market and the site: a switch in the site shuts or opens it, and it breaks after enough damage' },
+    { kind: 'breakable', at: [0.267, 0.284], about: 'Glass pane in A Window, looking into A Garden: it breaks at the first shot' },
   ],
   bind: [
     { kind: 'orb', at: [0.85, 0.46], about: 'Ultimate orb at the back of A Bath' },
@@ -95,10 +95,14 @@ export const FEATURES: Record<string, readonly MapFeature[]> = {
     { kind: 'door', at: [0.37, 0.455], about: 'Door between B Market and Mid Courtyard: a switch on the Market side shuts or opens it, and it breaks after enough damage' },
   ],
   abyss: [
-    { kind: 'breakable', at: [0.457, 0.29], about: 'Door at the A Tower end of A Vent: it stops bullets until broken' },
-    { kind: 'breakable', at: [0.477, 0.437], about: 'Door at the mid end of A Vent: it stops bullets until broken' },
-    { kind: 'rope', at: [0.47, 0.22], about: 'Rope from A Site up to A Tower' },
-    { kind: 'rope', at: [0.63, 0.69], about: 'Rope from B Main up to Mid Bend' },
+    { kind: 'breakable', at: [0.444, 0.291], about: 'Door at the A Tower end of A Vent: it stops bullets until broken' },
+    { kind: 'breakable', at: [0.5, 0.435], about: 'Door at the mid end of A Vent: it stops bullets until broken' },
+    { kind: 'rope', at: [0.5, 0.204], about: 'Rope from A Site up to A Tower' },
+    { kind: 'rope', at: [0.614, 0.683], about: 'Rope from B Main up to Mid Bend' },
+    { kind: 'rope', at: [0.839, 0.523], about: 'Rope by Attacker Side Spawn' },
+    { kind: 'rope', at: [0.452, 0.452], about: 'Rope by Mid Library' },
+    { kind: 'orb', at: [0.631, 0.193], about: 'Ultimate orb in A Main' },
+    { kind: 'orb', at: [0.629, 0.823], about: 'Ultimate orb in B Main' },
   ],
 };
 

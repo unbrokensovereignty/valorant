@@ -7,8 +7,9 @@
  *
  * How callouts show is the same on every minimap (useMapView): a dot at each callout's middle, and
  * names at the size chosen. A zoomable minimap also zooms (the wheel, the buttons, or + and − when
- * it has focus) and moves (dragging, or the arrow keys), with names and marks kept the same size on
- * screen, and it can show the map's layers: ultimate orbs and features (core/kb/features.ts).
+ * it has focus) and moves (dragging, or the arrow keys). Names grow and shrink with the map, so they
+ * always cover the same share of it, while dots and marks keep their size on screen; and it can
+ * show the map's layers: ultimate orbs and features (core/kb/features.ts).
  */
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { featuresOf, FEATURE_KINDS, type FeatureKind, type MapFeature } from '../../core/kb/features.ts';
@@ -104,8 +105,8 @@ export function Minimap({ map: id, routes = [], focus = -1, labels = 'routes', l
   const at = (name: string) => map.callouts.find((c) => c.name === name);
   const named = labels === 'all' ? map.callouts.map((c) => c.name) : labels === 'routes' ? [...new Set(routes.flatMap((r) => r.route))] : [];
   const spots = named.map((n) => at(n)).filter((c) => !!c);
-  // names and marks keep their size on screen as the map zooms
-  const k = scale / z, mark = 1 / z;
+  // names grow with the map as it zooms, so they always cover the same share of it; marks and dots keep their size on screen
+  const k = scale, mark = 1 / z;
   const shown = layers.length ? featuresOf(map.id).filter((f) => layers.includes(FEATURE_KINDS.find((x) => x.kind === f.kind)!.layer)) : [];
 
   const onKey = (e: KeyboardEvent) => {
@@ -147,7 +148,7 @@ export function Minimap({ map: id, routes = [], focus = -1, labels = 'routes', l
         {shown.map((f, i) => <Feature key={i} f={f} size={mark} />)}
         {routes.map((r, i) => <RoutePath key={i} r={r} i={i} uid={uid} map={map} dim={focus >= 0 && focus !== i} onFocus={onFocus} />)}
         {dots && spots.map((c) => <circle key={c.name} cx={c.x * 100} cy={c.y * 100} r={0.55 * mark} class="minimap-dot" />)}
-        {placeLabels(spots.map((c) => ({ text: shortName(c.name), x: c.x * 100, y: c.y * 100 })), k, dots).map((l) => (
+        {placeLabels(spots.map((c) => ({ text: shortName(c.name), x: c.x * 100, y: c.y * 100 })), k, dots ? 0.55 * mark : 0).map((l) => (
           <text key={l.text} x={l.x} y={l.y} class="minimap-label" text-anchor={l.anchor} style={{ fontSize: `${3 * k}px`, strokeWidth: `${0.7 * k}px` }}>{l.text}</text>
         ))}
       </svg>
@@ -215,22 +216,25 @@ export function FeatureSwatch({ kind }: { kind: FeatureKind }) {
 
 interface Label { text: string; x: number; y: number; anchor: 'middle' | 'start' | 'end' }
 
+/** The space between a name and its spot, for 3-unit text (a capital letter is about 2.2 units tall). */
+const LABEL_GAP = 0.4;
+
 /**
  * Puts each name above its spot, or below, right or left when that would cover a name already
- * placed (sizes in the map's 0 to 100 units, for 3-unit text times `k`). With dots, the name sits
- * a little further off so the dot shows.
+ * placed (sizes in the map's 0 to 100 units, for 3-unit text times `k`), just clear of the spot's
+ * dot (`dot` is its radius, 0 without dots).
  */
-function placeLabels(spots: readonly { text: string; x: number; y: number }[], k = 1, dots = false): Label[] {
+function placeLabels(spots: readonly { text: string; x: number; y: number }[], k = 1, dot = 0): Label[] {
   const boxes: { l: number; r: number; t: number; b: number }[] = [];
   const out: Label[] = [];
-  const gap = dots ? 0.6 * k : 0;
+  const gap = LABEL_GAP * k + dot;
   for (const s of spots) {
     const w = (s.text.length * 1.6 + 1) * k, h = 3.4 * k;
     const tries: Label[] = [
-      { text: s.text, x: s.x, y: s.y - 2.4 * k - gap, anchor: 'middle' },
-      { text: s.text, x: s.x, y: s.y + 4.6 * k + gap, anchor: 'middle' },
-      { text: s.text, x: s.x + 2.4 * k + gap, y: s.y + 1 * k, anchor: 'start' },
-      { text: s.text, x: s.x - 2.4 * k - gap, y: s.y + 1 * k, anchor: 'end' },
+      { text: s.text, x: s.x, y: s.y - gap, anchor: 'middle' },
+      { text: s.text, x: s.x, y: s.y + 2.2 * k + gap, anchor: 'middle' },
+      { text: s.text, x: s.x + gap, y: s.y + 1.1 * k, anchor: 'start' },
+      { text: s.text, x: s.x - gap, y: s.y + 1.1 * k, anchor: 'end' },
     ];
     const boxOf = (t: Label) => {
       const l = t.anchor === 'middle' ? t.x - w / 2 : t.anchor === 'start' ? t.x : t.x - w;

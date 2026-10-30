@@ -2,6 +2,11 @@
 
 Every version of Playbook By Sovereign and what it changed.
 
+## 0.3.1 (in progress)
+
+- **Callout names that zoom with the map.** Callout names now grow and shrink with the minimap as you zoom, so they always cover the same share of the map, and they sit closer to their dots. The map editor does the same.
+- **Abyss, placed by hand.** Twelve of Abyss's callouts moved to where players stand, such as Mid Bend, Mid Bottom, B Danger and A Secret; the A Vent doors and the ropes up to A Tower and Mid Bend moved onto their spots; and the minimap now shows Abyss's ultimate orbs in A Main and B Main and the ropes by Attack spawn and Mid Library.
+
 ## 0.3.0 (2026-10-30)
 
 - **A better minimap.** On each map's page, zoom in with the buttons, the mouse wheel or a double click, drag to move around, and use the keyboard too: plus and minus zoom, the arrow keys move and 0 shows the whole map again. Callout names can be small, medium, large or extra large, and a dot marks the middle of each callout, which you can turn off. The plays' minimaps zoom and move the same way.

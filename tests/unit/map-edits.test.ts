@@ -51,7 +51,8 @@ test('moves go into places, a move back to the game’s spot leaves places, and 
   const places = out.mapsTs.match(/\n {4}places: \{.*\},\n/g)!.find((l) => l.includes("'Mid Market'"))!;
   assert.match(places, /'A Main': \[0\.5, 0\.201\]/);
   assert.doesNotMatch(places, /'B Site'/);
-  assert.match(places, /'A Site': \[0\.311, 0\.148\]/, 'the places that didn’t move stay');
+  const aSite = MAPS.find((m) => m.id === 'ascent')!.callouts.find((c) => c.name === 'A Site')!;
+  assert.ok(places.includes(`'A Site': [${aSite.x}, ${aSite.y}]`), 'the places that didn’t move stay');
   assert.match(out.featuresTs, /\{ kind: 'orb', at: \[0\.5, 0\.25\], about: 'Ultimate orb in A Main' \},/);
   assert.match(out.featuresTs, /\{ kind: 'door', at: \[0\.4, 0\.4\], about: 'A test door, it’s by mid' \},/, 'without the full stop');
   assert.doesNotMatch(out.featuresTs, /Glass pane in A Window/);
