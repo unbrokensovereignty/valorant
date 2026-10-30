@@ -185,7 +185,7 @@ function Feature({ f, size }: { f: MapFeature; size: number }) {
   return (
     <g class={`feature ${f.kind}`}>
       <title>{f.about}</title>
-      {to && <line x1={x} y1={y} x2={to[0]} y2={to[1]} class="feature-link" style={{ strokeWidth: `${0.45 * size}px` }} />}
+      {to && (f.kind === 'rope' || f.kind === 'zipline') && <line x1={x} y1={y} x2={to[0]} y2={to[1]} class="feature-link" style={{ strokeWidth: `${0.45 * size}px` }} />}
       <FeatureMark kind={f.kind} x={x} y={y} size={size} />
       {to && <FeatureMark kind={f.kind} x={to[0]} y={to[1]} size={size} />}
     </g>

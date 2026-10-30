@@ -157,6 +157,10 @@
 .map-view .segmented .size-xl { font-size: 1.4em; }
 .map-legend { gap: 6px 16px; }
 .map-legend li { gap: 6px; }
+.map-marks summary { cursor: pointer; font-weight: 600; }
+.map-marks-list { gap: 6px; margin-top: 8px; }
+.map-marks-list li { gap: 8px; align-items: flex-start; }
+.map-marks-list .feature-swatch { flex: none; margin-top: 2px; }
 .sites { gap: 0; }
 .sites li { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); }
 .sites li:first-child { border-top: 0; padding-top: 0; }

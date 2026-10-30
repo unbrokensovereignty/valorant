@@ -6,6 +6,7 @@ import { useState } from 'preact/hooks';
 import { PageHead } from '../shell.tsx';
 import { Badge, Button, Empty, Segmented, Toggle } from '../components/controls.tsx';
 import { FeatureSwatch, featureKindsOn, Minimap, TEXT_SIZES, useMapView, type TextSize } from '../components/minimap.tsx';
+import { featuresOf } from '../../core/kb/features.ts';
 import { Icon } from '../icons.tsx';
 import { AgentIcon, MapThumb } from '../art.tsx';
 import { go, useSettings, useView } from '../state.ts';
@@ -138,6 +139,7 @@ function Plays({ m, side, rank, newAgents }: { m: MapInfo; side: Side; rank: Ran
 function MapViewControls({ m, names, setNames }: { m: MapInfo; names: boolean; setNames: (v: boolean) => void }) {
   const view = useMapView();
   const has = (layer: 'orbs' | 'features') => featureKindsOn(m.id, [layer]).length > 0;
+  const marked = featuresOf(m.id).filter((f) => (f.kind === 'orb' ? view.orbs : view.features));
   const legend = featureKindsOn(m.id, [...(view.orbs ? ['orbs' as const] : []), ...(view.features ? ['features' as const] : [])]);
   return (
     <div class="stack map-view" data-tour="map-view">
@@ -156,6 +158,15 @@ function MapViewControls({ m, names, setNames }: { m: MapInfo; names: boolean; s
           {legend.map((k) => <li key={k.kind} class="row"><FeatureSwatch kind={k.kind} /><span class="small">{k.name}</span></li>)}
         </ul>
       )}
+      {marked.length > 0 && (
+        <details class="map-marks">
+          <summary class="small">What’s marked on {m.name}</summary>
+          <ul class="plain-list stack map-marks-list">
+            {marked.map((f) => <li key={f.about} class="row small"><FeatureSwatch kind={f.kind} /><span>{f.about}.</span></li>)}
+          </ul>
+        </details>
+      )}
+      {view.orbs && !has('orbs') && <p class="small muted">Ultimate orbs aren’t marked on {m.name} yet.</p>}
       <p class="small muted">Scroll or use the buttons to zoom, and drag to move around. Point at a mark to see what it is.</p>
     </div>
   );
