@@ -11,6 +11,7 @@ import { PAIRS, pairOf } from '../../src/core/kb/synergy.ts';
 import { RANKS } from '../../src/core/kb/ranks.ts';
 import { DIMS, DIM_INFO, ROLE_IDS } from '../../src/core/kb/roles.ts';
 import { NEW_AGENTS } from '../../src/core/kb/new-agents.ts';
+import { MAP_WINS, sideShare } from '../../src/core/kb/mapwins.ts';
 import { inUse } from '../../src/core/settings.ts';
 
 describe('agents', () => {
@@ -234,6 +235,23 @@ describe('pro play', () => {
       ok(Number.isInteger(r.maps) && Number.isInteger(r.won) && r.won >= 0 && r.won <= r.maps && r.maps >= 1, `${r.agents.join(', ')}: ${r.won} of ${r.maps}`);
       ok(r.event.length > 0);
     }
+  });
+});
+
+describe('ranked play by map', () => {
+  spec('every map’s numbers are for a known map and known agents, with sensible rates and games', () => {
+    for (const [map, m] of Object.entries(MAP_WINS)) {
+      ok(mapById(map), `${map} is a map`);
+      ok(/^\d{4}-\d{2}-\d{2}$/.test(m.on), `${map} has a date`);
+      ok(m.attack > 40 && m.attack < 60 && m.defense > 40 && m.defense < 60, `${map}’s sides are near even`);
+      eq(Math.round((sideShare(map, 'attack')! + sideShare(map, 'defense')!) * 1e9) / 1e9, 1);
+      ok(Object.keys(m.agents).length >= 25, `${map} has most agents`);
+      for (const [id, [win, games]] of Object.entries(m.agents)) {
+        ok(agentById(id), `${id} on ${map} is an agent`);
+        ok(win >= 0 && win <= 100 && Number.isInteger(games) && games > 0, `${id} on ${map}: ${win}% of ${games}`);
+      }
+    }
+    eq(sideShare('icebox', 'attack'), undefined);
   });
 });
 

@@ -1,10 +1,11 @@
 /**
  * Map pick help: from the answers to "Find the best map", the maps a team should play and the ones
- * it should ban, each with why. A map to play says what the team's best comp there does well; a map
- * to ban says what that comp is short of next to the best comp for the map. Both are read off the
- * same score as the fits (explain.ts), so the reasons always match the ranking.
+ * it should ban, each with why: where the team's best comp on the map comes closer to the best comp
+ * for the map than it does on the other maps (to play), or falls further short (to ban). Both are
+ * read off the same score as the fits (explain.ts), so the reasons always match the ranking.
  */
 import { mapById } from '../kb/maps.ts';
+import { DIM_INFO, type Dim } from '../kb/roles.ts';
 import { belowParts, explainTeam } from './explain.ts';
 import { modelFor, type Situation } from './model.ts';
 import { bestTeamFor, type SituationAnswer } from './plan.ts';
@@ -55,55 +56,82 @@ export function mapPicks(answers: readonly SituationAnswer[], newAgents: boolean
   const top = maps[0]?.fit ?? 0, bottom = maps[maps.length - 1]?.fit ?? 0;
   if (maps.length < 2 || top - bottom < MAP_PICK.gap) return { even: true, play: [], ban: [] };
   const sides = (list: readonly SituationAnswer[]) => list.length > 1;
+  const usual = usualParts(answers, newAgents);
   const play = maps.filter((x) => x.fit >= bottom + MAP_PICK.gap).slice(0, MAP_PICK.most).map((x): MapPick => {
     const a = [...x.list].sort((p, q) => fitOfAnswer(q) - fitOfAnswer(p))[0]!;
-    return { map: x.map, fit: x.fit, tier: tierOf(x.fit), side: sides(x.list) ? side(a.situation) : undefined, ...toPlay(a, newAgents) };
+    return { map: x.map, fit: x.fit, tier: tierOf(x.fit), side: sides(x.list) ? side(a.situation) : undefined, ...toPlay(a, usual, newAgents) };
   });
   const ban = maps.filter((x) => x.fit <= top - MAP_PICK.gap && !play.some((p) => p.map === x.map)).slice(-MAP_PICK.most).reverse().map((x): MapPick => {
     const a = [...x.list].sort((p, q) => fitOfAnswer(p) - fitOfAnswer(q))[0]!;
-    return { map: x.map, fit: x.fit, tier: tierOf(x.fit), side: sides(x.list) ? side(a.situation) : undefined, ...toBan(a, answers, newAgents) };
+    return { map: x.map, fit: x.fit, tier: tierOf(x.fit), side: sides(x.list) ? side(a.situation) : undefined, ...toBan(a, usual, newAgents) };
   });
   return { even: false, play, ban };
 }
 
-/** The parts of the score that are the agents' own (see toBan). */
+/** The parts of the score that are the agents' own, the same on every map (see usualParts). */
 const AGENTS_OWN = ['win', 'rank'];
 
 const side = (s: Situation): 'attack' | 'defense' => (s.side === 'defense' ? 'defense' : 'attack');
 
-/** Why a map is worth playing: what the team's best comp there does well, on this map first. */
-function toPlay(a: SituationAnswer, newAgents: boolean): { team: string[]; best: string[]; lead: string; why: string[] } {
+/**
+ * How far each part of the score (belowParts) takes the team's best comp from the best comp for
+ * the map, on the average map of the answers: a map's reasons are the parts that cost more (or less)
+ * there than usual. How hard the agents are to play and how often they win ranked games are the
+ * agents' own, about the same on every map, so they're left out.
+ */
+function usualParts(answers: readonly SituationAnswer[], newAgents: boolean): Map<string, number> {
+  const usual = new Map<string, number>();
+  const fits = answers.filter((x) => x.comps[0]);
+  for (const x of fits) {
+    const mx = modelFor(x.situation);
+    for (const p of belowParts(mx, bestTeamFor(mx, newAgents), x.comps[0]!.team)) usual.set(p.key, (usual.get(p.key) ?? 0) + p.size / fits.length);
+  }
+  return usual;
+}
+
+/** The parts of the score where a map differs from the usual, most first: those that cost more there (`worse`), or less. */
+function unusual(m: ReturnType<typeof modelFor>, best: readonly string[], team: readonly string[], usual: Map<string, number>, worse: boolean) {
+  const sign = worse ? -1 : 1;
+  return belowParts(m, best, team).map((p) => ({ ...p, more: p.size - (usual.get(p.key) ?? 0) }))
+    .filter((p) => !AGENTS_OWN.includes(p.key) && p.more * sign >= BELOW_NOTE.part && (!worse || p.size < 0))
+    .sort((x, y) => (y.more - x.more) * sign);
+}
+
+/** Why a part of the score costs less on a map than usual, in words. */
+function betterWords(p: { key: string; size: number }, mapName: string): string {
+  if (p.key === 'pro') return `Pro teams on ${mapName} pick agents more like yours`;
+  if (p.key === 'roles') return `Its mix of roles suits ${mapName} better than most maps`;
+  if (p.key === 'pair') return `Its agents work together better on ${mapName}`;
+  const info = DIM_INFO[p.key as Dim];
+  // (flashes and smokes count, utility counts)
+  return p.size < 0 ? `Being short of ${info.has} costs less on ${mapName}` : `Its ${info.has} ${info.few ? 'count' : 'counts'} for more on ${mapName}`;
+}
+
+/**
+ * Why a map is worth playing: where the team's best comp there comes closer to the best comp for the
+ * map than it does on the other maps, or else what it does well, the pros about this map first.
+ */
+function toPlay(a: SituationAnswer, usual: Map<string, number>, newAgents: boolean): { team: string[]; best: string[]; lead: string; why: string[] } {
   const c = a.comps[0]!, m = modelFor(a.situation);
   const best = bestTeamFor(m, newAgents);
   const same = best.length === c.team.length && best.every((id) => c.team.includes(id));
   const mapName = mapById(a.situation.map)?.name ?? a.situation.map;
   const lead = same ? `Your agents can play the comp that fits ${mapName} best.` : '';
-  // the pros about this map in particular (its kit rules, what it rewards, its pro comps) come first
+  const closer = unusual(m, best, c.team, usual, false).map((p) => betterWords(p, mapName));
   const pros = explainTeam(m, c.team).pros;
-  const why = [...pros.filter((p) => p.includes(mapName)), ...pros.filter((p) => !p.includes(mapName))];
+  const why = closer.length ? closer : [...pros.filter((p) => p.includes(mapName)), ...pros.filter((p) => !p.includes(mapName))];
   return { team: c.team, best, lead, why: why.slice(0, MAP_PICK.why) };
 }
 
 /**
  * Why a map is worth banning: where the team's best comp there falls further short of the best
- * comp for the map than it does on the other maps. Parts of the score that cost about the same on
- * every map say nothing about the map, so each part counts by how much more it costs here than on
- * the average map (`all`); and how hard the agents are to play and how often they win ranked games
- * are the agents' own, the same on every map, so they're left out.
+ * comp for the map than it does on the other maps (or else the comp's biggest con there).
  */
-function toBan(a: SituationAnswer, all: readonly SituationAnswer[], newAgents: boolean): { team: string[]; best: string[]; lead: string; why: string[] } {
+function toBan(a: SituationAnswer, usual: Map<string, number>, newAgents: boolean): { team: string[]; best: string[]; lead: string; why: string[] } {
   const c = a.comps[0];
   if (!c) return { team: [], best: [], lead: `No comp fits all of your choices on ${mapById(a.situation.map)?.name ?? a.situation.map}.`, why: [] };
   const m = modelFor(a.situation), best = bestTeamFor(m, newAgents);
-  const usual = new Map<string, number>();
-  const others = all.filter((x) => x.comps[0]);
-  for (const x of others) {
-    const mx = modelFor(x.situation);
-    for (const p of belowParts(mx, bestTeamFor(mx, newAgents), x.comps[0]!.team)) usual.set(p.key, (usual.get(p.key) ?? 0) + p.size / others.length);
-  }
-  const here = belowParts(m, best, c.team).map((p) => ({ ...p, more: p.size - (usual.get(p.key) ?? 0) }))
-    .filter((p) => p.size < 0 && p.more <= -BELOW_NOTE.part && !AGENTS_OWN.includes(p.key)).sort((x, y) => x.more - y.more);
-  // a map that costs no one part much more than the others gets the comp's biggest con there instead
-  const why = here.length ? here.map((p) => p.words) : explainTeam(m, c.team).cons.slice(0, 1);
+  const here = unusual(m, best, c.team, usual, true).map((p) => p.words);
+  const why = here.length ? here : explainTeam(m, c.team).cons.slice(0, 1);
   return { team: c.team, best, lead: '', why: why.slice(0, MAP_PICK.why) };
 }
