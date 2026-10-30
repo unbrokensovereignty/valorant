@@ -15,7 +15,7 @@ import { planWith } from '../planner/store.ts';
 import { CompRow, TeamIcons } from '../planner/comp.tsx';
 import { PlaysPanel } from '../planner/plays.tsx';
 import { rankWord } from '../planner/words.ts';
-import { agentById } from '../../core/kb/agents.ts';
+import { agentById, AGENTS_BY_NAME } from '../../core/kb/agents.ts';
 import { mapById, MAPS, MECHANICS, SPACE_INFO, type MapInfo, type Side } from '../../core/kb/maps.ts';
 import { RULES, ruleApplies, ruleHelps } from '../../core/kb/kitfit.ts';
 import { PRO } from '../../core/kb/pro.ts';
@@ -81,9 +81,11 @@ function Pro({ m }: { m: MapInfo }) {
 
 /** How open the map is, its mechanics, and the agents whose kits make the most of them. */
 function HowItPlays({ m }: { m: MapInfo }) {
-  // agents a rule helps here, on either side (agents.ts names them)
-  const users = (keep: (r: (typeof RULES)[number]) => boolean) =>
-    [...new Set(RULES.filter((r) => keep(r) && ruleHelps(r) && (['attack', 'defense'] as const).some((sd) => ruleApplies(r, m.id, sd, []))).map((r) => r.agent))];
+  // agents a rule helps here, on either side, by name (so the list doesn't read as a ranking)
+  const users = (keep: (r: (typeof RULES)[number]) => boolean) => {
+    const ids = new Set(RULES.filter((r) => keep(r) && ruleHelps(r) && (['attack', 'defense'] as const).some((sd) => ruleApplies(r, m.id, sd, []))).map((r) => r.agent));
+    return AGENTS_BY_NAME.filter((a) => ids.has(a.id)).map((a) => a.id);
+  };
   const space = SPACE_INFO[m.space];
   const forSpace = users((r) => r.space === m.space);
   const who = (ids: string[]) => ids.length > 0 && (
