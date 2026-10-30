@@ -148,7 +148,7 @@ export function Minimap({ map: id, routes = [], focus = -1, labels = 'routes', l
         {shown.map((f, i) => <Feature key={i} f={f} size={mark} />)}
         {routes.map((r, i) => <RoutePath key={i} r={r} i={i} uid={uid} map={map} dim={focus >= 0 && focus !== i} onFocus={onFocus} />)}
         {dots && spots.map((c) => <circle key={c.name} cx={c.x * 100} cy={c.y * 100} r={0.55 * mark} class="minimap-dot" />)}
-        {placeLabels(spots.map((c) => ({ text: shortName(c.name), x: c.x * 100, y: c.y * 100 })), k, dots ? 0.55 * mark : 0).map((l) => (
+        {placeLabels(spots.map((c) => ({ text: shortName(c.name), x: c.x * 100, y: c.y * 100 })), k, dots ? 0.55 * mark : 0, shown.flatMap((f) => [f.at, ...(f.to ? [f.to] : [])]).map(([x, y]) => [x * 100, y * 100] as const), 1.6 * mark).map((l) => (
           <text key={l.text} x={l.x} y={l.y} class="minimap-label" text-anchor={l.anchor} style={{ fontSize: `${3 * k}px`, strokeWidth: `${0.7 * k}px` }}>{l.text}</text>
         ))}
       </svg>
@@ -223,11 +223,11 @@ const LABEL_GAP = 0.4;
 
 /**
  * Puts each name above its spot, or below, right or left when that would cover a name already
- * placed (sizes in the map's 0 to 100 units, for 3-unit text times `k`), just clear of the spot's
- * dot (`dot` is its radius, 0 without dots).
+ * placed or a mark (`marks`, each `mark` across from its middle) (sizes in the map's 0 to 100
+ * units, for 3-unit text times `k`), just clear of the spot's dot (`dot` is its radius, 0 without dots).
  */
-function placeLabels(spots: readonly { text: string; x: number; y: number }[], k = 1, dot = 0): Label[] {
-  const boxes: { l: number; r: number; t: number; b: number }[] = [];
+function placeLabels(spots: readonly { text: string; x: number; y: number }[], k = 1, dot = 0, marks: readonly (readonly [number, number])[] = [], mark = 0): Label[] {
+  const boxes = marks.map(([x, y]) => ({ l: x - mark, r: x + mark, t: y - mark, b: y + mark }));
   const out: Label[] = [];
   const gap = LABEL_GAP * k + dot;
   for (const s of spots) {
@@ -242,7 +242,9 @@ function placeLabels(spots: readonly { text: string; x: number; y: number }[], k
       const l = t.anchor === 'middle' ? t.x - w / 2 : t.anchor === 'start' ? t.x : t.x - w;
       return { l, r: l + w, t: t.y - h + 0.6 * k, b: t.y + 0.6 * k };
     };
-    const free = tries.find((t) => { const b = boxOf(t); return !boxes.some((o) => b.l < o.r && b.r > o.l && b.t < o.b && b.b > o.t); }) ?? tries[0]!;
+    // the first way that covers nothing, or else the one that covers least
+    const covered = (t: Label) => { const b = boxOf(t); return boxes.reduce((n, o) => n + Math.max(0, Math.min(b.r, o.r) - Math.max(b.l, o.l)) * Math.max(0, Math.min(b.b, o.b) - Math.max(b.t, o.t)), 0); };
+    const free = tries.map((t) => ({ t, n: covered(t) })).reduce((a, b) => (b.n < a.n ? b : a)).t;
     boxes.push(boxOf(free));
     out.push(free);
   }

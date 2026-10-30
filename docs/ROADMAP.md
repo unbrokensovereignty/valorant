@@ -2,6 +2,13 @@
 
 What's planned, what the owner has approved, and what's done. Update it as work lands. Items marked **proposed** wait for the owner's OK before they're built. Small fixes don't need to be listed here.
 
+## 0.3.1: map accuracy (in progress)
+
+The owner asked (30 October 2026) for a version about the maps only: everything on each minimap where it really is, nothing missing, and callout names that zoom with the map and sit close to their dots. The owner placed Abyss's and Ascent's callouts and marks by hand in the map editor, as the model for the rest.
+
+- **Built:** the owner's Abyss and Ascent edits; every other map's ultimate orbs, ropes, doors, walls, ziplines and teleporters placed from both VALORANT wikis' interactive maps (which line up with the game's minimaps) and checked by eye, with droppable walls and silent drops as marks of their own; callout names that scale with the zoom, sit closer to their dots and keep off the marks, in the app and the map editor.
+- **Left for a version that may move tiers:** the kit rules still count ropes only on Split (Jett's Updraft, Waylay's Lightspeed) and switch doors only on Ascent and Lotus (Hush's Telekinesis). Abyss, Breeze, Fracture, Icebox, Lotus and Summit have ropes and Sunset has a switch door too, but counting them would move ratings, which this version leaves alone.
+
 ## 0.3.0: picking the map, and a better minimap (released 2026-10-30)
 
 The owner approved (30 October 2026) three things for this version, from the ideas below and what 0.2.5 taught: ranked win rates for each map, ratings that move steadily between neighboring ranks, and help picking a map. The owner then made the minimap the main focus: every callout on all 13 maps placed from several sources, a dot at the center of each callout (on by default), callout text that can be made bigger or smaller, zoom and pan, and optional layers for ultimate orbs and map features such as doors, breakable walls and Bind's teleporters.
