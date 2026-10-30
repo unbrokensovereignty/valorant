@@ -1,7 +1,7 @@
 // Puts a file of edits from the map editor (tools/map-editor.mjs) into the app's data: callouts that
 // moved go into their map's `places` in src/core/kb/maps.ts, and each edited map's marks are written
-// out again in src/core/kb/features.ts. A renamed, new or removed callout is listed for a hand to
-// make, since plays and the game's content use the names. Run `npm run check` afterwards: the specs
+// out again in src/core/kb/features.ts, with how far each is turned. A renamed, new or removed
+// callout is listed for a hand to make, since plays and the game's content use the names. Run `npm run check` afterwards: the specs
 // check that everything still stands on the floor.
 //
 //   node --experimental-strip-types tools/map-edits.mjs <edits.json>          → changes the two files
@@ -16,6 +16,8 @@ const isSpot = (v) => Array.isArray(v) && v.length === 2 && v.every((n) => typeo
 const close = (a, b) => Math.abs(a[0] - b[0]) <= 0.0005 && Math.abs(a[1] - b[1]) <= 0.0005;
 const quote = (s) => `'${String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
 const spotText = ([x, y]) => `[${x}, ${y}]`;
+/** A mark's turn as whole degrees from 0 to 359 (0 is not turned), or null when it can't be read. */
+const turn = (v) => (v === undefined ? 0 : typeof v === 'number' && Number.isFinite(v) ? ((Math.round(v) % 360) + 360) % 360 : null);
 
 /**
  * The two files' new text for a file of edits, and what was done and what's left to do by hand.
@@ -56,8 +58,9 @@ export function applyEdits(edits, { mapsTs, featuresTs, maps }) {
 
     // the marks are written out again whole, when they changed
     const features = e.features.map((f) => {
-      if (!f || !KINDS.includes(f.kind) || !isSpot(f.at) || typeof f.about !== 'string') throw new Error(`${m.name}: a mark can't be read`);
-      return { kind: f.kind, at: [r3(f.at[0]), r3(f.at[1])], ...(isSpot(f.to) ? { to: [r3(f.to[0]), r3(f.to[1])] } : {}), about: f.about.trim().replace(/\.$/, '') };
+      const angle = f && turn(f.angle);
+      if (!f || !KINDS.includes(f.kind) || !isSpot(f.at) || typeof f.about !== 'string' || angle === null) throw new Error(`${m.name}: a mark can't be read`);
+      return { kind: f.kind, at: [r3(f.at[0]), r3(f.at[1])], ...(isSpot(f.to) ? { to: [r3(f.to[0]), r3(f.to[1])] } : {}), about: f.about.trim().replace(/\.$/, ''), ...(angle ? { angle } : {}) };
     });
     const block = featuresBlock(id, features);
     const old = featuresTs.match(blockRe(id));
@@ -98,7 +101,7 @@ function mapBlock(text, id) {
 const blockRe = (id) => new RegExp(`\\n  ${id}: \\[\\n[\\s\\S]*?\\n  \\],\\n`);
 function featuresBlock(id, features) {
   if (!features.length) return '';
-  const row = (f) => `    { kind: ${quote(f.kind)}, at: ${spotText(f.at)}, ${f.to ? `to: ${spotText(f.to)}, ` : ''}about: ${quote(f.about)} },`;
+  const row = (f) => `    { kind: ${quote(f.kind)}, at: ${spotText(f.at)}, ${f.to ? `to: ${spotText(f.to)}, ` : ''}about: ${quote(f.about)}${f.angle ? `, angle: ${f.angle}` : ''} },`;
   return `\n  ${id}: [\n${features.map(row).join('\n')}\n  ],\n`;
 }
 

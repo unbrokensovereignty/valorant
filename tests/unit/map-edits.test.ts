@@ -62,6 +62,22 @@ test('moves go into places, a move back to the game’s spot leaves places, and 
   assert.deepEqual(out.todo, []);
 });
 
+test('a turned mark keeps its turn, as whole degrees, and a mark turned back loses it', () => {
+  const e = editsOf('ascent') as ReturnType<typeof editsOf> & { features: { angle?: number }[] };
+  e.features[2]!.angle = 44.6;
+  e.features[3]!.angle = -90;
+  const out = applyEdits(file({ ascent: e }), { mapsTs, featuresTs, maps });
+  const rows = out.featuresTs.split('\n').filter((l) => l.includes(', angle: '));
+  assert.equal(rows.length, 2);
+  assert.match(rows[0]!, /^ {4}\{ kind: 'door', .*, angle: 45 \},$/);
+  assert.match(rows[1]!, /, angle: 270 \},$/);
+  e.features[2]!.angle = 360;
+  e.features[3]!.angle = 0;
+  assert.equal(applyEdits(file({ ascent: e }), { mapsTs, featuresTs, maps }).featuresTs, featuresTs);
+  e.features[2]!.angle = Number.NaN;
+  assert.throws(() => applyEdits(file({ ascent: e }), { mapsTs, featuresTs, maps }), /a mark can't be read/);
+});
+
 test('new, renamed and removed callouts are left to a hand, saying when plays use them', () => {
   const e = editsOf('ascent');
   e.callouts.find((c) => c.name === 'A Main')!.name = 'A Long';

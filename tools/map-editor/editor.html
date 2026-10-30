@@ -144,6 +144,7 @@ select.small { height: 30px; border-radius: 8px; border: 1px solid var(--line-st
 .field textarea { resize: vertical; min-height: 64px; }
 .xy { display: grid; grid-template-columns: auto 1fr 1fr; gap: 6px; align-items: center; }
 .xy span { font-size: 12.5px; color: var(--muted); font-weight: 600; min-width: 70px; }
+.xy.turn { grid-template-columns: auto auto 1fr auto; }
 .xy input { width: 100%; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--surface); padding: 4px 8px; font-variant-numeric: tabular-nums; }
 .note { font-size: 13.5px; padding: 8px 10px; border-radius: 8px; display: grid; gap: 6px; justify-items: start; }
 .note.warn { background: var(--warn-soft); color: var(--warn); }
@@ -269,10 +270,11 @@ dialog::backdrop { background: rgba(8, 10, 14, 0.5); }
   <ul>
     <li><b>Move</b> a callout or mark by dragging its dot, its name or the mark itself. Click one to select it, then nudge it with the arrow keys (hold <kbd>Shift</kbd> for bigger steps) or type its place on the right.</li>
     <li><b>Add</b> a callout or a mark: pick it in the tools (or press its key), then click the map. Name it or describe it on the right. Teleporters and ziplines get two ends; a rope can have a second end too.</li>
+    <li><b>Turn</b> a mark (a door or wall that lies at a slant, say) with <kbd>[</kbd> and <kbd>]</kbd>, 15° a press (hold <kbd>Shift</kbd> for 5°), or type its angle on the right.</li>
     <li><b>Remove</b> what's selected with <kbd>Delete</kbd> or the button on the right. Anything removed can be brought back from the list.</li>
     <li><b>Zoom</b> with the mouse wheel, the buttons or <kbd>+</kbd> and <kbd>−</kbd>; drag an empty spot to move around, and <kbd>0</kbd> shows the whole map again.</li>
     <li><b>Floor</b> shows in green where the app reads the floor. Every callout and mark has to stand on it, or the app's own checks fail; anything in a wall gets an orange ring, and the right side offers to move it onto the floor.</li>
-    <li><b>Names</b> sit next to their dot the way the app places them (above, or below, right or left when another name is in the way), so put each dot in the middle of the area it names.</li>
+    <li><b>Names</b> sit next to their dot the way the app places them (above, or below, right or left when another name is in the way), or right on the spot when dots are off, so put each dot in the middle of the area it names. Names, dots and marks grow with the map as you zoom, as they do in the app.</li>
     <li><b>Your work is kept</b> in this browser as you go, so you can close the file and come back. When you're done, choose <b>Save edits file</b> and send that file over. <b>Open edits file</b> loads one back in to keep going.</li>
     <li><b>Save picture</b> saves the map you're on as an image, with its names and marks.</li>
   </ul>
@@ -299,7 +301,11 @@ const store = {
 const KEY = 'playbook-map-editor';
 const KINDS = DATA.kinds;
 const kindOf = (k) => KINDS.find((x) => x.kind === k);
-const TEXT_SIZES = [['s', 'Small', 0.8], ['m', 'Medium', 1], ['l', 'Large', 1.25], ['xl', 'Extra large', 1.55]];
+const TEXT_SIZES = [['s', 'Small', 0.45], ['m', 'Medium', 0.58], ['l', 'Large', 0.72], ['xl', 'Extra large', 0.9]];
+/** A callout's dot radius and the space from it to its name, for 3-unit names: the app's own. */
+const DOT = 0.8, LABEL_GAP = 0.9;
+/** A mark's turn, as whole degrees from 0 to 359. */
+const turn = (v) => ((Math.round(Number(v) || 0) % 360) + 360) % 360;
 const KEYS = { callout: 'c', orb: 'o', door: 'd', breakable: 'b', wall: 'w', teleporter: 't', rope: 'r', zipline: 'z', drop: 's' };
 const ZOOM_MAX = 8, ZOOM_STEP = 1.4, FRAME = 108;
 const shortName = (n) => (n === 'Attacker Side Spawn' ? 'Attack spawn' : n === 'Defender Side Spawn' ? 'Defense spawn' : n).replace(/^(Attacker|Defender) Side /, '');
@@ -387,7 +393,7 @@ const ORIG = {}, S = {};
 for (const m of MAPS) {
   ORIG[m.id] = {
     callouts: m.callouts.map((c) => ({ uid: uid('c'), name: c.name, at: [c.x, c.y] })),
-    features: m.features.map((f) => ({ uid: uid('f'), kind: f.kind, at: [...f.at], to: f.to ? [...f.to] : null, about: f.about })),
+    features: m.features.map((f) => ({ uid: uid('f'), kind: f.kind, at: [...f.at], to: f.to ? [...f.to] : null, about: f.about, angle: turn(f.angle) })),
   };
   S[m.id] = clone(ORIG[m.id]);
 }
@@ -410,6 +416,7 @@ function changesOf(id) {
     if (was.kind !== f.kind) out.push({ uid: f.uid, text: `Made “${f.about}” a ${kindOf(f.kind).name.toLowerCase()}` });
     if (was.about !== f.about) out.push({ uid: f.uid, text: `Reworded “${was.about}” to “${f.about}”` });
     if (far(was.at, f.at) || (!!was.to !== !!f.to) || (was.to && f.to && far(was.to, f.to))) out.push({ uid: f.uid, text: `Moved the ${what}` });
+    if (turn(was.angle) !== turn(f.angle)) out.push({ uid: f.uid, text: `Turned the ${what} to ${turn(f.angle)}°` });
   }
   const sf = new Set(s.features.map((f) => f.uid));
   for (const f of o.features) if (!sf.has(f.uid)) out.push({ uid: null, text: `Removed the ${kindOf(f.kind).name.toLowerCase()} “${f.about}”` });
@@ -455,7 +462,7 @@ function editsOf(id) {
     removedCallouts: o.callouts.filter((c) => !sc.has(c.uid)).map((c) => c.name),
     features: s.features.map((f) => {
       const ref = o.features.findIndex((x) => x.uid === f.uid);
-      return { kind: f.kind, at: f.at, ...(f.to ? { to: f.to } : {}), about: f.about.trim(), ...(ref >= 0 ? { ref } : { new: true }) };
+      return { kind: f.kind, at: f.at, ...(f.to ? { to: f.to } : {}), about: f.about.trim(), ...(turn(f.angle) ? { angle: turn(f.angle) } : {}), ...(ref >= 0 ? { ref } : { new: true }) };
     }),
     removedFeatures: o.features.filter((f) => !sf.has(f.uid)).map((f) => f.about),
   };
@@ -493,7 +500,7 @@ function takeEdits(file) {
       const id2 = base && !used.has(base.uid) ? base.uid : uid('n');
       used.add(id2);
       const to = spot(f.to);
-      features.push({ uid: id2, kind: f.kind, at, to: kindOf(f.kind).ends === 1 ? null : to, about: typeof f.about === 'string' ? f.about.slice(0, 300) : '' });
+      features.push({ uid: id2, kind: f.kind, at, to: kindOf(f.kind).ends === 1 ? null : to, about: typeof f.about === 'string' ? f.about.slice(0, 300) : '', angle: turn(f.angle) });
     }
     S[id] = { callouts, features };
     n++;
@@ -543,12 +550,12 @@ function viewBox() {
   return [vx, vy, size];
 }
 
-/** Puts each name above its spot, or below, right or left when that would cover one already placed or a mark (`marks`, each reaching `mark` out from its middle), just clear of the spot's dot (`dot` is its radius): the app's own rule. */
+/** Puts each name above its spot, or below, right or left when that would cover one already placed or a mark (`marks`, each reaching `mark` out from its middle), a little way from the spot's dot (`dot` is its radius), or right on the spot without dots (`dot` below 0): the app's own rule. */
 function placeLabels(spots, k, dot, marks = [], mark = 0) {
-  const boxes = marks.map(([x, y]) => ({ l: x - mark, r: x + mark, t: y - mark, b: y + mark })), out = [], gap = 0.4 * k + dot;
+  const boxes = marks.map(([x, y]) => ({ l: x - mark, r: x + mark, t: y - mark, b: y + mark })), out = [], gap = LABEL_GAP * k + Math.max(0, dot);
   for (const s of spots) {
     const w = (s.text.length * 1.6 + 1) * k, h = 3.4 * k;
-    const tries = [
+    const tries = dot < 0 ? [{ ...s, x: s.x, y: s.y + 1.1 * k, anchor: 'middle' }] : [
       { ...s, x: s.x, y: s.y - gap, anchor: 'middle' },
       { ...s, x: s.x, y: s.y + 2.2 * k + gap, anchor: 'middle' },
       { ...s, x: s.x + gap, y: s.y + 1.1 * k, anchor: 'start' },
@@ -563,8 +570,12 @@ function placeLabels(spots, k, dot, marks = [], mark = 0) {
   return out;
 }
 
-/** A mark's shape, in map units (0 to 100), as the app draws it. */
-function markSvg(kind, x, y, mk) {
+/** A mark's shape, in map units (0 to 100), as the app draws it, turned `angle` degrees clockwise. */
+function markSvg(kind, x, y, mk, angle) {
+  const shape = markShape(kind, x, y, mk);
+  return angle ? `<g transform="rotate(${angle} ${x} ${y})">${shape}</g>` : shape;
+}
+function markShape(kind, x, y, mk) {
   const s = 1.5 * mk, w = (v) => `stroke-width:${v * mk}px`;
   switch (kind) {
     case 'orb': return `<path d="M${x} ${y - s}L${x + s} ${y}L${x} ${y + s}L${x - s} ${y}Z" class="mark" style="${w(0.35)}"/>`;
@@ -582,7 +593,9 @@ function renderMarks() {
   const m = mapOf(view.map), s = cur(), o = ORIG[view.map];
   const [vx, vy, size] = viewBox();
   svg.setAttribute('viewBox', `${vx} ${vy} ${size} ${size}`);
-  const mk = 1 / z, k = TEXT_SIZES.find((t) => t[0] === view.text)[2];
+  // names, dots and marks are in the map's units, so they grow as it zooms, as in the app; the
+  // editor's own rings and lines keep their size on screen, but never get smaller than what they ring
+  const mk = 1 / z, k = TEXT_SIZES.find((t) => t[0] === view.text)[2], dot = DOT * k;
   const origOf = new Map([...o.callouts, ...o.features].map((x) => [x.uid, x]));
   let h = '', hits = '';
   // where things were
@@ -604,28 +617,28 @@ function renderMarks() {
       h += `<g class="f-${f.kind}">`;
       if (f.to) {
         const [x2, y2] = P(f.to);
-        h += `<line x1="${x}" y1="${y}" x2="${x2}" y2="${y2}" class="link${f.kind === 'teleporter' ? ' faint' : ''}" style="stroke-width:${(f.kind === 'teleporter' ? 0.3 : 0.45) * mk}px"/>`;
+        h += `<line x1="${x}" y1="${y}" x2="${x2}" y2="${y2}" class="link${f.kind === 'teleporter' ? ' faint' : ''}" style="stroke-width:${f.kind === 'teleporter' ? 0.3 : 0.45}px"/>`;
       }
-      h += markSvg(f.kind, x, y, mk);
-      if (f.to) h += markSvg(f.kind, ...P(f.to), mk);
+      h += markSvg(f.kind, x, y, 1, f.angle);
+      if (f.to) h += markSvg(f.kind, ...P(f.to), 1, f.angle);
       h += '</g>';
       for (const end of f.to ? ['at', 'to'] : ['at']) {
         const [ex, ey] = P(f[end]);
-        if (!onFloor(view.map, f[end])) h += `<circle cx="${ex}" cy="${ey}" r="${2.5 * mk}" class="wall-ring" style="stroke-width:${0.4 * mk}px;stroke-dasharray:${0.8 * mk} ${0.5 * mk}"/>`;
-        if (sel === f.uid) h += `<circle cx="${ex}" cy="${ey}" r="${2.9 * mk}" class="sel-ring" style="stroke-width:${0.45 * mk}px"/>`;
-        hits += `<circle cx="${ex}" cy="${ey}" r="${2.3 * mk}" fill="transparent" class="hit" data-uid="${f.uid}" data-end="${end}"><title>${esc(f.about)}${f.to ? (end === 'at' ? ' (one end)' : ' (other end)') : ''}</title></circle>`;
+        if (!onFloor(view.map, f[end])) h += `<circle cx="${ex}" cy="${ey}" r="${Math.max(2.5 * mk, 2.9)}" class="wall-ring" style="stroke-width:${0.4 * mk}px;stroke-dasharray:${0.8 * mk} ${0.5 * mk}"/>`;
+        if (sel === f.uid) h += `<circle cx="${ex}" cy="${ey}" r="${Math.max(2.9 * mk, 3.2)}" class="sel-ring" style="stroke-width:${0.45 * mk}px"/>`;
+        hits += `<circle cx="${ex}" cy="${ey}" r="${Math.max(2.3 * mk, 2)}" fill="transparent" class="hit" data-uid="${f.uid}" data-end="${end}"><title>${esc(f.about)}${f.to ? (end === 'at' ? ' (one end)' : ' (other end)') : ''}</title></circle>`;
       }
     }
   }
   for (const c of s.callouts) {
     const [x, y] = P(c.at);
-    if (!onFloor(view.map, c.at)) h += `<circle cx="${x}" cy="${y}" r="${2.2 * mk}" class="wall-ring" style="stroke-width:${0.4 * mk}px;stroke-dasharray:${0.8 * mk} ${0.5 * mk}"/>`;
-    if (sel === c.uid) h += `<circle cx="${x}" cy="${y}" r="${2.4 * mk}" class="sel-ring" style="stroke-width:${0.45 * mk}px"/>`;
-    if (view.dots || sel === c.uid) h += `<circle cx="${x}" cy="${y}" r="${0.55 * mk}" class="dot" style="stroke-width:${0.25 * mk}px"/>`;
-    hits += `<circle cx="${x}" cy="${y}" r="${1.8 * mk}" fill="transparent" class="hit" data-uid="${c.uid}" data-end="at"><title>${esc(c.name)}</title></circle>`;
+    if (!onFloor(view.map, c.at)) h += `<circle cx="${x}" cy="${y}" r="${Math.max(2.2 * mk, dot + 0.8)}" class="wall-ring" style="stroke-width:${0.4 * mk}px;stroke-dasharray:${0.8 * mk} ${0.5 * mk}"/>`;
+    if (sel === c.uid) h += `<circle cx="${x}" cy="${y}" r="${Math.max(2.4 * mk, dot + 1)}" class="sel-ring" style="stroke-width:${0.45 * mk}px"/>`;
+    if (view.dots || sel === c.uid) h += `<circle cx="${x}" cy="${y}" r="${dot}" class="dot" style="stroke-width:${0.3 * dot}px"/>`;
+    hits += `<circle cx="${x}" cy="${y}" r="${Math.max(1.8 * mk, dot + 0.4)}" fill="transparent" class="hit" data-uid="${c.uid}" data-end="at"><title>${esc(c.name)}</title></circle>`;
   }
   if (view.names) {
-    const labels = placeLabels(s.callouts.map((c) => ({ uid: c.uid, text: shortName(c.name.trim() || 'Unnamed'), x: c.at[0] * 100, y: c.at[1] * 100 })), k, view.dots ? 0.55 * mk : 0, view.marks ? s.features.flatMap((f) => [f.at, ...(f.to ? [f.to] : [])]).map(P) : [], 1.6 * mk);
+    const labels = placeLabels(s.callouts.map((c) => ({ uid: c.uid, text: shortName(c.name.trim() || 'Unnamed'), x: c.at[0] * 100, y: c.at[1] * 100 })), k, view.dots ? dot : -1, view.marks ? s.features.flatMap((f) => [f.at, ...(f.to ? [f.to] : [])]).map(P) : [], 1.6);
     for (const l of labels) {
       h += `<text x="${l.x}" y="${l.y}" text-anchor="${l.anchor}" class="lbl${sel === l.uid ? ' sel' : ''}" data-uid="${l.uid}" data-end="at" style="font-size:${3 * k}px;stroke-width:${0.7 * k}px">${esc(l.text)}</text>`;
     }
@@ -708,6 +721,8 @@ function renderInspector(force) {
     // keep what's being typed; just bring the places up to date
     const it = sel && findItem(sel);
     if (it) box.querySelectorAll('[data-xy]').forEach((inp) => { if (inp !== document.activeElement) { const [end, i] = inp.dataset.xy.split(':'); if (it[end]) inp.value = it[end][+i]; } });
+    const a = $('#i-angle');
+    if (it && a && a !== document.activeElement) a.value = turn(it.angle);
     return;
   }
   const it = sel && findItem(sel);
@@ -738,6 +753,10 @@ function renderInspector(force) {
       <label class="field"><span>What it is (shown when you point at it in the app)</span><textarea id="i-about" maxlength="300">${esc(it.about)}</textarea></label>
       ${xyRow(it.to ? 'One end' : 'Place', 'at', it.at)}
       ${it.to ? xyRow(it.kind === 'teleporter' ? 'Where it goes' : 'Other end', 'to', it.to) : ''}
+      <div class="xy turn"><span>Turned</span>
+        <button class="btn small" id="i-left" title="Turn left 15° ([)" aria-label="Turn left 15 degrees">↺</button>
+        <input type="number" min="0" max="359" step="1" value="${turn(it.angle)}" id="i-angle" aria-label="Turned, in degrees clockwise from 0 to 359" title="Degrees clockwise: 0 is as drawn, 90 a quarter turn">
+        <button class="btn small" id="i-right" title="Turn right 15° (])" aria-label="Turn right 15 degrees">↻</button></div>
       ${k.ends === 'maybe' ? `<div class="row"><button class="btn small" id="i-ends">${it.to ? 'Take off the other end' : 'Give it another end'}</button></div>` : ''}`;
   }
   if (wall.length) h += `<div class="note warn">${wall.length === 2 ? 'Both ends are' : it.to ? (wall[0] === 'at' ? 'One end is' : 'The other end is') : 'This is'} in a wall, so the app's checks won't take it. <button class="btn small" id="i-floor">Move onto the floor</button></div>`;
@@ -791,6 +810,16 @@ function add(at) {
   changed(true);
   const field = $('#i-name') || $('#i-about');
   if (field) setTimeout(() => { field.focus(); field.select(); }, 0);
+}
+/** Turns a mark by `by` degrees; quick presses in a row undo together, as nudges do. */
+let lastTurn = 0;
+function turnBy(it, by) {
+  if (!it || isCallout(it)) return;
+  const now = Date.now();
+  if (now - lastTurn > 700) begin();
+  lastTurn = now;
+  it.angle = turn(turn(it.angle) + by);
+  changed(false);
 }
 function remove(u) {
   const s = cur();
@@ -860,8 +889,9 @@ function grab(e) {
     const e2 = Math.hypot((it[end][0] - x) * 100, (it[end][1] - y) * 100);
     if (e2 <= reach && e2 < d) { d = e2; best = { it, end }; }
   };
-  for (const c of cur().callouts) near(c, 'at', 1.8 * mk);
-  if (view.marks) for (const f of cur().features) { near(f, 'at', 2.3 * mk); if (f.to) near(f, 'to', 2.3 * mk); }
+  const dot = DOT * TEXT_SIZES.find((t) => t[0] === view.text)[2];
+  for (const c of cur().callouts) near(c, 'at', Math.max(1.8 * mk, dot + 0.4));
+  if (view.marks) for (const f of cur().features) { near(f, 'at', Math.max(2.3 * mk, 2)); if (f.to) near(f, 'to', Math.max(2.3 * mk, 2)); }
   return best;
 }
 svg.addEventListener('pointerdown', (e) => {
@@ -941,6 +971,7 @@ document.addEventListener('keydown', (e) => {
   if (key === '-' || key === '_') { zoomTo(z / ZOOM_STEP); return; }
   if (key === '0') { zoomTo(1); return; }
   if ((key === 'delete' || key === 'backspace') && sel) { e.preventDefault(); remove(sel); return; }
+  if ((e.code === 'BracketLeft' || e.code === 'BracketRight') && sel) { e.preventDefault(); turnBy(findItem(sel), (e.code === 'BracketLeft' ? -1 : 1) * (e.shiftKey ? 5 : 15)); return; }
   const dirs = { arrowleft: [-1, 0], arrowright: [1, 0], arrowup: [0, -1], arrowdown: [0, 1] };
   if (dirs[key]) {
     e.preventDefault();
@@ -966,6 +997,7 @@ $('#inspector').addEventListener('click', (e) => {
   const id = e.target.closest('button')?.id;
   if (id === 'i-remove') remove(it.uid);
   else if (id === 'i-back') putBack(it.uid);
+  else if (id === 'i-left' || id === 'i-right') turnBy(it, id === 'i-left' ? -15 : 15);
   else if (id === 'i-ends') { begin(); it.to = it.to ? null : [r3(it.at[0] + 0.03), r3(it.at[1] - 0.03)]; changed(true); }
   else if (id === 'i-floor') {
     begin();
@@ -983,6 +1015,7 @@ $('#inspector').addEventListener('input', (e) => {
   if (!typingStarted) { begin(); typingStarted = true; }
   if (t.id === 'i-name') it.name = t.value;
   else if (t.id === 'i-about') it.about = t.value;
+  else if (t.id === 'i-angle') { if (t.value === '' || !Number.isFinite(Number(t.value))) return; it.angle = turn(t.value); }
   else if (t.dataset.xy) {
     const [end, i] = t.dataset.xy.split(':'), v = Number(t.value);
     if (t.value === '' || !Number.isFinite(v)) return;
@@ -1111,7 +1144,9 @@ $('#png').addEventListener('click', async () => {
   }
   const X = (v) => pad + v * inner;
   const colors = { orb: '#F2C14E', door: '#6FC3FF', breakable: '#FF8A65', wall: '#F48FB1', teleporter: '#C792EA', rope: '#8BE28B', zipline: '#8BE28B', drop: '#80DEEA' };
-  const drawMark = (kind, x, y) => {
+  const drawMark = (kind, x, y, angle) => {
+    ctx.save();
+    if (angle) { ctx.translate(x, y); ctx.rotate((angle * Math.PI) / 180); ctx.translate(-x, -y); }
     const sz = 1.5 * u * 1.2;
     ctx.fillStyle = colors[kind]; ctx.strokeStyle = 'rgba(10,12,16,0.9)'; ctx.lineWidth = 0.35 * u * 1.2;
     ctx.beginPath();
@@ -1122,22 +1157,23 @@ $('#png').addEventListener('click', async () => {
     else if (kind === 'drop') { ctx.moveTo(x - sz * 0.9, y - sz * 0.6); ctx.lineTo(x + sz * 0.9, y - sz * 0.6); ctx.lineTo(x, y + sz * 0.8); ctx.closePath(); ctx.fill(); ctx.stroke(); }
     else if (kind === 'teleporter') { ctx.arc(x, y, sz * 0.85, 0, 7); ctx.fillStyle = colors[kind] + '4D'; ctx.fill(); ctx.strokeStyle = colors[kind]; ctx.lineWidth = 0.5 * u * 1.2; ctx.stroke(); }
     else { ctx.arc(x, y, sz * 0.5, 0, 7); ctx.fill(); ctx.stroke(); }
+    ctx.restore();
   };
   if (view.marks) for (const f of s.features) {
     if (f.to && f.kind !== 'teleporter') { ctx.save(); ctx.strokeStyle = colors[f.kind]; ctx.globalAlpha = 0.85; ctx.lineWidth = 0.45 * u * 1.2; ctx.setLineDash([u, 0.8 * u]); ctx.beginPath(); ctx.moveTo(X(f.at[0]), X(f.at[1])); ctx.lineTo(X(f.to[0]), X(f.to[1])); ctx.stroke(); ctx.restore(); }
-    drawMark(f.kind, X(f.at[0]), X(f.at[1]));
-    if (f.to) drawMark(f.kind, X(f.to[0]), X(f.to[1]));
+    drawMark(f.kind, X(f.at[0]), X(f.at[1]), f.angle);
+    if (f.to) drawMark(f.kind, X(f.to[0]), X(f.to[1]), f.angle);
   }
   const k = TEXT_SIZES.find((t) => t[0] === view.text)[2];
   for (const cl of s.callouts) {
     if (!view.dots) break;
-    ctx.beginPath(); ctx.arc(X(cl.at[0]), X(cl.at[1]), 0.55 * u * 1.1, 0, 7);
-    ctx.fillStyle = '#F4F6F8'; ctx.strokeStyle = 'rgba(10,12,16,0.85)'; ctx.lineWidth = 0.25 * u; ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.arc(X(cl.at[0]), X(cl.at[1]), DOT * k * u, 0, 7);
+    ctx.fillStyle = '#F4F6F8'; ctx.strokeStyle = 'rgba(10,12,16,0.85)'; ctx.lineWidth = 0.3 * DOT * k * u; ctx.fill(); ctx.stroke();
   }
   if (view.names) {
     ctx.font = `600 ${3 * k * u}px 'Atkinson Hyperlegible Next', system-ui, sans-serif`;
     ctx.lineJoin = 'round';
-    for (const l of placeLabels(s.callouts.map((cl) => ({ text: shortName(cl.name.trim() || 'Unnamed'), x: cl.at[0] * 100, y: cl.at[1] * 100 })), k, view.dots ? 0.6 : 0, view.marks ? s.features.flatMap((f) => [f.at, ...(f.to ? [f.to] : [])]).map(P) : [], 1.9)) {
+    for (const l of placeLabels(s.callouts.map((cl) => ({ text: shortName(cl.name.trim() || 'Unnamed'), x: cl.at[0] * 100, y: cl.at[1] * 100 })), k, view.dots ? DOT * k : -1, view.marks ? s.features.flatMap((f) => [f.at, ...(f.to ? [f.to] : [])]).map(P) : [], 1.9)) {
       ctx.textAlign = l.anchor === 'middle' ? 'center' : l.anchor === 'start' ? 'left' : 'right';
       ctx.lineWidth = 0.7 * k * u; ctx.strokeStyle = 'rgba(10,12,16,0.85)'; ctx.strokeText(l.text, X(l.x / 100), X(l.y / 100));
       ctx.fillStyle = '#F4F6F8'; ctx.fillText(l.text, X(l.x / 100), X(l.y / 100));

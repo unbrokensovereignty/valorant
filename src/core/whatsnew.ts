@@ -19,7 +19,7 @@ export const WHATS_NEW: readonly VersionNotes[] = [
   {
     version: '0.3.1',
     items: [
-      { icon: 'map', title: 'Maps that match the game', text: 'Every map’s ultimate orbs, ropes, doors, walls, ziplines and teleporters sit where they really are, with Summit’s droppable walls and the silent drops on Lotus and Summit added. Callout names now zoom with the map and sit close to their dots.', page: 'maps/summit' },
+      { icon: 'map', title: 'Maps that match the game', text: 'Every map’s ultimate orbs, ropes, doors, walls, ziplines and teleporters sit where they really are, with Summit’s droppable walls and the silent drops on Lotus and Summit added. Names, dots and marks now zoom with the map, names are smaller, and the map can fill the screen.', page: 'maps/summit' },
     ],
   },
   {

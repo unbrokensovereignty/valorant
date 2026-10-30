@@ -4,7 +4,8 @@
  * teleporters, ropes, ziplines and silent drops). Spots are fractions of the minimap's width and height, as
  * callouts are, placed by hand against the minimap and checked against several callout maps and
  * map guides; the specs check that each one stands on the floor. A feature with two ends (a
- * teleporter, rope or zipline) has `to` for the other end.
+ * teleporter, rope or zipline) has `to` for the other end, and a mark can be turned (`angle`) to lie
+ * the way its door or wall does.
  */
 import type { Spot } from './floor.ts';
 
@@ -17,6 +18,8 @@ export interface MapFeature {
   to?: Spot;
   /** What it is, in a few words: "Rotating door between A Main and A Rubble". */
   about: string;
+  /** How far its mark is turned, in degrees clockwise (a door or wall that lies across the map's lines). */
+  angle?: number;
 }
 
 /** Each kind in words, for the legend, in the order the legend lists them. */

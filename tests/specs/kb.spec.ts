@@ -132,6 +132,7 @@ describe('maps', () => {
         ok(f.about.length > 10 && !f.about.endsWith('.'), `${id}: “${f.about}” says what it is, without a full stop`);
         if (f.to) ok(f.kind === 'teleporter' || f.kind === 'zipline' || f.kind === 'rope', `${id}: only teleporters, ziplines and ropes have two ends`);
         if (f.kind === 'teleporter' || f.kind === 'zipline') ok(!!f.to, `${id}: a ${f.kind} has two ends`);
+        if (f.angle !== undefined) ok(Number.isInteger(f.angle) && f.angle > 0 && f.angle < 360, `${id}: ${f.about} is turned by a whole number of degrees, 1 to 359`);
         for (const s of [f.at, ...(f.to ? [f.to] : [])]) ok(onFloor(id, s), `${id}: ${f.about} is on the floor`);
       }
       const orbs = fs.filter((f) => f.kind === 'orb').length;
