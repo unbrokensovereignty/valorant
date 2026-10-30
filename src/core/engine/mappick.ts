@@ -102,9 +102,10 @@ function betterWords(p: { key: string; size: number }, mapName: string): string 
   if (p.key === 'pro') return `Pro teams on ${mapName} pick agents more like yours`;
   if (p.key === 'roles') return `Its mix of roles suits ${mapName} better than most maps`;
   if (p.key === 'pair') return `Its agents work together better on ${mapName}`;
-  const info = DIM_INFO[p.key as Dim];
-  // (flashes and smokes count, utility counts)
-  return p.size < 0 ? `Being short of ${info.has} costs less on ${mapName}` : `Its ${info.has} ${info.few ? 'count' : 'counts'} for more on ${mapName}`;
+  // named as the reasons to ban name it (crowd control), with its verb (flashes count, utility counts)
+  const info = DIM_INFO[p.key as Dim], disrupt = p.key === 'disrupt';
+  const has = disrupt ? 'crowd control' : info.has, many = info.few && !disrupt;
+  return p.size < 0 ? `Being short of ${has} costs less on ${mapName}` : `Its ${has} ${many ? 'count' : 'counts'} for more on ${mapName}`;
 }
 
 /**
