@@ -84,15 +84,16 @@ test('every tour runs to the end with the keyboard, each step lit and clear of i
 test('a tour goes back, ends with Esc, keeps the page from being clicked, and ends when you leave its page', async ({ page, errors }) => {
   await open(page, 'help/tours');
   await page.locator('#start-tour-start').click();
-  expect((await stepNow(page)).count).toBe('Getting started · 1 of 12');
+  const of = tourById('start')!.steps.length;
+  expect((await stepNow(page)).count).toBe(`Getting started · 1 of ${of}`);
   // two quick presses still show every step
   await page.keyboard.press('Space');
   await page.keyboard.press('Space');
-  expect((await stepNow(page)).count).toBe('Getting started · 2 of 12');
+  expect((await stepNow(page)).count).toBe(`Getting started · 2 of ${of}`);
   await page.keyboard.press('Space');
-  expect((await stepNow(page)).count).toBe('Getting started · 3 of 12');
+  expect((await stepNow(page)).count).toBe(`Getting started · 3 of ${of}`);
   await page.keyboard.press('ArrowLeft');
-  expect((await stepNow(page)).count).toBe('Getting started · 2 of 12');
+  expect((await stepNow(page)).count).toBe(`Getting started · 2 of ${of}`);
   await expect(page).toHaveURL(/#\/home$/);
   // a click on the page lands on the tour's cover, not on the map under it
   await page.locator('.home-maps .map-tile').first().click({ force: true });

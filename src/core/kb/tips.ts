@@ -109,7 +109,7 @@ export const MAP_TIPS: Record<string, Record<Side, readonly [string, string]>> =
     defense: ['B Main and A Main are long sightlines where an Operator or a long wall pays off.', 'Mid gives fast rotations; hold it with a smoke ready for either site.'],
   },
   split: {
-    attack: ['Ropes let defenders hold high ground: smoke A Rafters (Heaven) and B Tower first.', 'Take mid (Mid Vent, Mid Mail) to pinch either site.'],
+    attack: ['Ropes let defenders hold high ground: smoke A Tower and B Tower (Heaven) first.', 'Take mid (Mid Vent, Mid Mail) to pinch either site.'],
     defense: ['Narrow ways in favor defenders: slow the hit with utility and trade from close angles.', 'Hold mid with a smoke ready; the ropes let you rotate quickly.'],
   },
   summit: {
@@ -121,6 +121,125 @@ export const MAP_TIPS: Record<string, Record<Side, readonly [string, string]>> =
     defense: ['A Elbow and B Market are close-range fights where close angles pay off.', 'Hold mid with information so a split doesn’t catch you out.'],
   },
 };
+
+/**
+ * Tips for an agent on a map: what the kit does there in particular, for the agents pro teams pick
+ * there and the ones whose kits suit the map. A tip for both sides is a string; one for each side,
+ * an object. Callouts are the game's own for the map.
+ */
+export const AGENT_MAP_TIPS: Record<string, Record<string, string | Partial<Record<Side, string>>>> = {
+  abyss: {
+    sova: 'Recon Bolt sees a long way on Abyss’s open sites: dart the site before the hit, so the team knows who holds A Tower or B Tower.',
+    harbor: 'High Tide runs across Abyss’s open sites in one line; steer it to cut A Tower or B Tower off before the team crosses.',
+    astra: 'Astra’s stars reach both of Abyss’s sites, so she can smoke a hit on one and still help a retake on the other.',
+    yoru: 'Abyss’s long mid gives Yoru room to fake: send Fakeout down one main and Gatecrash toward the other site.',
+    waylay: 'Lightspeed crosses Abyss’s open ground fast; dash onto site behind smokes, and Refract back if a tower sees you.',
+    jett: 'Abyss’s long sightlines suit an Operator Jett: take one shot from Mid Top or A Main and dash back to cover.',
+    omen: 'Dark Cover reaches anywhere on Abyss; smoke the towers for the hit and keep one smoke for after the plant.',
+  },
+  ascent: {
+    sova: 'A Recon Bolt from A Lobby or B Main before the hit finds the defenders on Ascent’s sites; the lineups are worth learning.',
+    omen: 'Smoke Mid Market and Mid Catwalk to take Ascent’s mid safely, then keep Dark Cover for the site the team hits.',
+    chamber: { defense: 'Hold A Main or mid with the Operator, with Rendezvous back on site so you can get out after the shot.', attack: 'Hold mid with the Operator while the team takes Mid Catwalk, then Rendezvous onto the site after the plant.' },
+    cypher: { defense: 'Cypher can hold B alone with Trapwires in B Main and a Spycam over the site, which frees a player for mid.' },
+    sage: { defense: 'Barrier Orb across B Main or Mid Market stops a fast push on Ascent for the first seconds.' },
+    hush: 'Telekinesis works Ascent’s site doors from range: shut one way in to slow a hit, or open it for a retake, without standing in the doorway.',
+  },
+  bind: {
+    viper: 'A Toxic Screen down B Long cuts the site’s long sightline, so the team can walk onto B together.',
+    brimstone: 'Bind is small enough that Sky Smoke reaches every smoke a hit needs; Stim Beacon speeds a rush through A Short or B Long.',
+    yoru: 'Gatecrash and the teleporters make Bind Yoru’s best map for fakes: send a Gatecrash or Fakeout toward one site and hit the other.',
+    fade: 'Haunt over A Bath (Showers) or B Window (Hookah) shows the close angles before anyone peeks them.',
+    raze: 'Paint Shells and Boom Bot clear Bind’s close spots, like A Lamps and B Elbow, before the team walks onto site.',
+    skye: 'Trailblazer clears A Bath (Showers) or B Window (Hookah) on its own; send it in before anyone walks through.',
+    cypher: 'A Trapwire by a teleporter exit catches anyone who comes through it, on attack and on defense.',
+  },
+  breeze: {
+    viper: 'A Toxic Screen across A Pyramids or down B Main is how the team crosses Breeze’s open ground; set it up before the hit.',
+    sova: 'Breeze’s open sites let a Recon Bolt see far; dart A Pyramids or B Back before the team commits.',
+    jett: 'Breeze has the longest sightlines in the game: an Operator Jett in mid or A Shop wins rounds, as long as she dashes out after each shot.',
+    yoru: 'Breeze is so big that defenders stand far apart; fake one site with Fakeout and Gatecrash behind the other.',
+    omen: 'Omen’s smokes reach anywhere on Breeze; pair them with Viper’s wall so every long sightline on the hit is covered.',
+    chamber: { defense: 'Hold Mid Hall or A Shop with the Operator, with Rendezvous behind cover so each long shot is safe.' },
+  },
+  corrode: {
+    viper: 'Corrode’s lobbies are long ways in; a Toxic Screen across A Main or B Main lets the team cross them together.',
+    fade: 'Haunt and Prowlers find the defenders in the corners near Corrode’s plant spots, like A Yard, A Pocket and A Elbow.',
+    vyse: { defense: 'Shear and Razorvine shut the narrow way from a lobby onto Corrode’s sites on whoever walks in first.' },
+    waylay: 'Lightspeed gets Waylay onto Corrode’s sites before the defenders can settle; go in the moment the team’s utility lands.',
+  },
+  fracture: {
+    breach: 'Fracture’s sites are reached through narrow ways from both ends; Fault Line and Flashpoint through the walls let both groups go in together.',
+    brimstone: 'Attackers come from both ends of Fracture, close to the sites, so Brimstone’s smokes reach both sides of a split.',
+    cypher: { defense: 'A Trapwire on the far way into each site, like A Rope or B Arcade, warns you of the pinch before it lands.' },
+    raze: 'Paint Shells clear the narrow ways into Fracture’s sites, so the team doesn’t walk into a close angle.',
+    fade: 'Haunt from one end of a Fracture site while the other group waits, so both groups know where the defenders are.',
+  },
+  haven: {
+    sova: 'Haven’s three sites need early information: a Recon Bolt down A Long or C Long shows where the defense is thin.',
+    neon: 'Neon’s speed gets the team to whichever Haven site is weakest before defenders can rotate across three sites.',
+    chamber: { defense: 'Hold A Long or C Long with the Operator, with Rendezvous placed to get you out after the shot.' },
+    omen: 'Smoke C Garage or Mid Window to move between Haven’s lanes without being seen.',
+    phoenix: 'Curveball around the corner of A Sewer (Short) or C Garage takes the close fight on your terms.',
+    killjoy: { defense: 'Killjoy’s setup can hold one Haven site alone, which frees two teammates to cover the other sites.' },
+  },
+  icebox: {
+    viper: 'Icebox’s B is crossed through B Yellow under long sightlines; a Toxic Screen across it lets the team plant.',
+    sova: 'Dart A Nest or B Yellow before the hit: Icebox’s high spots are hard to clear by peeking.',
+    killjoy: { defense: 'Lock one site down with Turret and Nanoswarms; Icebox’s sites are far apart, so the setup buys time to rotate.' },
+    jett: 'Updraft and Drift take Jett to Icebox’s tall boxes, where she can take angles the defenders don’t expect.',
+    kayo: 'ZERO/point onto a site before the hit stops the defenders’ utility, and FRAG/ment clears Icebox’s close spots.',
+    gekko: 'Wingman can plant on Icebox while the team holds the tall boxes around the site.',
+  },
+  lotus: {
+    omen: 'Lotus has three sites close together: keep Dark Cover for the site you hit, and send Paranoia through the narrow ways in.',
+    viper: 'A Toxic Screen across A Main or C Mound cuts Lotus’s close angles for the hit.',
+    fade: 'Haunt over A Hut or C Waterfall shows Lotus’s close corners before the entry goes in.',
+    raze: 'Paint Shells and Boom Bot clear Lotus’s corners, like A Hut, A Tree and C Hall, faster than anyone.',
+    chamber: 'A Trademark that watches A Door or C Door hears and slows a rotation through it.',
+    hush: {
+      attack: 'Turn A Door or C Door from a distance with Telekinesis to fake a rotation: the noise pulls defenders away while the team hits elsewhere.',
+      defense: 'Turn A Door or C Door from cover with Telekinesis to slow a push or cut off a flank, without standing in the doorway.',
+    },
+    vyse: 'Shear and Razorvine close Lotus’s narrow ways in, like A Main and C Mound.',
+  },
+  pearl: {
+    astra: 'Pearl’s long mains and wide mid suit Astra: stars placed in the buy phase can cover A Main, B Main and mid in one round.',
+    killjoy: { defense: 'Killjoy can hold B alone: Turret down B Main and Nanoswarms where the Spike is planted.' },
+    sova: 'Pearl’s long A Main and B Main give Recon Bolt long lines; dart the site before the team crosses.',
+    yoru: 'Pearl’s long mid lets Yoru fake one site and Gatecrash onto the other.',
+  },
+  split: {
+    viper: 'Split’s ways in are narrow: a Toxic Screen through A Main or B Garage and a Poison Cloud on the tower let the team take space.',
+    omen: 'Smoke A Tower and B Tower (Heaven) before the hit: Split’s defenders hold from above.',
+    raze: 'Blast Pack gets Raze up to A Tower or B Tower (Heaven) faster than the ropes, and Paint Shells clear the close spots on site.',
+    fade: 'Haunt over A Ramps or B Garage shows who holds Split’s close angles.',
+    neon: 'Neon’s speed takes Split’s sites before the defenders can rotate through mid; run in right behind Fast Lane.',
+    cypher: { defense: 'Trapwires at the top of A Ramps or in B Garage stop a rush on Split cold.' },
+  },
+  summit: {
+    neon: 'Summit’s wide mid around Mid Fountain lets Neon cross fast to either site before the rotation.',
+    fade: 'Summit’s sites have lots of cover; Haunt and Prowlers clear them faster than peeking each spot.',
+    chamber: 'Chamber holds Summit’s longer lanes with the Operator; place Rendezvous behind cover so each shot is safe.',
+    sage: { defense: 'Barrier Orb closes one way onto a Summit site while the team holds the other.' },
+  },
+  sunset: {
+    omen: 'Smoke B Market and Mid Courtyard so the team can take Sunset’s close fights on its own terms.',
+    neon: 'Sunset is compact: Neon’s speed takes B Market or A Main before the defenders can rotate.',
+    fade: 'Prowlers clear B Market’s close corners and A Elbow before the entry walks in.',
+    chamber: 'Hold A Main or B Main with the Operator, with Rendezvous placed to fall back after the shot.',
+    cypher: { defense: 'Trapwires in B Market catch the push into B before it reaches the site.' },
+    sage: { defense: 'Barrier Orb stops a push through B Market or A Main for the first seconds.' },
+  },
+};
+
+/** An agent's tip for a map and side ('both' prefers the tip for both sides, then the attack one), if there is one. */
+export function agentMapTip(agent: string, map: string, side: Side | 'both'): string | undefined {
+  const t = AGENT_MAP_TIPS[map]?.[agent];
+  if (!t) return undefined;
+  if (typeof t === 'string') return t;
+  return side === 'both' ? t.attack ?? t.defense : t[side];
+}
 
 /** Tips by rank: low (Iron to Silver), middle (Gold to Diamond) and high (Ascendant and up). */
 export const RANK_TIPS: Record<'low' | 'middle' | 'high', readonly string[]> = {
@@ -144,7 +263,11 @@ export const RANK_TIPS: Record<'low' | 'middle' | 'high', readonly string[]> = {
 export const rankBand = (t: number): 'low' | 'middle' | 'high' => (t < 0.3 ? 'low' : t < 0.7 ? 'middle' : 'high');
 
 /** Tips for a duo or a trio, whose other players are random: how to play, and what to ask the others for (while some haven't locked in). */
-export const PARTY_TIPS: Record<2 | 3, { play: string; ask: string }> = {
+export const PARTY_TIPS: Record<1 | 2 | 3, { play: string; ask: string }> = {
+  1: {
+    play: 'Pick late if you can: once your teammates lock in, add their agents under Teammates locked in and play what the team is missing.',
+    ask: 'Say what you’ll play early, and ask for the roles the Planner suggests before your teammates lock in.',
+  },
   2: {
     play: 'Pick two agents that work together, like a flash and an entry; the other three are random.',
     ask: 'Ask your random teammates for the roles the Planner suggests before they lock in.',
@@ -157,18 +280,15 @@ export const PARTY_TIPS: Record<2 | 3, { play: string; ask: string }> = {
 
 /**
  * Tips for a team with two of a role (what doubling up asks of the team), shown under "Two duelists"
- * and so on: one for each side, and one for a question about both.
+ * and so on: one for each side, and one for a question about both. Two initiators get a tip built
+ * from their kits instead (engine/tips.ts), since which one finds enemies and which one flashes
+ * depends on who they are.
  */
-export const DOUBLE_TIPS: Record<Role, Record<Side | 'both', string>> = {
+export const DOUBLE_TIPS: Record<Exclude<Role, 'initiator'>, Record<Side | 'both', string>> = {
   duelist: {
     attack: 'Go in one right after the other, so the second can trade the first.',
     defense: 'Split them up: one takes early fights for information, and the other stays back to trade or retake.',
     both: 'On attack, go in one right after the other so the second can trade the first; on defense, one takes early fights and the other stays back.',
-  },
-  initiator: {
-    attack: 'One finds the enemies and the other flashes them; don’t spend both on the same angle.',
-    defense: 'One finds the enemies and the other flashes them; don’t spend both on the same angle.',
-    both: 'One finds the enemies and the other flashes them; don’t spend both on the same angle.',
   },
   controller: {
     attack: 'One smokes the hit and the other plays mid or saves smokes for after the plant.',

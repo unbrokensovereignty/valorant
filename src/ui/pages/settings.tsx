@@ -11,6 +11,7 @@ import { data, go, revisit, safely, tabRole, toast, watch } from '../state.ts';
 import { scrollMotion } from '../theme.ts';
 import { play } from '../sound.ts';
 import { backUpNow, restoreFromFile } from '../backup.tsx';
+import { AgentChips } from '../components/pickers.tsx';
 import { askToKeep, sizeText, storageState, type Kept } from '../storage.ts';
 import { inUse, SECTIONS, SETTING_KEYS, SETTINGS, type SectionId, type SettingDef, type SettingKey, type Settings } from '../../core/settings.ts';
 import { ACCENTS, BUILT_IN_THEMES, type ThemePicks } from '../../core/theme.ts';
@@ -52,6 +53,7 @@ function Control({ k, s, save }: { k: SettingKey; s: Settings; save: (k: Setting
   const v = s[k];
   if (k === 'themeLight' || k === 'themeDark') return <ThemeSetting base={k === 'themeDark' ? 'dark' : 'light'} value={String(v)} onSave={(x) => save(k, x)} own={data().themes()} />;
   if (k === 'accent') return <AccentSetting value={String(v)} onSave={(x) => save(k, x)} />;
+  if (k === 'usualParty' && def.type === 'choice') return <Segmented value={String(v)} options={def.options} onChange={(x) => save(k, x)} label={def.label} />;
   switch (def.type) {
     case 'bool': return <Toggle checked={v as boolean} onChange={(x) => save(k, x)} label={<span class="visually-hidden">{def.label}</span>} />;
     case 'choice':
@@ -62,6 +64,8 @@ function Control({ k, s, save }: { k: SettingKey; s: Settings; save: (k: Setting
       if (def.percent) return <Slider value={v as number} min={def.min} max={def.max} step={def.step ?? 1} label={def.label} format={(n) => `${n}%`} onChange={(x) => save(k, x)} />;
       return <Stepper value={v as number} min={def.min} max={def.max} step={def.step ?? 1} unit={def.unit} label={def.label} onChange={(x) => save(k, x)} />;
     case 'text': return null;
+    case 'agents':
+      return <AgentChips ids={v as readonly string[]} empty="Choose agents" onChange={(x) => save(k, x)} o={{ title: def.label, max: def.max, line: def.help }} />;
   }
 }
 

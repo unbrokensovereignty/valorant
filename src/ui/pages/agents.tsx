@@ -13,15 +13,19 @@ import { answerFor } from '../solved.ts';
 import { planWith } from '../planner/store.ts';
 import { Fit } from '../planner/comp.tsx';
 import { rankWord } from '../planner/words.ts';
+import { SinceArrow, sinceTip, sinceWords } from '../since.tsx';
 import { agentById, AGENTS_BY_NAME, earlyStats, STATS_ON, type Agent } from '../../core/kb/agents.ts';
 import { kitOf, abilityNames, textParts } from '../../core/kb/kits.ts';
-import { POOL } from '../../core/kb/maps.ts';
+import { mapById, MAPS, POOL } from '../../core/kb/maps.ts';
+import { agentRules, ruleHelps, ruleWhyAt } from '../../core/kb/kitfit.ts';
 import { PRO, PRO_MAPS_COUNTED, proKnown } from '../../core/kb/pro.ts';
-import { RANKS } from '../../core/kb/ranks.ts';
+import { RANKS, type RankId } from '../../core/kb/ranks.ts';
 import { DIM_INFO, DIMS, ROLES, roleOf, type Role } from '../../core/kb/roles.ts';
 import { PAIRS, type Pair } from '../../core/kb/synergy.ts';
-import { agentTips } from '../../core/engine/tips.ts';
-import type { RankPick } from '../../core/engine/model.ts';
+import type { Situation } from '../../core/engine/model.ts';
+import { sinceOf, type Since } from '../../core/engine/since.ts';
+import { UNSETTLED, unsureWords } from '../../core/engine/sure.ts';
+import { agentMapTips, agentTips } from '../../core/engine/tips.ts';
 import { tierOf } from '../../core/engine/weights.ts';
 import { fmtLongDay } from '../../core/dates.ts';
 import { listJoin } from '../../core/text.ts';
@@ -102,10 +106,14 @@ function Strengths({ a }: { a: Agent }) {
   );
 }
 
-function BestMaps({ a, rank, newAgents }: { a: Agent; rank: RankPick; newAgents: boolean }) {
+/** The tooltip of a fit on an agent's page: why its tier moved and why it's less sure, when they are. */
+const tipOf = (moved: Since | undefined, unsure: string | undefined): string | undefined => [moved && sinceTip(moved), unsure].filter(Boolean).join(' ') || undefined;
+
+function BestMaps({ a, rank, newAgents }: { a: Agent; rank: RankId; newAgents: boolean }) {
   const rows = POOL.map((m) => {
-    const ans = answerFor({ map: m.id, side: 'both', rank, sites: [] }, newAgents);
-    return { m, fit: ans?.agents.find((x) => x.id === a.id)?.fit };
+    const s: Situation = { map: m.id, side: 'both', rank, sites: [] };
+    const x = answerFor(s, newAgents)?.agents.find((y) => y.id === a.id);
+    return { m, fit: x?.fit, moved: x && sinceOf(s, x), unsure: x?.unsure && unsureWords(s, a.id, x.unsure) };
   });
   const ready = rows.every((r) => r.fit !== undefined);
   const sorted = ready ? [...rows].sort((x, y) => y.fit! - x.fit!) : rows;
@@ -113,38 +121,44 @@ function BestMaps({ a, rank, newAgents }: { a: Agent; rank: RankPick; newAgents:
     <section class="panel stack" data-tour="agent-best-maps">
       <div class="row-between"><h2>Best maps</h2>{!ready && <span class="spinner" aria-label="Working it out" />}</div>
       <ul class="plain-list best-maps">
-        {sorted.map(({ m, fit }) => (
+        {sorted.map(({ m, fit, moved, unsure }) => (
           <li key={m.id}>
-            <button type="button" class="list-row" onClick={() => planWith({ map: m.id, include: [a.id], newAgents: newAgents || !!a.estimate })}>
+            <button type="button" class="list-row" data-tip={tipOf(moved, unsure)} onClick={() => planWith({ map: m.id, include: [a.id], newAgents: newAgents || !!a.estimate })}>
               <MapThumb id={m.id} class="small" />
               <span class="list-row-text"><b>{m.name}</b>{(PRO[m.id]?.picks[a.id] ?? 0) >= 30 && <small class="muted">Pros pick {a.name} in {PRO[m.id]!.picks[a.id]}% of games here</small>}</span>
-              {fit !== undefined ? <Fit fit={fit} tier={tierOf(fit)} label={`${a.name} on ${m.name}`} compact /> : <span class="faint small">…</span>}
+              {moved && <><SinceArrow m={moved} /><span class="visually-hidden">{sinceWords(moved)}</span></>}
+              {fit !== undefined ? <Fit fit={fit} tier={tierOf(fit)} label={`${a.name} on ${m.name}`} compact unsure={!!unsure} /> : <span class="faint small">…</span>}
             </button>
           </li>
         ))}
       </ul>
-      <p class="small muted">For a five-stack, both sides, at {rank === 'any' ? 'all ranks' : rankWord(rank)}. Pick a map to plan with {a.name} there.</p>
+      <p class="small muted">For a five-stack, both sides, at {rankWord(rank)}. Pick a map to plan with {a.name} there.</p>
     </section>
   );
 }
 
-function ByRank({ a, rank, newAgents }: { a: Agent; rank: RankPick; newAgents: boolean }) {
-  const rows = RANKS.map((r) => ({ r, fit: answerFor({ map: 'any', side: 'both', rank: r.id, sites: [] }, newAgents)?.agents.find((x) => x.id === a.id)?.fit }));
+function ByRank({ a, rank, newAgents }: { a: Agent; rank: RankId; newAgents: boolean }) {
+  const rows = RANKS.map((r) => {
+    const s: Situation = { map: 'any', side: 'both', rank: r.id, sites: [] };
+    const x = answerFor(s, newAgents)?.agents.find((y) => y.id === a.id);
+    return { r, fit: x?.fit, moved: x && sinceOf(s, x), unsure: x?.unsure && unsureWords(s, a.id, x.unsure) };
+  });
   const ready = rows.every((x) => x.fit !== undefined);
   return (
     <section class="panel stack" data-tour="agent-by-rank">
       <div class="row-between"><h2>By rank</h2>{!ready && <span class="spinner" aria-label="Working it out" />}</div>
       <ul class="plain-list by-rank">
-        {rows.map(({ r, fit }) => (
+        {rows.map(({ r, fit, moved, unsure }) => (
           <li key={r.id}>
-            <button type="button" class={`by-rank-cell${r.id === rank ? ' current' : ''}`} aria-current={r.id === rank ? 'true' : undefined} onClick={() => planWith({ rank: r.id, include: [a.id], newAgents })}>
+            <button type="button" class={`by-rank-cell${r.id === rank ? ' current' : ''}`} aria-current={r.id === rank ? 'true' : undefined} data-tip={tipOf(moved, unsure)} onClick={() => planWith({ rank: r.id, include: [a.id], newAgents })}>
               <span class="small">{r.name}</span>
-              {fit !== undefined ? <Fit fit={fit} tier={tierOf(fit)} label={`${a.name} at ${r.name}`} compact /> : <span class="faint small">…</span>}
+              {fit !== undefined ? <Fit fit={fit} tier={tierOf(fit)} label={`${a.name} at ${r.name}`} compact unsure={!!unsure} /> : <span class="faint small">…</span>}
+              {moved && <><SinceArrow m={moved} /><span class="visually-hidden">{sinceWords(moved)}</span></>}
             </button>
           </li>
         ))}
       </ul>
-      <p class="small muted">For a five-stack on any map in the pool, both sides{rank !== 'any' ? `; your usual rank is marked` : ''}. Pick a rank to plan with {a.name} there.</p>
+      <p class="small muted">For a five-stack on any map in the pool, both sides; your usual rank is marked. Pick a rank to plan with {a.name} there.</p>
     </section>
   );
 }
@@ -176,9 +190,35 @@ function Partners({ a }: { a: Agent }) {
   );
 }
 
+/** The maps' names, joined ("Bind, Lotus and Split"), or "Every map". */
+const mapNames = (ids: readonly string[]) => (ids.length === MAPS.length ? 'Every map' : listJoin(ids.map((id) => mapById(id)?.name ?? id)));
+
+/** What the agent's kit does on particular maps: the tips for each map, and where the kit does more or less. */
+function MapByMap({ a }: { a: Agent }) {
+  const tips = agentMapTips(a.id);
+  const rules = agentRules(a.id);
+  if (!tips.length && !rules.length) return null;
+  const side = (s?: string) => (s === 'attack' ? ', attack' : s === 'defense' ? ', defense' : '');
+  const more = rules.filter((r) => ruleHelps(r.rule)), less = rules.filter((r) => !ruleHelps(r.rule));
+  return (
+    <section class="panel stack" data-tour="agent-map-by-map">
+      <h2>Map by map</h2>
+      {tips.length > 0 && (
+        <ul class="tips">
+          {tips.map((t) => (
+            <li key={t.map + (t.side ?? '')}><b><a href={`#/maps/${t.map}`}>{mapById(t.map)?.name}</a>{side(t.side)}</b><span>{t.text}</span></li>
+          ))}
+        </ul>
+      )}
+      {more.length > 0 && <><h3 class="row good-text"><Icon name="check" size={16} />Where the kit does more</h3><ul class="tips">{more.map((r) => <li key={r.rule.caps + r.maps.join()}><b>{mapNames(r.maps)}{side(r.rule.side)}</b><span>{ruleWhyAt(r.rule, r.maps)}</span></li>)}</ul></>}
+      {less.length > 0 && <><h3 class="row bad-text"><Icon name="warning" size={16} />Where it does less</h3><ul class="tips">{less.map((r) => <li key={r.rule.caps + r.maps.join()}><b>{mapNames(r.maps)}{side(r.rule.side)}</b><span>{ruleWhyAt(r.rule, r.maps)}</span></li>)}</ul></>}
+    </section>
+  );
+}
+
 function AgentPage({ a }: { a: Agent }) {
   const s = useSettings();
-  const rank = s.defaultRank as RankPick;
+  const rank = s.defaultRank as RankId;
   const tips = agentTips(a.id);
   const kit = kitOf(a.id);
   const newAgents = s.includeNew || !!a.estimate;
@@ -204,6 +244,7 @@ function AgentPage({ a }: { a: Agent }) {
           <BestMaps a={a} rank={rank} newAgents={newAgents} />
           <ByRank a={a} rank={rank} newAgents={newAgents} />
           <Partners a={a} />
+          <MapByMap a={a} />
           {tips.length > 0 && (
             <section class="panel stack">
               <h2>Tips</h2>
@@ -222,6 +263,7 @@ function AgentPage({ a }: { a: Agent }) {
               <p class="small muted">
                 Ranked numbers are across all ranks, as of {fmtLongDay(STATS_ON)}, and win rates are evened out so the average agent wins half its games.
                 {earlyStats(a) && ` They’re from ${a.name}’s first days, while players are still learning the agent.`}
+                {UNSETTLED.includes(a) && ` Until there’s more play behind ${a.name}, a fit that could still be off by about a tier is marked less sure, and pointing at it says why.`}
               </p>
             )}
           </section>

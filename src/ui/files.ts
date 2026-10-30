@@ -1,7 +1,9 @@
-/** Saving a file to the computer, picking one to open, and copying text. */
+/** Saving a file to the computer, picking one to open, copying text, and printing. */
+import { render, type VNode } from 'preact';
 import { toast } from './state.ts';
 import { play } from './sound.ts';
 import { keyOf } from '../core/dates.ts';
+import { BUILT_IN_THEMES, DEFAULT_LIGHT, generateTheme, tokensCss } from '../core/theme.ts';
 
 export function download(name: string, text: string, type = 'application/json') {
   const url = URL.createObjectURL(new Blob([text], { type: `${type};charset=utf-8` }));
@@ -54,4 +56,29 @@ export async function copyWithToast(text: string, done: string, failed = 'Copyin
 export async function readFile(f: File): Promise<{ name: string; text: string }> {
   if (f.size > MAX_FILE) throw new Error(`That file is over ${MAX_FILE / 1024 / 1024} MB, too big to be a Playbook file.`);
   return { name: f.name, text: new TextDecoder().decode(await f.arrayBuffer()) };
+}
+
+let sheet: HTMLElement | null = null;
+
+/**
+ * Prints one sheet: it's drawn on its own, as the only thing on the paper (see base.css), in the
+ * light theme's colors on white whatever the theme on screen, and put away once printing is done.
+ */
+export async function printSheet(node: VNode): Promise<void> {
+  if (!sheet) {
+    sheet = document.createElement('div');
+    sheet.id = 'print-sheet';
+    const paper = BUILT_IN_THEMES.find((t) => t.id === DEFAULT_LIGHT)!;
+    sheet.setAttribute('style', tokensCss(generateTheme({ ...paper, bg: '#FFFFFF', surface: '#FFFFFF', card: '#FFFFFF' })));
+    document.body.appendChild(sheet);
+    addEventListener('afterprint', () => {
+      document.documentElement.classList.remove('printing');
+      if (sheet) render(null, sheet);
+    });
+  }
+  render(node, sheet);
+  document.documentElement.classList.add('printing');
+  // every picture drawn first, so none is missing from the paper
+  await Promise.all([...sheet.querySelectorAll('img')].map((img) => img.decode().catch(() => undefined)));
+  window.print();
 }

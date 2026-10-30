@@ -156,6 +156,28 @@ describe('parties', () => {
   });
 });
 
+describe('flags', () => {
+  spec('flag an answer, newest first, delete it with undo, and there’s a most', async () => {
+    const { repo, tick } = await fresh();
+    const comp = { query: haven(), team: ['omen', 'sova', 'jett', 'killjoy', 'breach'], agent: '', shown: 'Fit 100, tier S, number 1 of 10' };
+    const a = repo.addFlag({ ...comp, note: 'Too high' })!;
+    eq(repo.db.undoStack.at(-1)?.label, 'Flag an answer');
+    tick(1000);
+    const b = repo.addFlag({ ...comp, team: [], agent: 'astra', note: 'Too low' })!;
+    eq(repo.flags().map((f) => f.id), [b.id, a.id]);
+    eq(repo.snapshot().flags.length, 2, 'in backups');
+    repo.deleteFlag(a.id);
+    eq(repo.flags().map((f) => f.id), [b.id]);
+    repo.undo();
+    eq(repo.flags().length, 2);
+    let threw = false;
+    try { repo.addFlag({ ...comp, note: '  ' }); } catch { threw = true; }
+    ok(threw, 'an empty note isn’t kept');
+    for (let i = repo.flags().length; i < LIMITS.flags; i++) repo.addFlag({ ...comp, note: `Note ${i}` });
+    eq(repo.addFlag({ ...comp, note: 'One more' }), null);
+  });
+});
+
 describe('the planner’s question', () => {
   spec('the question is kept as it was left, without an undo step', async () => {
     const { repo } = await fresh();
@@ -263,12 +285,14 @@ describe('saved data', () => {
   spec('backups restore by replacing or merging, and can be undone, as can erasing everything', async () => {
     const { repo } = await fresh();
     repo.savePlan({ name: 'Kept', query: haven() });
+    repo.addFlag({ query: haven(), team: [], agent: 'astra', shown: 'Fit 90, tier A', note: 'Kept too' });
     const backup = readBackup(backupText(repo.snapshot(), '0.1.0', new Date(T0)));
     ok(backup.ok);
     if (!backup.ok) return;
     repo.savePlan({ name: 'Later', query: haven() });
     repo.restore(backup.data, 'replace');
     eq(repo.plans().map((x) => x.name), ['Kept']);
+    eq(repo.flags().map((x) => x.note), ['Kept too']);
     repo.undo();
     eq(repo.plans().map((x) => x.name).sort(), ['Kept', 'Later']);
     repo.restore(backup.data, 'merge');

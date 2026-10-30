@@ -5,7 +5,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { solve, type SituationAnswer } from '../../src/core/engine/plan.ts';
 import { newQuery } from '../../src/core/engine/query.ts';
-import { proMixOf, type RankPick, type SidePick } from '../../src/core/engine/model.ts';
+import { proMixOf, type SidePick } from '../../src/core/engine/model.ts';
+import type { RankId } from '../../src/core/kb/ranks.ts';
 import { agentById } from '../../src/core/kb/agents.ts';
 import { MAPS, POOL, type Side } from '../../src/core/kb/maps.ts';
 import { PRO } from '../../src/core/kb/pro.ts';
@@ -15,13 +16,13 @@ const SIDES: readonly Side[] = ['attack', 'defense'];
 const name = (id: string) => agentById(id)!.name;
 const roleOf = (id: string) => agentById(id)!.role;
 const solved = new Map<string, SituationAnswer>();
-function answer(map: string, side: SidePick, rank: RankPick, keep = 3): SituationAnswer {
+function answer(map: string, side: SidePick, rank: RankId, keep = 3): SituationAnswer {
   const key = [map, side, rank, keep].join('|');
   let a = solved.get(key);
   if (!a) solved.set(key, (a = solve({ ...newQuery(rank, true), map, side }, { map, side, rank, sites: [] }, keep)));
   return a;
 }
-const top = (map: string, side: SidePick, rank: RankPick) => answer(map, side, rank).comps[0]!.team;
+const top = (map: string, side: SidePick, rank: RankId) => answer(map, side, rank).comps[0]!.team;
 /** Fails once, listing every situation that went wrong. */
 const none = (problems: string[]) => assert.deepEqual(problems, [], `\n${problems.join('\n')}`);
 
@@ -38,14 +39,17 @@ test('the best comp on every map, side and rank has a sound mix of roles', () =>
   none(problems);
 });
 
-test('at Immortal and Radiant, one of the top three comps shares four agents with a comp pros play', () => {
+test('at Immortal and Radiant, one of the top three comps shares four agents with a comp pros play (three on a defense pros play without a sentinel)', () => {
   const problems: string[] = [];
   for (const rank of ['immortal', 'radiant'] as const) for (const m of MAPS) for (const side of SIDES) {
     const pro = PRO[m.id];
     if (!pro) continue;
     const teams = answer(m.id, side, rank).comps.map((c) => c.team);
     const overlap = Math.max(...teams.flatMap((t) => pro.comps.map((pc) => pc.filter((id) => t.includes(id)).length)));
-    if (overlap < 4) problems.push(`${m.name} ${side} at ${rank}: at most ${overlap} in common, best is ${teams[0]!.map(name).join(', ')}`);
+    // below Radiant a defense keeps its sentinel where pro teams play without one (see the first
+    // test), so on those maps it can share one agent fewer
+    const least = rank !== 'radiant' && side === 'defense' && (proMixOf(m.id)?.sentinel ?? 1) < 0.5 ? 3 : 4;
+    if (overlap < least) problems.push(`${m.name} ${side} at ${rank}: at most ${overlap} in common, best is ${teams[0]!.map(name).join(', ')}`);
   }
   none(problems);
 });
@@ -54,14 +58,14 @@ test('the agents pro teams pick on at least half of a map’s games show up in i
   const problems: string[] = [];
   for (const [map, pro] of Object.entries(PRO)) for (const [id, pct] of Object.entries(pro.picks)) {
     if (pct < 50) continue;
-    const seen = ['immortal', 'radiant'].some((rank) => SIDES.some((side) => answer(map, side, rank as RankPick, 5).comps.some((c) => c.team.includes(id))));
+    const seen = ['immortal', 'radiant'].some((rank) => SIDES.some((side) => answer(map, side, rank as RankId, 5).comps.some((c) => c.team.includes(id))));
     if (!seen) problems.push(`${map}: no ${name(id)} (picked on ${pct}%)`);
   }
   none(problems);
 });
 
 /** Agent fits over every map and side at a rank, with their middle. */
-function fitsAt(rank: RankPick) {
+function fitsAt(rank: RankId) {
   const agents = answer('any', 'both', rank, 1).agents;
   const fit = (id: string) => agents.find((a) => a.id === id)!.fit;
   const mid = [...agents].sort((a, b) => a.fit - b.fit)[Math.floor(agents.length / 2)]!.fit;

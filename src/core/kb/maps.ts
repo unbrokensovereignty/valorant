@@ -13,10 +13,35 @@ export type Side = 'attack' | 'defense';
 export const SIDES: readonly { id: Side; name: string }[] = [{ id: 'attack', name: 'Attack' }, { id: 'defense', name: 'Defense' }];
 export type SiteId = 'A' | 'B' | 'C';
 
+/**
+ * How open a map or site is. On a tight one, fights happen at chokes and close corners, where
+ * utility that needs walls (a concuss on impact, a trap strung between two walls, a wall across a
+ * choke) works best; on an open one, fights happen across long sightlines and wide ground.
+ */
+export type Space = 'tight' | 'mixed' | 'open';
+
+export const SPACE_INFO: Record<Space, { name: string; blurb: string }> = {
+  tight: { name: 'Tight', blurb: 'Fights happen at chokes and close corners, where stuns, traps and walls across a way in do the most.' },
+  mixed: { name: 'Mixed', blurb: 'Some long sightlines and some close corners, so most kits work.' },
+  open: { name: 'Open', blurb: 'Fights happen across long sightlines and wide ground, where long walls, the Operator and information do the most.' },
+};
+
+/** Things on a map that change how a round is played, and that some kits use (kb/kitfit.ts). */
+export type Mechanic = 'doors' | 'teleporters' | 'ropes' | 'ziplines' | 'breakable';
+export const MECHANICS: Record<Mechanic, { name: string; blurb: string }> = {
+  doors: { name: 'Doors', blurb: 'Doors worked by a switch, which open, shut or turn and can be heard across the map.' },
+  teleporters: { name: 'Teleporters', blurb: 'One-way teleporters that move a player between sites in a moment, with a sound both teams hear.' },
+  ropes: { name: 'Ropes', blurb: 'Ropes up to high ground, which a player climbs slowly and in the open.' },
+  ziplines: { name: 'Ziplines', blurb: 'Ziplines that carry a player across a gap; the player can shoot while riding.' },
+  breakable: { name: 'Breakable walls', blurb: 'Walls or doors that can be shot or blown open, which opens a new way in for the rest of the round.' },
+};
+
 export interface SiteDef {
   id: SiteId;
   /** What the site is like, in a sentence or two. */
   about: string;
+  /** How open the site is, when it differs from the map. */
+  space?: Space;
   needs: { both?: string; attack?: string; defense?: string };
 }
 
@@ -26,13 +51,21 @@ export interface MapDef {
   /** In the current competitive pool. */
   pool: boolean;
   about: string;
+  /** How open the map is, on the whole. */
+  space: Space;
+  /** Its mechanics, each with a sentence on where they are and what they change. */
+  mechanics?: readonly { id: Mechanic; about: string }[];
   /** What wins on this map, in a sentence. */
   keys: string;
   needs: { both?: string; attack?: string; defense?: string };
   sites: readonly SiteDef[];
   /** Other names players use for a callout: the game's name → what people also call it. */
   aka?: Record<string, string>;
-  /** Where a callout really sits on the minimap, for the few the game's content places badly. */
+  /**
+   * Where a callout really sits on the minimap, when the game's content places it badly: in a wall,
+   * on the edge of its site or outside its own area. Each was checked by hand against the minimap,
+   * and the specs check that every callout stands on the floor.
+   */
   places?: Record<string, readonly [x: number, y: number]>;
 }
 
@@ -43,97 +76,110 @@ export const POOL_SINCE = '2026-10-13';
 
 const DEFS: readonly MapDef[] = [
   {
-    id: 'abyss', name: 'Abyss', pool: true,
+    id: 'abyss', name: 'Abyss', pool: true, space: 'open',
     about: 'An open map with no walls at its edges: fall off and you die. Long sightlines, a contested mid and two wide sites.',
     keys: 'Information and long walls. Pros run Sova with two controllers, often Harbor and Astra.',
     needs: { both: 'wall +.6; smoke +.15; recon +.35; mobility +.1; angles +.4', attack: 'entry +.1', defense: 'anchor +.1; retake +.1' },
+    places: { 'A Secret': [0.183, 0.262], 'A Site': [0.39, 0.11], 'B Danger': [0.625, 0.94], 'B Site': [0.36, 0.89] },
     sites: [
       { id: 'A', about: 'A large site reached from A Main and A Lobby, overlooked by A Tower and the bridge, with A Secret and A Security behind it.', needs: { both: 'recon +.15', attack: 'flash +.1' } },
       { id: 'B', about: 'Reached down B Main past B Danger and B Nest; B Tower looks over the site and B Link joins it to mid.', needs: { both: 'wall +.2', attack: 'postplant +.1' } },
     ],
   },
   {
-    id: 'ascent', name: 'Ascent', pool: false,
+    id: 'ascent', name: 'Ascent', pool: false, space: 'mixed',
+    mechanics: [{ id: 'doors', about: 'Each site has a door that a switch shuts or opens, so one way onto that site can be closed for a while.' }],
     about: 'A classic two-site map won in mid: control Market and Catwalk and both sites open up. Doors on each site can be shut.',
     keys: 'Mid control with information and an Operator: pros always play Omen and Sova, often with Chamber.',
     needs: { both: 'recon +.3; smoke +.1; duel +.15; angles +.4', attack: 'flash +.1', defense: 'anchor +.2; retake +.1; angles +.2' },
     aka: { 'A Tree': 'Tree', 'A Rafters': 'Heaven', 'Mid Bottom': 'Mid', 'Mid Courtyard': 'Mid' },
+    places: { 'A Site': [0.32, 0.16], 'B Lobby': [0.717, 0.671], 'B Site': [0.29, 0.78] },
     sites: [
       { id: 'A', about: 'Entered through A Main (from A Lobby) or from mid through A Garden and Tree; A Rafters (Heaven) and A Wine overlook it.', needs: { both: 'clear +.1', attack: 'smoke +.1' } },
       { id: 'B', about: 'Entered through B Main or from mid through Market; B Boat House sits at the back of a deep site.', needs: { both: 'disrupt +.1', defense: 'stall +.1' } },
     ],
   },
   {
-    id: 'bind', name: 'Bind', pool: true,
+    id: 'bind', name: 'Bind', pool: true, space: 'tight',
+    mechanics: [{ id: 'teleporters', about: 'Two one-way teleporters, one by each site, send a player to the other site in a moment; both are loud, so they make fakes and fast rotations.' }],
     about: 'No mid, but two one-way teleporters move players between sites fast. Narrow entrances make utility on each choke decisive.',
     keys: 'Clearing tight chokes and stopping defuses: pros pair Viper with Brimstone, plus Fade for information and Yoru to take space.',
     needs: { both: 'clear +.3; flash +.15; smoke +.15; wall +.4; flank +.25; postplant +.15; angles -.6', defense: 'stall +.2; flank +.1' },
     aka: { 'A Bath': 'Showers', 'A Short': 'A Short', 'B Window': 'Hookah', 'A Tower': 'Heaven' },
+    places: { 'Attacker Side Spawn': [0.582, 0.95] },
     sites: [
       { id: 'A', about: 'Hit through A Short and A Bath (Showers); A Lamps and A Tower (Heaven) look down on it, and the teleporter exits in A Short.', needs: { both: 'clear +.2; flash +.1' } },
       { id: 'B', about: 'Hit down B Long or through B Window (Hookah); B Garden and B Elbow give defenders close angles.', needs: { both: 'wall +.15; smoke +.1', defense: 'stall +.1' } },
     ],
   },
   {
-    id: 'breeze', name: 'Breeze', pool: false,
+    id: 'breeze', name: 'Breeze', pool: false, space: 'open',
+    mechanics: [{ id: 'breakable', about: 'Mid Wood Doors can be shot open, which opens a quicker way through mid.' }],
     about: 'A huge, open map with very long sightlines and wide sites. Crossing open ground is the whole fight.',
     keys: 'Long walls and an Operator: Viper is close to a must, with Sova for information.',
     needs: { both: 'wall +1; smoke +.15; duel +.3; recon +.25; mobility +.2; flank +.1; angles +.6', defense: 'anchor +.15' },
     aka: { 'A Pyramids': 'Pyramids', 'Mid Nest': 'Nest', 'B Elbow': 'Elbow' },
-    places: { 'A Lobby': [0.66, 0.8] },
+    places: { 'A Bridge': [0.686, 0.193], 'A Lobby': [0.66, 0.83], 'A Pyramids': [0.79, 0.43], 'A Ramp': [0.63, 0.27], 'A Shop': [0.742, 0.629], 'A Site': [0.87, 0.45], 'Attacker Side Spawn': [0.45, 0.88], 'B Back': [0.1, 0.233], 'B Elbow': [0.262, 0.439], 'B Main': [0.17, 0.51], 'B Site': [0.1, 0.31], 'B Tunnel': [0.36, 0.31], 'B Wall': [0.27, 0.17], 'B Window': [0.172, 0.593], 'Defender Side Arches': [0.38, 0.12], 'Defender Side Spawn': [0.66, 0.13], 'Mid Bottom': [0.47, 0.66], 'Mid Cannon': [0.308, 0.579], 'Mid Hall': [0.619, 0.475], 'Mid Nest': [0.48, 0.17], 'Mid Pillar': [0.48, 0.48], 'Mid Top': [0.479, 0.339], 'Mid Wood Doors': [0.61, 0.44] },
     sites: [
       { id: 'A', about: 'A big site with the Pyramids in the middle, reached through A Shop or from mid through Mid Hall; A Bridge links it to defender spawn.', needs: { both: 'wall +.2', attack: 'smoke +.1' } },
-      { id: 'B', about: 'Reached through B Main and B Window, or from mid through B Tunnel; tighter than A, with B Wall and B Back to clear.', needs: { both: 'clear +.1; smoke +.1' } },
+      { id: 'B', space: 'mixed', about: 'Reached through B Main and B Window, or from mid through B Tunnel; tighter than A, with B Wall and B Back to clear.', needs: { both: 'clear +.1; smoke +.1' } },
     ],
   },
   {
-    id: 'corrode', name: 'Corrode', pool: true,
+    id: 'corrode', name: 'Corrode', pool: true, space: 'tight',
     about: 'A newer two-site map with a three-lane mid. Sites are reached through lobbies with many corners near the plant spots.',
     keys: 'Two controllers with Viper, plus Fade for information; Waylay or Neon to take space.',
     needs: { both: 'wall +.6; smoke +.15; recon +.2; angles -.3', attack: 'entry +.1', defense: 'stall +.15' },
-    places: { 'A Main': [0.59, 0.21], 'A Lobby': [0.71, 0.29] },
+    places: { 'A Lobby': [0.71, 0.29], 'A Main': [0.59, 0.21], 'A Site': [0.4, 0.19], 'B Site': [0.4, 0.76] },
     sites: [
       { id: 'A', about: 'Reached through A Main or from mid through A Link; A Yard, A Pocket, A Elbow and A Crane give defenders many corners.', needs: { both: 'clear +.15; recon +.1' } },
       { id: 'B', about: 'Reached through B Main or from mid through B Link; B Tower and B Arch overlook the plant.', needs: { both: 'smoke +.1', attack: 'postplant +.1' } },
     ],
   },
   {
-    id: 'fracture', name: 'Fracture', pool: false,
+    id: 'fracture', name: 'Fracture', pool: false, space: 'mixed',
+    mechanics: [{ id: 'ziplines', about: 'A zipline joins the two attacker sides across the map, so attackers can switch ends quickly.' }],
     about: 'Attackers spawn on both ends and can hit a site from two sides at once; defenders start in the middle.',
     keys: 'Stuns and flank watch: Breach, Brimstone and a sentinel who covers the back.',
     needs: { both: 'flank +.35; disrupt +.25; clear +.15; smoke +.1; mobility +.15; angles -.3', defense: 'stall +.2; retake +.15; recon +.15; flank +.2' },
+    places: { 'A Site': [0.86, 0.5] },
     sites: [
       { id: 'A', about: 'Hit from A Main and A Door on one end, or from the other side down A Rope; A Dish and A Drop look over it.', needs: { both: 'disrupt +.15' } },
       { id: 'B', about: 'Hit from B Main and B Tree, or through B Arcade from the far side; B Tower and B Canteen hold over it.', needs: { both: 'clear +.15' } },
     ],
   },
   {
-    id: 'haven', name: 'Haven', pool: true,
+    id: 'haven', name: 'Haven', pool: true, space: 'mixed',
     about: 'Three sites, so defenders spread thin and rotate far. Mid control through Mid Doors and C Garage opens splits.',
     keys: 'Information and speed: Sova and Neon are favorites, and every defender must hold alone at times.',
     needs: { both: 'recon +.3; mobility +.2; duel +.1; angles +.3', attack: 'entry +.1', defense: 'anchor +.2; retake +.15; mobility +.1' },
     aka: { 'A Tower': 'Heaven', 'A Long': 'A Long', 'C Garage': 'Garage' },
+    places: { 'C Lobby': [0.7, 0.74], 'C Long': [0.62, 0.84], 'C Site': [0.37, 0.82] },
     sites: [
       { id: 'A', about: 'Hit through A Long or A Sewer (Short); A Tower (Heaven) and A Link let defenders hold from above and behind.', needs: { both: 'flash +.1; clear +.1' } },
-      { id: 'B', about: 'The small middle site, open to Mid Window and Mid Doors; quick to take and quick to retake.', needs: { both: 'disrupt +.1', attack: 'postplant +.1' } },
+      { id: 'B', space: 'tight', about: 'The small middle site, open to Mid Window and Mid Doors; quick to take and quick to retake.', needs: { both: 'disrupt +.1', attack: 'postplant +.1' } },
       { id: 'C', about: 'Hit down C Long or from C Garage; C Cubby, C Window and C Link give defenders angles across the site.', needs: { both: 'smoke +.1; wall +.1', attack: 'postplant +.15' } },
     ],
   },
   {
-    id: 'icebox', name: 'Icebox', pool: false,
+    id: 'icebox', name: 'Icebox', pool: false, space: 'mixed',
+    mechanics: [{ id: 'ziplines', about: 'Ziplines on both sites let players reach high spots fast.' }],
     about: 'Vertical sites full of boxes and ziplines, with long open lanes into each site.',
     keys: 'Long walls and an Operator, with information to clear the many high spots.',
     needs: { both: 'wall +.8; recon +.25; duel +.2; clear +.15; angles +.4', attack: 'postplant +.2', defense: 'anchor +.15' },
+    places: { 'B Back': [0.79, 0.28], 'B Fence': [0.755, 0.33] },
     sites: [
       { id: 'A', about: 'Entered past A Belt and A Nest; A Pipes, A Rafters and A Screen give defenders high and close spots.', needs: { both: 'clear +.2; recon +.1' } },
       { id: 'B', about: 'Entered through B Yellow and B Green; defenders hold from B Snowman, B Back, B Hall and B Kitchen.', needs: { both: 'wall +.2', attack: 'postplant +.1' } },
     ],
   },
   {
-    id: 'lotus', name: 'Lotus', pool: true,
+    id: 'lotus', name: 'Lotus', pool: true, space: 'tight',
+    mechanics: [{ id: 'doors', about: 'A Door and C Door are worked by a switch and turn slowly and loudly, which changes the ways between the sites while they move.' }, { id: 'breakable', about: 'A wall on the way into A can be broken, which opens a second way onto the site for the rest of the round.' }],
     about: 'Three sites linked by rotating doors, with a breakable wall on A. Tight entrances and many corners on every site.',
     keys: 'Clearing corners and smoking chokes: pros always play Omen, usually with Viper and Fade, and often Chamber.',
     needs: { both: 'clear +.3; recon +.2; smoke +.2; wall +.3; flash +.1; mobility +.15; angles +.1', attack: 'postplant +.1', defense: 'anchor +.1' },
+    places: { 'A Hut': [0.872, 0.331], 'A Site': [0.885, 0.3], 'C Lobby': [0.343, 0.812], 'C Mound': [0.275, 0.62] },
     sites: [
       { id: 'A', about: 'Hit through A Main and A Root or A Rubble; A Hut, A Tree, A Stairs and A Drop give defenders close angles.', needs: { both: 'clear +.15; flash +.1' } },
       { id: 'B', about: 'The small center site, through B Main and B Pillars; B Upper overlooks it.', needs: { both: 'disrupt +.1', attack: 'postplant +.1' } },
@@ -141,43 +187,47 @@ const DEFS: readonly MapDef[] = [
     ],
   },
   {
-    id: 'pearl', name: 'Pearl', pool: false,
+    id: 'pearl', name: 'Pearl', pool: false, space: 'mixed',
     about: 'A long, layered mid and two sites with long main entrances; no tricks, just space to take and hold.',
     keys: 'Smokes placed anywhere and information: Astra is the pro pick.',
     needs: { both: 'smoke +.2; recon +.25; wall +.2; mobility +.1; angles +.1', defense: 'anchor +.15' },
     aka: { 'B Main': 'B Long' },
+    places: { 'A Art': [0.88, 0.56], 'A Dugout': [0.915, 0.3], 'A Flowers': [0.76, 0.24], 'A Link': [0.729, 0.333], 'A Main': [0.83, 0.47], 'A Restaurant': [0.74, 0.66], 'A Secret': [0.83, 0.17], 'A Site': [0.88, 0.34], 'Attacker Side Spawn': [0.53, 0.93], 'B Club': [0.27, 0.8], 'B Hall': [0.15, 0.29], 'B Link': [0.33, 0.5], 'B Main': [0.089, 0.606], 'B Ramp': [0.2, 0.735], 'B Site': [0.19, 0.4], 'B Tower': [0.285, 0.33], 'B Tunnel': [0.33, 0.235], 'Defender Side Records': [0.47, 0.24], 'Defender Side Spawn': [0.57, 0.08], 'Defender Side Water': [0.585, 0.3], 'Mid Connector': [0.621, 0.436], 'Mid Doors': [0.519, 0.549], 'Mid Plaza': [0.52, 0.63], 'Mid Shops': [0.4, 0.72], 'Mid Top': [0.57, 0.79] },
     sites: [
       { id: 'A', about: 'Hit through A Main or from A Art and A Link; A Flowers, A Secret and A Dugout give defenders cover.', needs: { both: 'smoke +.1' } },
-      { id: 'B', about: 'Hit down the long B Main from B Ramp, with B Screen, B Tower and B Hall to clear.', needs: { both: 'wall +.15; duel +.1' } },
+      { id: 'B', space: 'open', about: 'Hit down the long B Main from B Ramp, with B Screen, B Tower and B Hall to clear.', needs: { both: 'wall +.15; duel +.1' } },
     ],
   },
   {
-    id: 'split', name: 'Split', pool: false,
+    id: 'split', name: 'Split', pool: false, space: 'tight',
+    mechanics: [{ id: 'ropes', about: 'Ropes lead up to high ground on each site (A Tower and B Tower, both called Heaven), which defenders use to hold from above.' }],
     about: 'Tight, vertical sites with ropes up to high ground, and a mid that leads to both. Chokes everywhere.',
     keys: 'Smokes and clearing: Viper and Omen together, with Neon to take space and Fade for information.',
     needs: { both: 'clear +.3; smoke +.25; disrupt +.15; flank +.2; wall +.4; recon +.1; angles -.5', defense: 'stall +.15' },
     aka: { 'A Tower': 'A Heaven', 'B Tower': 'B Heaven', 'Mid Vent': 'Vents' },
+    places: { 'A Rafters': [0.353, 0.268], 'A Site': [0.3, 0.12], 'B Rafters': [0.368, 0.751], 'B Site': [0.32, 0.83] },
     sites: [
       { id: 'A', about: 'Hit through A Main and up A Ramps, with A Rafters, A Screens and A Tower (Heaven) above the site.', needs: { both: 'flash +.1' } },
       { id: 'B', about: 'Hit through B Garage or from mid down B Link; B Tower (Heaven), B Rafters and B Alley overlook the site.', needs: { both: 'clear +.15; disrupt +.1' } },
     ],
   },
   {
-    id: 'summit', name: 'Summit', pool: true,
+    id: 'summit', name: 'Summit', pool: true, space: 'mixed',
     about: 'A newer two-site map with a wide mid around Mid Fountain and Mid Tiles; both sites have lots of cover.',
     keys: 'Fast entry and information: Neon and Fade are the pro picks, with Chamber holding angles.',
     needs: { both: 'entry +.15; recon +.25; duel +.15; wall +.15; mobility +.1; angles +.4', defense: 'stall +.15' },
-    places: { 'Attacker Side Spawn': [0.49, 0.92] },
+    places: { 'A Lobby': [0.693, 0.75], 'A Site': [0.91, 0.43], 'Attacker Side Spawn': [0.49, 0.92], 'B Lobby': [0.27, 0.62] },
     sites: [
       { id: 'A', about: 'Hit through A Main or from mid through A Link; A Garden, A Art, A Hall and A Cave surround the site.', needs: { both: 'clear +.1', attack: 'flash +.1' } },
       { id: 'B', about: 'Hit through B Main or from mid through B Link; B Tower, B Gym, B Trophy and B Drop overlook the plant.', needs: { both: 'smoke +.1', attack: 'postplant +.1' } },
     ],
   },
   {
-    id: 'sunset', name: 'Sunset', pool: true,
+    id: 'sunset', name: 'Sunset', pool: true, space: 'tight',
     about: 'A compact city map with a busy mid; B Market and A Elbow are tight, close-range fights.',
     keys: 'Information and fast entry: Omen, Neon and Fade, with Chamber as the sentinel.',
     needs: { both: 'recon +.25; entry +.15; clear +.15; smoke +.1; flank +.1; angles +.3' },
+    places: { 'A Alley': [0.786, 0.254], 'A Elbow': [0.839, 0.493], 'A Link': [0.72, 0.4], 'A Lobby': [0.68, 0.66], 'A Main': [0.7, 0.56], 'A Site': [0.8, 0.36], 'Attacker Side Spawn': [0.54, 0.91], 'B Boba': [0.17, 0.29], 'B Lobby': [0.36, 0.73], 'B Main': [0.12, 0.63], 'B Market': [0.27, 0.5], 'B Site': [0.08, 0.41], 'Defender Side Spawn': [0.5, 0.08], 'Mid Bottom': [0.37, 0.64], 'Mid Courtyard': [0.45, 0.54], 'Mid Tiles': [0.55, 0.63], 'Mid Top': [0.43, 0.32] },
     sites: [
       { id: 'A', about: 'Hit through A Main and A Lobby, or from A Link; A Elbow and A Alley hold close angles.', needs: { both: 'clear +.1' } },
       { id: 'B', about: 'Hit through B Main or from mid through B Market; B Boba overlooks the site.', needs: { both: 'smoke +.1; disrupt +.1' } },

@@ -1,7 +1,8 @@
 /**
- * Plays for every map: attack hits, splits and fakes, defense setups and retakes. A play names
- * jobs, not agents ("smoke", "entry"), so it fits any comp: the planner gives each job to the
- * agent in the comp best at it (see engine/plays.ts).
+ * Plays for every map: attack hits, splits and fakes, defense setups and retakes, and for the maps in
+ * the pool, pistol-round and eco plays for each side. A play names jobs, not agents ("smoke",
+ * "entry"), so it fits any comp: the planner gives each job to the agent in the comp best at it
+ * (see engine/plays.ts).
  *
  * Each step is written as `jobs: route | what to do`:
  * - jobs: one or two of the JOBS below; every play has five, one per player.
@@ -16,8 +17,20 @@ export const JOBS = ['smoke', 'wall', 'flash', 'recon', 'entry', 'clear', 'ancho
 export type Job = (typeof JOBS)[number];
 const isJob = (v: string): v is Job => (JOBS as readonly string[]).includes(v);
 
-export type PlayKind = 'hit' | 'split' | 'fake' | 'default' | 'setup' | 'retake';
-export const KIND_NAMES: Record<PlayKind, string> = { hit: 'Hit', split: 'Split', fake: 'Fake', default: 'Default', setup: 'Setup', retake: 'Retake' };
+export type PlayKind = 'hit' | 'split' | 'fake' | 'default' | 'setup' | 'retake' | 'pistol' | 'eco';
+export const KIND_NAMES: Record<PlayKind, string> = { hit: 'Hit', split: 'Split', fake: 'Fake', default: 'Default', setup: 'Setup', retake: 'Retake', pistol: 'Pistol', eco: 'Eco' };
+
+/** Plays for a round with little to spend (the pistol round of each half, and a save), listed apart from the rest. */
+export const isLowBuy = (k: PlayKind): boolean => k === 'pistol' || k === 'eco';
+
+export type RoundKind = 'pistol' | 'eco' | 'force' | 'full';
+/** What to buy and how to play in each kind of round, from the first round of a half to a full buy. */
+export const BUY_GUIDE: readonly { id: RoundKind; name: string; text: string }[] = [
+  { id: 'pistol', name: 'Pistol round', text: 'The first round of each half, with only a few credits each. Buy light shields or an ability or two on top of your free signature ability, or a better pistol. With no rifles about, numbers win fights, so stay together and trade.' },
+  { id: 'eco', name: 'Eco round', text: 'After a lost round, when the team can’t afford rifles and shields together, spend little or nothing so the next round is a full buy. Play close angles, where a pistol or a cheap shotgun can beat a rifle, trade every kill, and take the rifle of anyone you kill. On attack, planting the Spike earns every attacker credits, even in a lost round.' },
+  { id: 'force', name: 'Force buy', text: 'When a round matters more than the credits, like when the other team is about to pull away or late in a half, everyone buys the best they can afford together (SMGs, shotguns, cheaper rifles and light shields), so no one plays half bought. Play close and together.' },
+  { id: 'full', name: 'Full buy', text: 'Rifles, full shields and all your abilities, and an Operator for the player who plays one. If you have plenty, buy for a teammate who’s short, so the whole team is bought.' },
+];
 
 export interface PlayStep { jobs: Job[]; route: string[]; text: string }
 
@@ -794,7 +807,227 @@ play('sunset', 'defense', 'B', 'retake', 'Retake B', 'Retake from B Boba with B 
   'duel: B Market > B Site | Swing from B Market at the same time.',
 ]);
 
+// ---------------------------------------------------------------- pistol and eco rounds
+// For the maps in the pool: a pistol-round play and an eco play for each side. With little to
+// spend, a team plays together and close, where a pistol can win a fight (see BUY_GUIDE).
+
+const PISTOL_ATTACK = 'On the pistol round, five together win the first fights with numbers';
+const PISTOL_DEFENSE = 'On the pistol round, close angles win fights';
+const ECO_ATTACK = 'Low on credits, play together and close';
+const ECO_DEFENSE = 'Low on credits, three hide in close corners on one site, where a pistol can beat a rifle';
+
+play('abyss', 'attack', 'B', 'pistol', 'Five through B Main', `${PISTOL_ATTACK}. B Main is short, so the hit lands before a rotation does.`, [
+  'smoke: Attacker Side Spawn > B Lobby | Smoke B Tower from B Lobby, so the hit only faces the site.',
+  'flash: B Lobby > B Main | Flash B Danger and the site corners as the entry goes.',
+  'entry: B Lobby > B Main > B Danger > B Site | Go in first and clear B Danger; the team trades right behind you.',
+  'clear: B Lobby > B Main > B Site | Clear the rest of the site and plant behind cover.',
+  'postplant: B Lobby > B Main > B Nest | Hold the plant from B Nest, close enough to trade.',
+]);
+play('abyss', 'attack', 'A', 'eco', 'One close fight in A Main', `${ECO_ATTACK}: take one fight in A Main, where it’s close, trade every kill, and plant if the site opens.`, [
+  'recon: A Lobby | Gather information on A Main before anyone peeks, and call where they are.',
+  'flash: A Lobby > A Main | Flash the first fight with what you have.',
+  'entry: A Lobby > A Main | Take the first fight in A Main up close; don’t peek the long angles.',
+  'duel: A Lobby > A Main | Stay right behind the entry and trade the first kill.',
+  'lurk: Mid Bend > Mid Catwalk | Look for one close pick in mid, then join the others for the plant.',
+]);
+play('abyss', 'defense', null, 'pistol', 'Two and two, one to retake', `${PISTOL_DEFENSE}. Two hold each site close to its way in, and one waits between them to retake with the rotation.`, [
+  'anchor: A Secret | Hold A from a close angle at A Secret and call the hit.',
+  'duel: A Tower | Play A Main close from A Tower, and fall back if they come five.',
+  'stall: B Site | Hold B close and slow the hit with what you have.',
+  'duel: B Tower | Play B Main close from B Tower and trade the site player.',
+  'retake: Defender Side Spawn > A Link | Wait between the sites and retake together with the rotation.',
+]);
+play('abyss', 'defense', 'B', 'eco', 'Stack B close', `${ECO_DEFENSE}; two watch A and mid from a distance and stay alive.`, [
+  'duel: B Danger | Hide close at B Danger and fight the first player in.',
+  'duel: B Site | Play a close corner on the site and trade the first fight.',
+  'stall: B Tower | Slow the hit with what you have, then fight up close.',
+  'recon: A Tower | Watch A alone and call a hit early; don’t take a far fight.',
+  'flank: Mid Top | Watch mid, then come in behind the B hit.',
+]);
+
+play('bind', 'attack', 'A', 'pistol', 'Five through Showers', `${PISTOL_ATTACK}. A Bath (Showers) is close to spawn and opens straight onto a small site.`, [
+  'smoke: Attacker Side Spawn > A Lobby | Smoke A Tower (Heaven) and A Lamps from A Lobby.',
+  'flash: A Lobby > A Bath | Flash out of A Bath (Showers) as the entry goes.',
+  'entry: A Lobby > A Bath > A Site | Go out first and clear the close corners; the team trades right behind you.',
+  'clear: A Lobby > A Bath > A Site | Clear A Cubby and plant behind cover.',
+  'lurk: A Link > A Short | Push A Short as the hit lands, so A Lamps faces two ways.',
+]);
+play('bind', 'attack', 'B', 'eco', 'Take Hookah close', `${ECO_ATTACK}: B Window (Hookah) is a tight room where a pistol wins fights. Trade every kill, and plant if the site opens.`, [
+  'flash: B Short | Flash into B Window (Hookah) as the entry goes.',
+  'entry: B Short > B Window | Push into B Window (Hookah) and take the first close fight.',
+  'duel: B Short > B Window | Trade the entry at once; fights in Hookah are close.',
+  'clear: B Short > B Window > B Site | Once Hookah falls, go onto the site and plant.',
+  'flank: B Fountain | Watch B Long and B Fountain for a push behind you.',
+]);
+play('bind', 'defense', null, 'pistol', 'Two and two, one between', `${PISTOL_DEFENSE}. Two hold each site close, and one waits between them, ready to retake whichever is hit.`, [
+  'anchor: A Site | Hold A close and call the hit.',
+  'stall: A Lamps | Slow A Short and A Bath (Showers) from A Lamps.',
+  'duel: B Site | Hold B Long close from the site.',
+  'stall: B Garden | Slow B Window (Hookah) from B Garden.',
+  'retake: Defender Side Spawn | Wait between the sites and retake together with the rotation.',
+]);
+play('bind', 'defense', 'A', 'eco', 'Stack A close', `${ECO_DEFENSE}; one watches B and one waits between the sites.`, [
+  'duel: A Cubby | Hide in A Cubby and fight the first player through A Short.',
+  'duel: A Site | Play a close corner on the site and trade.',
+  'stall: A Lamps | Slow A Bath (Showers), then fight up close.',
+  'recon: B Garden | Watch B alone and call a hit early; don’t take a far fight.',
+  'retake: Defender Side Spawn | Wait between the sites and come in behind whichever hit comes.',
+]);
+
+play('corrode', 'attack', 'B', 'pistol', 'Five through B Main', `${PISTOL_ATTACK}. B Main leads straight onto a site ringed by corners, so clear them as a group.`, [
+  'smoke: Attacker Side Spawn > B Lobby | Smoke B Tower and B Arch from B Lobby.',
+  'flash: B Lobby > B Main | Flash B Elbow and the site corners as the entry goes.',
+  'entry: B Lobby > B Main > B Site | Go in first and clear B Elbow; the team trades right behind you.',
+  'clear: B Lobby > B Main > B Site | Clear the rest of the site and plant behind cover.',
+  'postplant: B Lobby > B Main | Hold the plant from B Main, close enough to trade.',
+]);
+play('corrode', 'attack', 'A', 'eco', 'One close fight in A Yard', `${ECO_ATTACK}: A Yard’s corners are close, so a pistol can win the first fight there. Trade every kill, and plant if the site opens.`, [
+  'recon: A Lobby > A Main | Gather information on A Yard before anyone peeks.',
+  'flash: A Lobby > A Main | Flash the first fight with what you have.',
+  'entry: A Lobby > A Main > A Yard | Take the first close fight in A Yard.',
+  'duel: A Lobby > A Main > A Yard | Trade the entry at once.',
+  'flank: Mid Bottom | Watch mid for a push behind the team.',
+]);
+play('corrode', 'defense', null, 'pistol', 'Two and two, one in mid', `${PISTOL_DEFENSE}. Two hold each site close, one watches mid, and the retake goes in together.`, [
+  'anchor: A Site | Hold A close and call the hit.',
+  'duel: A Crane | Play A Main close from A Crane.',
+  'stall: B Site | Hold B close and slow the hit.',
+  'duel: B Tower | Play B Main close from B Tower.',
+  'retake: Mid Window | Watch mid from Mid Window and retake together with the rotation.',
+]);
+play('corrode', 'defense', 'B', 'eco', 'Stack B close', `${ECO_DEFENSE}; two watch A and mid from a distance and stay alive.`, [
+  'duel: B Elbow | Hide close at B Elbow and fight the first player in.',
+  'duel: B Site | Play a close corner on the site and trade.',
+  'stall: B Tower | Slow B Main, then fight up close.',
+  'recon: A Crane | Watch A alone and call a hit early; don’t take a far fight.',
+  'flank: Mid Window | Watch mid, then come in behind the B hit through B Link.',
+]);
+
+play('haven', 'attack', 'C', 'pistol', 'Five down C Long', `${PISTOL_ATTACK}. C Long is wide enough for five to cross together.`, [
+  'smoke: Attacker Side Spawn > C Lobby | Smoke C Link and C Window from C Lobby.',
+  'flash: C Lobby > C Long | Flash C Long and the site corners as the entry goes.',
+  'entry: C Lobby > C Long > C Site | Go in first and clear C Cubby; the team trades right behind you.',
+  'clear: C Lobby > C Long > C Site | Clear the rest of the site and plant behind cover.',
+  'flank: Mid Doors > C Garage | Watch C Garage so no one comes round behind the plant.',
+]);
+play('haven', 'attack', 'B', 'eco', 'Take B close through mid', `${ECO_ATTACK}: B through mid is short and its fights are close. Trade every kill, and plant if the site opens.`, [
+  'recon: Mid Window > Mid Courtyard | Gather information on B before anyone peeks.',
+  'flash: Mid Courtyard | Flash B Back with what you have as the entry goes.',
+  'entry: Mid Courtyard > B Site | Take the first close fight on B.',
+  'duel: Mid Courtyard > B Site | Trade the entry at once.',
+  'flank: Mid Doors | Watch Mid Doors and C Garage for a push behind the team.',
+]);
+play('haven', 'defense', null, 'pistol', 'One on each site, two to retake', `${PISTOL_DEFENSE}. One holds each site close, and two wait on the links to retake together with the site player.`, [
+  'anchor: A Site | Hold A close and call the hit early.',
+  'duel: Mid Window | Play mid close from Mid Window, then fall back to B.',
+  'stall: C Site | Hold C close and slow the hit.',
+  'retake: A Link | Wait at A Link and retake A or B together.',
+  'retake: C Link | Wait at C Link and retake C or B together.',
+]);
+play('haven', 'defense', 'C', 'eco', 'Stack C close', `${ECO_DEFENSE}; one watches A and one mid from a distance.`, [
+  'duel: C Cubby | Hide in C Cubby and fight the first player off C Long.',
+  'duel: C Site | Play a close corner on the site and trade.',
+  'stall: C Window | Slow the hit from C Window, then fight up close.',
+  'recon: A Link | Watch A alone and call a hit early; don’t take a far fight.',
+  'flank: Mid Window | Watch mid and B, then come in behind the C hit.',
+]);
+
+play('lotus', 'attack', 'B', 'pistol', 'Five through B Main', `${PISTOL_ATTACK}. B is small and quick to take, so plant fast and hold it close.`, [
+  'smoke: Attacker Side Spawn > B Pillars | Smoke B Upper and A Link from B Pillars.',
+  'flash: B Pillars > B Main | Flash the site as the entry goes.',
+  'entry: B Pillars > B Main > B Site | Go in first; the team trades right behind you.',
+  'clear: B Pillars > B Main > B Site | Clear the site corners and plant behind cover.',
+  'postplant: B Pillars | Hold the plant from B Pillars and B Main, close enough to trade.',
+]);
+play('lotus', 'attack', 'A', 'eco', 'One close fight in A Main', `${ECO_ATTACK}: A Main and A Rubble are tight, so a pistol can win the first fight. Trade every kill, and plant if the site opens.`, [
+  'recon: A Lobby > A Root | Gather information on A Main before anyone peeks.',
+  'flash: A Lobby > A Root | Flash the first fight with what you have.',
+  'entry: A Root > A Main | Take the first close fight in A Main.',
+  'duel: A Root > A Main | Trade the entry at once.',
+  'lurk: A Lobby > A Rubble | Look for a close pick in A Rubble, then join the plant.',
+]);
+play('lotus', 'defense', null, 'pistol', 'One on each site, two to retake', `${PISTOL_DEFENSE}. One holds each site close, and two wait at A Link and C Link to retake together; the rotating doors make the way between the sites short.`, [
+  'anchor: A Site | Hold A close and call the hit.',
+  'stall: B Site | Hold B close and slow a rush.',
+  'duel: C Site | Hold C close from the site and call the hit.',
+  'retake: A Link | Wait at A Link and retake A or B together.',
+  'retake: C Link | Wait at C Link and retake B or C together.',
+]);
+play('lotus', 'defense', 'A', 'eco', 'Stack A close', `${ECO_DEFENSE}; one watches B and one C from a distance.`, [
+  'duel: A Hut | Hide in A Hut and fight the first player in.',
+  'duel: A Site | Play a close corner on the site and trade.',
+  'stall: A Stairs | Slow A Main from A Stairs, then fight up close.',
+  'recon: C Waterfall | Watch C alone and call a hit early; don’t take a far fight.',
+  'flank: B Upper | Watch B, then come in behind the A hit through A Link.',
+]);
+
+play('summit', 'attack', 'A', 'pistol', 'Five through A Main', `${PISTOL_ATTACK}. Take A Garden as a group and the site falls with it.`, [
+  'smoke: Attacker Side Spawn > A Lobby | Smoke A Hall and A Cave from A Lobby.',
+  'flash: A Lobby > A Main | Flash A Garden and the site as the entry goes.',
+  'entry: A Lobby > A Main > A Garden > A Site | Go in first; the team trades right behind you.',
+  'clear: A Lobby > A Main > A Garden > A Site | Clear the site corners and plant behind cover.',
+  'postplant: A Lobby > A Main | Hold the plant from A Main, close enough to trade.',
+]);
+play('summit', 'attack', 'B', 'eco', 'One close fight in B Main', `${ECO_ATTACK}: take one fight in B Main, where it’s close, trade every kill, and plant if the site opens.`, [
+  'recon: B Lobby > B Main | Gather information on B Main before anyone peeks.',
+  'flash: B Lobby | Flash the first fight with what you have.',
+  'entry: B Lobby > B Main | Take the first close fight in B Main.',
+  'duel: B Lobby > B Main | Trade the entry at once.',
+  'flank: Mid Tiles | Watch mid for a push behind the team.',
+]);
+play('summit', 'defense', null, 'pistol', 'Two and two, one in mid', `${PISTOL_DEFENSE}. Two hold each site close, one watches mid, and the retake goes in together.`, [
+  'anchor: A Site | Hold A close and call the hit.',
+  'duel: A Hall | Play A Main close from A Hall.',
+  'stall: B Site | Hold B close and slow the hit.',
+  'duel: B Tower | Play B Main close from B Tower.',
+  'retake: Mid Window | Watch mid from Mid Window and retake together with the rotation.',
+]);
+play('summit', 'defense', 'B', 'eco', 'Stack B close', `${ECO_DEFENSE}; two watch A and mid from a distance and stay alive.`, [
+  'duel: B Drop | Hide at B Drop and fight the first player in.',
+  'duel: B Site | Play a close corner on the site and trade.',
+  'stall: B Tower | Slow B Main, then fight up close.',
+  'recon: A Hall | Watch A alone and call a hit early; don’t take a far fight.',
+  'flank: Mid Window | Watch mid, then come in behind the B hit through B Link.',
+]);
+
+play('sunset', 'attack', 'B', 'pistol', 'Five through B Main', `${PISTOL_ATTACK}. B Main is short and opens straight onto the site.`, [
+  'smoke: Attacker Side Spawn > B Lobby | Smoke B Boba and B Market from B Lobby.',
+  'flash: B Lobby > B Main | Flash the site corners as the entry goes.',
+  'entry: B Lobby > B Main > B Site | Go in first; the team trades right behind you.',
+  'clear: B Lobby > B Main > B Site | Clear the site corners and plant behind cover.',
+  'postplant: B Lobby > B Main | Hold the plant from B Main, close enough to trade.',
+]);
+play('sunset', 'attack', 'A', 'eco', 'One close fight in A Main', `${ECO_ATTACK}: take one fight in A Main, where it’s close, trade every kill, and plant if the site opens.`, [
+  'recon: A Lobby > A Main | Gather information on A Main before anyone peeks.',
+  'flash: A Lobby | Flash the first fight with what you have.',
+  'entry: A Lobby > A Main | Take the first close fight in A Main.',
+  'duel: A Lobby > A Main | Trade the entry at once.',
+  'flank: Mid Bottom | Watch mid for a push behind the team.',
+]);
+play('sunset', 'defense', null, 'pistol', 'Two and two, one in mid', `${PISTOL_DEFENSE}. Two hold each site close, one watches mid, and the retake goes in together.`, [
+  'anchor: A Site | Hold A close and call the hit.',
+  'duel: A Link | Play A Main and mid close from A Link.',
+  'stall: B Site | Hold B close and slow the hit.',
+  'duel: B Market | Play B Main and mid close from B Market.',
+  'retake: Mid Top | Watch mid from Mid Top and retake together with the rotation.',
+]);
+play('sunset', 'defense', 'B', 'eco', 'Stack B close', `${ECO_DEFENSE}; two watch A and mid from a distance and stay alive.`, [
+  'duel: B Boba | Hide in B Boba and fight the first player in.',
+  'duel: B Site | Play a close corner on the site and trade.',
+  'stall: B Market | Slow the hit from B Market, then fight up close.',
+  'recon: A Link | Watch A alone and call a hit early; don’t take a far fight.',
+  'flank: Mid Top | Watch mid, then come in behind the B hit.',
+]);
+
 export const PLAYS: readonly Play[] = ALL;
+
+/** The round a pistol or eco play is for, as BUY_GUIDE names it. */
+export const roundOf = (p: Play) => (isLowBuy(p.kind) ? BUY_GUIDE.find((r) => r.id === p.kind) : undefined);
+/** A play's name as shown on its own: "Pistol round: Five through B Main", or just the name. */
+export const playTitle = (p: Play): string => {
+  const round = roundOf(p);
+  return round ? `${round.name}: ${p.name}` : p.name;
+};
 
 /** A map's plays for a side, and for some of its sites (none: all of them). Whole-map plays always come too. */
 export function playsOn(map: string, side: Side, sites: readonly SiteId[] = []): Play[] {

@@ -54,6 +54,15 @@ test('a saved plan keeps its comp, fit and note, and can be starred, renamed, de
   const again = page.getByRole('article', { name: 'Haven attack, default' });
   await expect(again.getByRole('textbox', { name: 'Note' })).toHaveValue('Jett ops from A Long.');
   await expect(again.getByRole('button', { name: 'Star' })).toHaveAttribute('aria-pressed', 'true');
+  // printed, it carries its name and note, and a play for each side
+  await page.evaluate(() => { window.print = () => {}; });
+  await again.getByRole('button', { name: 'Print' }).click();
+  const sheet = page.locator('#print-sheet');
+  await expect(sheet.locator('h1')).toHaveText('Haven attack, default');
+  await expect(sheet.locator('.sheet-own')).toHaveText('Jett ops from A Long.');
+  await expect(sheet.locator('h2').filter({ hasText: /^On attack: / })).toHaveCount(1);
+  await expect(sheet.locator('h2').filter({ hasText: /^On defense: / })).toHaveCount(1);
+  await page.evaluate(() => dispatchEvent(new Event('afterprint')));
   // Open in the Planner asks the same question again
   await again.getByRole('button', { name: 'Open in the Planner' }).click();
   await answered(page);
@@ -65,6 +74,53 @@ test('a saved plan keeps its comp, fit and note, and can be starred, renamed, de
   await expect(page.getByRole('heading', { name: 'No saved plans yet' })).toBeVisible();
   await page.getByRole('status').filter({ hasText: 'Deleted' }).getByRole('button', { name: /Undo/ }).click();
   await expect(page.getByRole('list', { name: 'Saved plans' }).getByRole('button', { name: /Haven attack, default/ })).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test('an answer that looks wrong is flagged with a note, kept on the Saved page and in backups, and opens its question again', async ({ page, errors }) => {
+  await page.addInitScript(() => {
+    const copied: string[] = [];
+    (window as unknown as { copied: string[] }).copied = copied;
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText: async (t: string) => { copied.push(t); } } });
+  });
+  await open(page, 'maps/lotus');
+  await page.getByRole('button', { name: 'Plan for Lotus' }).click();
+  await answered(page);
+  const team = (await page.locator('.comp.open .comp-names').textContent())!;
+  await page.locator('.comp.open').getByRole('button', { name: 'This looks wrong' }).click();
+  const dialog = page.getByRole('dialog', { name: 'What looks wrong?' });
+  await dialog.getByRole('textbox').fill('Two controllers at this rank?');
+  await dialog.getByRole('button', { name: 'Keep the note' }).click();
+  await page.getByRole('status').filter({ hasText: 'Noted.' }).getByRole('button', { name: 'Open' }).click();
+  // on the Saved page, with what it's about and the question
+  const list = page.getByRole('list', { name: 'Flagged answers' });
+  await expect(list.getByRole('listitem')).toHaveCount(1);
+  await expect(list).toContainText('Two controllers at this rank?');
+  await expect(list).toContainText(`Comp: ${team}`);
+  await expect(list).toContainText('Lotus');
+  await page.getByRole('button', { name: 'Copy all' }).click();
+  const text = await page.evaluate(() => (window as unknown as { copied: string[] }).copied[0] ?? '');
+  expect(text).toMatch(/^Playbook \d+\.\d+\.\d+: 1 flagged answer\n\n1\. Lotus/);
+  expect(text).toContain('Note: Two controllers at this rank?');
+  expect(await a11y(page, '.flag-list')).toEqual([]);
+  // kept through a reload, and it opens its question again
+  await saved(page);
+  await reload(page);
+  await page.getByRole('list', { name: 'Flagged answers' }).getByRole('button', { name: 'Open in the Planner' }).click();
+  await answered(page);
+  await expect(page.locator('.answers-head h2')).toHaveText('Lotus');
+  // an agent's rating can be flagged too
+  await page.getByRole('tab', { name: 'Agents' }).click();
+  await page.locator('.agent-row').first().click();
+  await page.getByRole('button', { name: 'This looks wrong' }).click();
+  await page.getByRole('dialog', { name: 'What looks wrong?' }).getByRole('textbox').fill('Too high');
+  await page.getByRole('dialog', { name: 'What looks wrong?' }).getByRole('button', { name: 'Keep the note' }).click();
+  await go(page, 'saved/flagged');
+  await expect(page.getByRole('list', { name: 'Flagged answers' }).getByRole('listitem')).toHaveCount(2);
+  await expect(page.getByRole('list', { name: 'Flagged answers' }).getByRole('listitem').first()).toContainText('Agent: ');
+  // and deleted, with undo
+  await page.getByRole('list', { name: 'Flagged answers' }).getByRole('button', { name: 'Delete this flag' }).first().click();
+  await expect(page.getByRole('list', { name: 'Flagged answers' }).getByRole('listitem')).toHaveCount(1);
   expect(errors).toEqual([]);
 });
 

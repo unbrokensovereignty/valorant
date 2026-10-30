@@ -1,17 +1,23 @@
 /**
  * What you ask the planner. Every field can be given ("Haven"), left open ("Any map", "Both
- * sides", "All ranks") or asked for ("Find the best map"), which is what lets any input be an
- * output too: fix a trio and ask for the best map, or fix the map and ask for the best trio.
+ * sides") or asked for ("Find the best map"), which is what lets any input be an output too: fix a
+ * trio and ask for the best map, or fix the map and ask for the best trio. The rank is always given
+ * or asked for: a team plays differently at each rank, so no one answer fits them all.
  */
 import { isAgent, agentById } from '../kb/agents.ts';
 import { isMap, mapById, MAPS, POOL, type SiteId } from '../kb/maps.ts';
-import { isRank, RANK_IDS } from '../kb/ranks.ts';
+import { isRank, RANK_IDS, type RankId } from '../kb/ranks.ts';
 import { ROLE_IDS, type Role } from '../kb/roles.ts';
 import { isRecord } from '../util.ts';
-import type { RankPick, Situation, SidePick } from './model.ts';
+import type { Situation, SidePick } from './model.ts';
 
-export type PartySize = 2 | 3 | 5;
-export const PARTY_SIZES: readonly { id: PartySize; name: string }[] = [{ id: 5, name: 'Five-stack' }, { id: 3, name: 'Trio' }, { id: 2, name: 'Duo' }];
+/** How many of you queue together: on your own (the other four are random teammates), a duo, a trio or a five-stack. */
+export type PartySize = 1 | 2 | 3 | 5;
+export const PARTY_SIZES: readonly { id: PartySize; name: string; plural: string }[] = [
+  { id: 1, name: 'Solo', plural: 'solo picks' }, { id: 2, name: 'Duo', plural: 'duos' }, { id: 3, name: 'Trio', plural: 'trios' }, { id: 5, name: 'Five-stack', plural: 'five-stacks' },
+];
+export const isPartySize = (v: unknown): v is PartySize => PARTY_SIZES.some((p) => p.id === v);
+export const partyOf = (n: PartySize) => PARTY_SIZES.find((p) => p.id === n)!;
 
 export interface Query {
   /** A map id, 'any' or 'best'. */
@@ -19,7 +25,7 @@ export interface Query {
   side: SidePick | 'best';
   /** Sites to plan for on the chosen map; none means all of them. */
   sites: SiteId[];
-  rank: RankPick | 'best';
+  rank: RankId | 'best';
   party: PartySize;
   /** Agents that must be in your party (or team, for a five-stack). */
   include: string[];
@@ -31,18 +37,35 @@ export interface Query {
   roles: Partial<Record<Role, number>>;
   /**
    * The agents each player in your party plays, one list per player (an empty list: anyone).
-   * Empty when not planning for a saved party.
+   * Empty when not planning for a saved party or for your own agents.
    */
   pools: string[][];
   /** Include agents too new for much play (their numbers are early estimates). */
   newAgents: boolean;
   /** "Any map" and "Find the best map" cover all maps, not just the competitive pool. */
   allMaps: boolean;
+  /** The other team's agents, as far as they're known (kb/counters.ts says what they make you play around). */
+  enemy: string[];
 }
 
-export const newQuery = (rank: RankPick = 'gold', newAgents = true): Query => ({
-  map: 'any', side: 'both', sites: [], rank, party: 5, include: [], exclude: [], locked: [], roles: {}, pools: [], newAgents, allMaps: false,
+export const newQuery = (rank: RankId = 'gold', newAgents = true): Query => ({
+  map: 'any', side: 'both', sites: [], rank, party: 5, include: [], exclude: [], locked: [], roles: {}, pools: [], newAgents, allMaps: false, enemy: [],
 });
+
+/** Pools for planning with your own agents: one of them for you, anyone for the rest of your party (none when you haven't said). */
+export const myPools = (party: PartySize, agents: readonly string[]): string[][] =>
+  agents.length ? [[...agents], ...Array.from({ length: party - 1 }, (): string[] => [])] : [];
+/** Whether a question plans with your own agents (rather than a saved party's, or no one's). */
+export const withMine = (q: Pick<Query, 'party' | 'pools'>, agents: readonly string[]): boolean =>
+  agents.length > 0 && JSON.stringify(q.pools) === JSON.stringify(myPools(q.party, agents));
+
+/**
+ * A new question as you'd usually ask it: your rank and party size, and one of the agents you play
+ * for you (when you've said which).
+ */
+export function startingQuery(you: { rank: RankId; party: PartySize; agents: readonly string[] }, newAgents: boolean): Query {
+  return { ...newQuery(you.rank, newAgents), party: you.party, pools: myPools(you.party, you.agents) };
+}
 
 const ids = (v: unknown, ok: (x: unknown) => boolean, max: number): string[] =>
   Array.isArray(v) ? [...new Set(v.filter((x): x is string => typeof x === 'string' && ok(x)))].slice(0, max) : [];
@@ -53,8 +76,10 @@ export function sanitizeQuery(x: unknown): Query {
   if (!isRecord(x)) return q;
   if (x.map === 'any' || x.map === 'best' || isMap(x.map)) q.map = x.map as string;
   if (x.side === 'attack' || x.side === 'defense' || x.side === 'both' || x.side === 'best') q.side = x.side;
-  if (x.rank === 'any' || x.rank === 'best' || isRank(x.rank)) q.rank = x.rank as Query['rank'];
-  if (x.party === 2 || x.party === 3 || x.party === 5) q.party = x.party;
+  if (x.rank === 'best' || isRank(x.rank)) q.rank = x.rank;
+  // a question from 0.2.0 or before could be for all ranks, which planned as Platinum does
+  else if (x.rank === 'any') q.rank = 'platinum';
+  if (isPartySize(x.party)) q.party = x.party;
   q.newAgents = x.newAgents !== false;
   q.allMaps = x.allMaps === true;
   const map = mapById(q.map);
@@ -72,6 +97,8 @@ export function sanitizeQuery(x: unknown): Query {
   // one pool per player, or none at all
   if (Array.isArray(x.pools) && x.pools.length === q.party) q.pools = x.pools.map((p) => ids(p, isAgent, 30));
   if (q.pools.every((p) => !p.length)) q.pools = [];
+  // both teams can play the same agent, so theirs don't limit yours
+  q.enemy = ids(x.enemy, isAgent, 5);
   return fixRoles(q);
 }
 
@@ -107,9 +134,9 @@ export const mapsFor = (q: Pick<Query, 'allMaps'>) => (q.allMaps ? MAPS : POOL);
 export function situationsOf(q: Query): Situation[] {
   const maps = q.map === 'best' ? mapsFor(q).map((m) => m.id) : [q.map];
   const sides: SidePick[] = q.side === 'best' ? ['attack', 'defense'] : [q.side];
-  const ranks: RankPick[] = q.rank === 'best' ? [...RANK_IDS] : [q.rank];
+  const ranks: RankId[] = q.rank === 'best' ? [...RANK_IDS] : [q.rank];
   const out: Situation[] = [];
-  for (const map of maps) for (const side of sides) for (const rank of ranks) out.push({ map, side, rank, sites: maps.length === 1 && map !== 'any' ? q.sites : [] });
+  for (const map of maps) for (const side of sides) for (const rank of ranks) out.push({ map, side, rank, sites: maps.length === 1 && map !== 'any' ? q.sites : [], enemy: q.enemy });
   return out;
 }
 

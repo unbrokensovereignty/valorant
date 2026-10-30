@@ -23,7 +23,7 @@ export async function restoreFromFile() {
   const res = readBackup(file.text);
   if (!res.ok) { play('error'); toast(res.error, { tone: 'bad', ms: 8000 }); return; }
   const c = countsOf(res.data);
-  const what = `${plural(c.plans, 'saved plan')}, ${plural(c.parties, 'party', 'parties')} and ${plural(c.themes, 'theme')}`;
+  const what = `${plural(c.plans, 'saved plan')}, ${plural(c.parties, 'party', 'parties')}, ${plural(c.flags, 'flagged answer')} and ${plural(c.themes, 'theme')}`;
   const how = await openDialog<'merge' | 'replace'>('Restore this backup?', (close) => (
     <DialogLayout title="Restore this backup?" icon="import" close={() => close()} foot={<>
       <CancelButton onClick={() => close()} />

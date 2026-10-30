@@ -9,7 +9,6 @@ import { ROLE_IDS } from '../kb/roles.ts';
 import { D, N, ROLE_OF, ROLES_N, type Model } from './model.ts';
 import { roleCostOf, scoreTeam, TopK, walkTeams, type Rules, type Team } from './search.ts';
 import { FILL_MISSING, FILL_TOO_MANY_DUELISTS } from './weights.ts';
-import { ALL_RANKS_T } from '../kb/ranks.ts';
 
 /** How often random players at rank `t` (0 Iron to 1 Radiant) lock an agent in, relative to others. */
 export function pickWeight(agent: number, t: number): number {
@@ -35,10 +34,15 @@ export interface PartyPick {
   expected: number;
   /** How much the score swings with the fill (standard deviation). */
   spread: number;
-  /** The most likely full team, and the best one. */
+  /** The most likely full team, and the best one: the agents to ask random teammates for. */
   likely: Team;
   best: Team;
+  /** The next best full teams after `best`, best first (up to PICKS − 1). */
+  others: Team[];
 }
+
+/** How many of the best full teams each party keeps: the best, and the next ones as other good picks. */
+const PICKS = 3;
 
 export interface PartyResult {
   top: PartyPick[];
@@ -116,7 +120,7 @@ export interface PartyRules extends Rules {
 }
 
 /** Ranks every party of `size` the rules allow by its expected team score. */
-export function searchParties(m: Model, rules: PartyRules, size: number, rankT = ALL_RANKS_T, keep = 40): PartyResult {
+export function searchParties(m: Model, rules: PartyRules, size: number, rankT: number, keep = 40): PartyResult {
   const locked = [...new Set(rules.locked)];
   const lockedSet = new Set(locked);
   const fillSize = 5 - size - locked.length;
@@ -171,7 +175,9 @@ export function searchParties(m: Model, rules: PartyRules, size: number, rankT =
     }
     const roles0 = packRoles(partyCounts) + lockRoles;
     const s0 = 1 + baseSum + lockBase + pairSum + cross;
-    let sw = 0, sws = 0, sws2 = 0, likelyW = -1, likelyS = 0, likelyI = -1, bestS = -Infinity, bestI = -1;
+    let sw = 0, sws = 0, sws2 = 0, likelyW = -1, likelyS = 0, likelyI = -1;
+    // the best fills, best first
+    const topS: number[] = Array(PICKS).fill(-Infinity), topI: number[] = Array(PICKS).fill(-1);
     for (let i = 0; i < fN; i++) {
       if ((fLo[i]! & maskLo) | (fHi[i]! & maskHi)) continue;
       let missed = 0;
@@ -183,7 +189,11 @@ export function searchParties(m: Model, rules: PartyRules, size: number, rankT =
       const wt = fWeight[i]! * likeTable[roles]!;
       sw += wt; sws += wt * s; sws2 += wt * s * s;
       if (wt > likelyW) { likelyW = wt; likelyS = s; likelyI = i; }
-      if (s > bestS) { bestS = s; bestI = i; }
+      if (s > topS[PICKS - 1]!) {
+        let k = PICKS - 1;
+        while (k > 0 && s > topS[k - 1]!) { topS[k] = topS[k - 1]!; topI[k] = topI[k - 1]!; k--; }
+        topS[k] = s; topI[k] = i;
+      }
     }
     if (sw <= 0) return;
     const fillOf = (i: number) => (i < 0 ? [] : Array.from(fills.agents.subarray(i * fills.size, (i + 1) * fills.size)));
@@ -194,7 +204,8 @@ export function searchParties(m: Model, rules: PartyRules, size: number, rankT =
     const pick: PartyPick = {
       party: sorted(party), expected: exp, spread,
       likely: { agents: sorted([...fixed, ...fillOf(likelyI)]), score: fills.size ? likelyS : exp },
-      best: { agents: sorted([...fixed, ...fillOf(bestI)]), score: fills.size ? bestS : exp },
+      best: { agents: sorted([...fixed, ...fillOf(topI[0]!)]), score: fills.size ? topS[0]! : exp },
+      others: fills.size ? topI.slice(1).filter((i) => i >= 0).map((i, k) => ({ agents: sorted([...fixed, ...fillOf(i)]), score: topS[k + 1]! })) : [],
     };
     for (const a of party) if (!bestWith[a] || exp > bestWith[a]!.expected) bestWith[a] = pick;
     if (exp > top.floor) {
@@ -213,7 +224,7 @@ export function searchParties(m: Model, rules: PartyRules, size: number, rankT =
  * score when at least one random teammate plays it, and how often they do without being asked
  * (0 to 1), best first.
  */
-export function askFor(m: Model, party: readonly number[], rules: PartyRules, rankT = ALL_RANKS_T): { role: string; expected: number; chance: number }[] {
+export function askFor(m: Model, party: readonly number[], rules: PartyRules, rankT: number): { role: string; expected: number; chance: number }[] {
   const fixed = [...party, ...rules.locked];
   const fixedSet = new Set(fixed);
   const pool: number[] = [];

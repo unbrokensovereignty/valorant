@@ -59,7 +59,7 @@ for (const file of files) {
         const spec = imp[1];
         if (inCore && (spec.includes('/ui/') || spec.includes('/data/') || spec.startsWith('preact'))) report(file, n, `core must not import "${spec}"`);
         if (inData && (spec.includes('/ui/') || spec.startsWith('preact'))) report(file, n, `data must not import "${spec}"`);
-        if (spec.startsWith('.') && !/\.(ts|tsx|css|svg|txt|woff2|json)$/.test(spec)) report(file, n, `relative import needs its file extension: "${spec}"`);
+        if (spec.startsWith('.') && !/\.(ts|tsx|mjs|css|svg|txt|woff2|json)$/.test(spec)) report(file, n, `relative import needs its file extension: "${spec}"`);
       }
       if (inCore && /\b(document|window|localStorage|indexedDB|navigator)\./.test(line) && !line.trim().startsWith('//') && !line.trim().startsWith('*')) report(file, n, 'core must not touch the DOM or browser storage');
       if (/\bconsole\.log\(/.test(line)) report(file, n, 'console.log left in');

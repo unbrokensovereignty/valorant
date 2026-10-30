@@ -1,7 +1,10 @@
 import { describe, spec, eq, ok, throws } from './harness.ts';
 import { AGENTS, agentById, isNew, parseCaps } from '../../src/core/kb/agents.ts';
 import { kitOf, abilityOn, abilityNames, plainText, textParts } from '../../src/core/kb/kits.ts';
-import { MAPS, POOL, mapById, parseNeeds, calloutLabel } from '../../src/core/kb/maps.ts';
+import { MAPS, MECHANICS, POOL, mapById, parseNeeds, calloutLabel } from '../../src/core/kb/maps.ts';
+import { hasFloor, onFloor, walk, type Spot } from '../../src/core/kb/floor.ts';
+import { PLAYS } from '../../src/core/kb/plays.ts';
+import { AGENT_MAP_TIPS, MAP_TIPS } from '../../src/core/kb/tips.ts';
 import { PRO, PRO_MAPS_COUNTED, RECORDED, proKnown, proOverall, proPick, proRoleMix } from '../../src/core/kb/pro.ts';
 import { PAIRS, pairOf } from '../../src/core/kb/synergy.ts';
 import { RANKS } from '../../src/core/kb/ranks.ts';
@@ -111,6 +114,41 @@ describe('maps', () => {
       eq(mapById(m.id), m);
     }
   });
+  spec('every callout stands on its minimap’s floor', () => {
+    for (const m of MAPS) {
+      ok(hasFloor(m.id), `${m.name}: the floor was read from its minimap`);
+      for (const c of m.callouts) ok(onFloor(m.id, [c.x, c.y]), `${m.name}: ${c.name} is on the floor, not in a wall`);
+    }
+  });
+  spec('every route in a play keeps to the floor, and goes no long way round', () => {
+    const length = (ps: readonly Spot[]) => ps.slice(1).reduce((t, q, k) => t + Math.hypot(q[0] - ps[k]![0], q[1] - ps[k]![1]), 0);
+    for (const p of PLAYS) {
+      const m = mapById(p.map)!;
+      for (const s of p.steps) {
+        const spots = s.route.map((n) => m.callouts.find((c) => c.name === n)!).map((c): Spot => [c.x, c.y]);
+        for (let i = 1; i < spots.length; i++) {
+          const a = spots[i - 1]!, b = spots[i]!, line = walk(m.id, a, b);
+          const where = `${m.name}: ${s.route[i - 1]} to ${s.route[i]}`;
+          // a spot every half a percent of the minimap along the line
+          for (let k = 1; k < line.length; k++) {
+            const [x0, y0] = line[k - 1]!, [x1, y1] = line[k]!;
+            const n = Math.ceil(Math.hypot(x1 - x0, y1 - y0) * 200);
+            for (let j = 0; j <= n; j++) ok(onFloor(m.id, [x0 + ((x1 - x0) * j) / n, y0 + ((y1 - y0) * j) / n]), `${where} goes through a wall`);
+          }
+          ok(length(line) <= 2.2 * length([a, b]) + 0.05, `${where} goes a long way round`);
+        }
+      }
+    }
+  });
+  spec('a route goes round a wall rather than through it', () => {
+    // Lotus: from C Mound to B Main there's a wall in the straight line, so the route bends
+    const lotus = mapById('lotus')!, at = (n: string): Spot => { const c = lotus.callouts.find((x) => x.name === n)!; return [c.x, c.y]; };
+    const line = walk('lotus', at('C Mound'), at('B Main'));
+    ok(line.length > 2, 'it has a corner');
+    eq(line[0], at('C Mound'));
+    eq(line[line.length - 1], at('B Main'));
+    eq(walk('nowhere', [0.1, 0.1], [0.9, 0.9]), [[0.1, 0.1], [0.9, 0.9]], 'a map without a floor gets the straight line');
+  });
   spec('a typo in a need fails loudly', () => {
     throws(() => parseNeeds('smok +.5', 'x'));
     throws(() => parseNeeds('smoke +2', 'x'));
@@ -201,5 +239,45 @@ describe('ranks and strengths', () => {
     eq(RANKS.map((r) => r.id), ['iron', 'bronze', 'silver', 'gold', 'platinum', 'diamond', 'ascendant', 'immortal', 'radiant']);
     for (let i = 1; i < RANKS.length; i++) ok(RANKS[i]!.t > RANKS[i - 1]!.t);
     for (const d of DIMS) ok(DIM_INFO[d].name && DIM_INFO[d].has && DIM_INFO[d].lacks && DIM_INFO[d].blurb, `${d} is described`);
+  });
+});
+
+describe('map tips and mechanics', () => {
+  // words that start an ability's or agent's name ("A Toxic Screen", "A Killjoy Alarmbot"), not a callout
+  const names = new Set(AGENTS.flatMap((a) => [a.name, ...(kitOf(a.id)?.abilities.map((x) => x.name) ?? [])]).flatMap((n) => n.split(/[\s/]+/)));
+  /** "A Main", "Mid Market" and the like in a text that aren't callouts on the map. */
+  const unknownCallouts = (mapId: string, text: string): string[] => {
+    const map = mapById(mapId)!;
+    const has = (name: string) => map.callouts.some((c) => c.name === name);
+    const out: string[] = [];
+    for (const m of text.matchAll(/\b(A|B|C|Mid) ([A-Z][a-z]+)(?: ([A-Z][a-z]+))?/g)) {
+      if (names.has(m[2]!) || (m[1] === 'A' && m.index === 0)) continue;
+      if (!has(`${m[1]} ${m[2]}`) && !(m[3] && has(`${m[1]} ${m[2]} ${m[3]}`))) out.push(m[0]);
+    }
+    return out;
+  };
+  spec('every callout named in a map’s tips, agent tips and mechanics is one of the map’s own', () => {
+    for (const m of MAPS) {
+      const texts = [...(MAP_TIPS[m.id]?.attack ?? []), ...(MAP_TIPS[m.id]?.defense ?? []), ...(m.mechanics ?? []).map((x) => x.about)];
+      for (const t of Object.values(AGENT_MAP_TIPS[m.id] ?? {})) texts.push(...(typeof t === 'string' ? [t] : Object.values(t)));
+      for (const t of texts) eq(unknownCallouts(m.id, t), [], `${m.name}: “${t}”`);
+    }
+  });
+  spec('agent tips are for real agents on real maps, and each is a full sentence', () => {
+    for (const [map, byAgent] of Object.entries(AGENT_MAP_TIPS)) {
+      ok(mapById(map), `${map} is a map`);
+      for (const [agent, t] of Object.entries(byAgent)) {
+        ok(agentById(agent), `${agent} is an agent`);
+        for (const text of typeof t === 'string' ? [t] : Object.values(t)) ok(/^[A-Z].*[.]$/.test(text) && !text.includes('!'), `${map} ${agent}: “${text}”`);
+      }
+    }
+  });
+  spec('every map says how open it is, and only names mechanics it has once', () => {
+    for (const m of MAPS) {
+      ok(['tight', 'mixed', 'open'].includes(m.space), `${m.name}: space`);
+      const ids = (m.mechanics ?? []).map((x) => x.id);
+      eq(new Set(ids).size, ids.length, `${m.name}: mechanics listed once`);
+      for (const x of m.mechanics ?? []) ok(MECHANICS[x.id] && /[.]$/.test(x.about), `${m.name}: ${x.id}`);
+    }
   });
 });

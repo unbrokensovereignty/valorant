@@ -1,6 +1,7 @@
 /**
  * Saved: your saved plans (each opens to its comp's pros and cons, plays and tips, with a note
- * of your own) and your parties (the people you queue with and the agents each of them plays).
+ * of your own), your parties (the people you queue with and the agents each of them plays), and
+ * the answers you flagged as looking wrong.
  */
 import { useState } from 'preact/hooks';
 import { PageHead } from '../shell.tsx';
@@ -10,26 +11,29 @@ import { AgentChips } from '../components/pickers.tsx';
 import { Icon } from '../icons.tsx';
 import { AgentIcon } from '../art.tsx';
 import { data, go, openDialog, safely, toast, watch } from '../state.ts';
+import { copyWithToast } from '../files.ts';
 import { play } from '../sound.ts';
 import { openPlanner, planWith } from '../planner/store.ts';
 import { CompDetail, Fit, TeamIcons } from '../planner/comp.tsx';
 import { askedLine, askedTitle, partyWord } from '../planner/words.ts';
 import { agentById } from '../../core/kb/agents.ts';
-import { LIMITS, poolsOf, type Party, type Player, type SavedPlan } from '../../core/saved.ts';
+import type { RankId } from '../../core/kb/ranks.ts';
+import { LIMITS, poolsOf, type Flag, type Party, type Player, type SavedPlan } from '../../core/saved.ts';
 import type { Situation } from '../../core/engine/model.ts';
 import { teamFit, type CompAnswer, type SituationAnswer } from '../../core/engine/plan.ts';
 import type { PartySize } from '../../core/engine/query.ts';
-import { fmtDay, keyOf } from '../../core/dates.ts';
+import { fmtDay, fmtLongDay, keyOf } from '../../core/dates.ts';
 import { listJoin } from '../../core/text.ts';
 import { plural } from '../../core/util.ts';
 import type { PageProps } from './index.ts';
 
-type Tab = 'plans' | 'parties';
+type Tab = 'plans' | 'parties' | 'flagged';
 
 /** The one situation a saved plan is about (a plan saved from "the best map" keeps the map it picked). */
 function situationOf(p: SavedPlan): Situation {
   const q = p.query;
-  return { map: q.map === 'best' ? 'any' : q.map, side: q.side === 'best' ? 'both' : q.side, rank: q.rank === 'best' ? 'any' : q.rank, sites: q.sites };
+  const rank = q.rank === 'best' ? data().settings().defaultRank as RankId : q.rank;
+  return { map: q.map === 'best' ? 'any' : q.map, side: q.side === 'best' ? 'both' : q.side, rank, sites: q.sites, enemy: q.enemy };
 }
 
 // ---------------------------------------------------------------- plans
@@ -79,7 +83,7 @@ function PlanDetail({ p }: { p: SavedPlan }) {
         <textarea id={`note-${p.id}`} class="input" value={note} maxLength={LIMITS.note} rows={3}
           onInput={(e) => { const v = (e.target as HTMLTextAreaElement).value; setNote(v); safely(() => r.updatePlan(p.id, { note: v })); }} />
       </Field>
-      {filled && <CompDetail c={filled.c} i={0} ans={filled.ans} q={p.query} saveable={false} />}
+      {filled && <CompDetail c={filled.c} i={0} ans={filled.ans} q={p.query} saveable={false} plan={{ name: p.name, note }} />}
     </article>
   );
 }
@@ -121,7 +125,8 @@ const sizeOf = (n: number): PartySize => (n === 2 ? 2 : n === 3 ? 3 : 5);
 
 function PartyEditor({ initial, close }: { initial: Party | null; close: (v?: unknown) => void }) {
   const [name, setName] = useState(initial?.name ?? '');
-  const [players, setPlayers] = useState<Player[]>(initial?.players.map((x) => ({ ...x, agents: [...x.agents] })) ?? [{ name: 'Me', agents: [] }, { name: 'Player 2', agents: [] }]);
+  // a new party starts with you, playing the agents you play (Settings → You)
+  const [players, setPlayers] = useState<Player[]>(initial?.players.map((x) => ({ ...x, agents: [...x.agents] })) ?? [{ name: 'Me', agents: [...data().settings().myAgents] }, { name: 'Player 2', agents: [] }]);
   const resize = (n: PartySize) => setPlayers((ps) => Array.from({ length: n }, (_, i) => ps[i] ?? { name: `Player ${i + 1}`, agents: [] }));
   const set = (i: number, patch: Partial<Player>) => setPlayers((ps) => ps.map((x, k) => (k === i ? { ...x, ...patch } : x)));
   const save = () => {
@@ -203,14 +208,67 @@ function Parties() {
   );
 }
 
+// ---------------------------------------------------------------- flagged
+
+/** What a flag is about, and the question it came from: "Comp: Raze, Fade, Viper, Omen, Chamber". */
+const aboutOf = (f: Flag) => (f.agent ? `Agent: ${agentById(f.agent)?.name ?? f.agent}` : `Comp: ${f.team.map((id) => agentById(id)?.name ?? id).join(', ')}`);
+const askedOf = (f: Flag) => `${askedTitle(f.query)} · ${askedLine(f.query)}`;
+
+/** Every flag as plain text, to send on. */
+function flagsText(flags: readonly Flag[]): string {
+  const lines = [`Playbook ${__APP_VERSION__}: ${plural(flags.length, 'flagged answer')}`];
+  flags.forEach((f, i) => lines.push('', `${i + 1}. ${askedOf(f)}`, `${aboutOf(f)} (${f.shown})`, `Note: ${f.note}`, `Flagged ${fmtLongDay(keyOf(new Date(f.created)))}`));
+  return lines.join('\n');
+}
+
+function Flagged() {
+  const r = watch('meta');
+  const flags = r.flags();
+  const remove = (f: Flag) => safely(() => { r.deleteFlag(f.id); toast('Deleted the flag.', { undo: true }); });
+  if (!flags.length) {
+    return (
+      <Empty level={2} title="Nothing flagged yet" actions={<Button kind="primary" icon="planner" onClick={() => go('planner')}>Open the Planner</Button>}>
+        When a comp or an agent’s rating looks wrong, press This looks wrong on it and say why. The note is kept here with the question and what Playbook showed, and goes into backups.
+      </Empty>
+    );
+  }
+  return (
+    <div class="stack">
+      <div class="row wrap">
+        <Button icon="copy" onClick={() => void copyWithToast(flagsText(flags), `Copied ${plural(flags.length, 'flag')}.`)}>Copy all</Button>
+        <span class="muted small">Paste them into a message, or send a backup (Settings → Data), to have them checked.</span>
+      </div>
+      <ul class="plain-list flag-list" aria-label="Flagged answers">
+        {flags.map((f) => (
+          <li key={f.id} class="panel flag-row">
+            <div class="grow stack" style={{ gap: '6px' }}>
+              <p><b>{f.note}</b></p>
+              <div class="row wrap flag-about">
+                {f.agent ? <AgentIcon id={f.agent} size={26} /> : <TeamIcons team={f.team} size={26} />}
+                <span class="muted small">{aboutOf(f)} · {f.shown}</span>
+              </div>
+              <p class="muted small">{askedOf(f)} · flagged {fmtDay(keyOf(new Date(f.created)), keyOf(new Date()))}</p>
+            </div>
+            <div class="row flag-actions">
+              <Button size="sm" kind="soft" icon="planner" onClick={() => openPlanner(f.query)}>Open in the Planner</Button>
+              <IconButton icon="trash" label="Delete this flag" onClick={() => remove(f)} />
+            </div>
+          </li>
+        ))}
+      </ul>
+      <p class="small muted">{plural(flags.length, 'flag')} of {LIMITS.flags} at most.</p>
+    </div>
+  );
+}
+
 export function SavedPage({ arg }: PageProps) {
-  const tab: Tab = arg === 'parties' ? 'parties' : 'plans';
+  const tab: Tab = arg === 'parties' ? 'parties' : arg === 'flagged' ? 'flagged' : 'plans';
   return (
     <>
-      <PageHead title="Saved">Your saved plans and the parties you play with.</PageHead>
-      <Tabs<Tab> label="Saved" tour="saved-tabs" value={tab} onChange={(t) => go('saved', t === 'parties' ? 'parties' : '')} tabs={[['plans', 'Plans'], ['parties', 'Parties']]} />
+      <PageHead title="Saved">Your saved plans, the parties you play with, and answers you flagged.</PageHead>
+      <Tabs<Tab> label="Saved" tour="saved-tabs" value={tab} onChange={(t) => go('saved', t === 'plans' ? '' : t)} tabs={[['plans', 'Plans'], ['parties', 'Parties'], ['flagged', 'Flagged']]} />
       <div class="tab-body" key={tab}>
-        {tab === 'plans' ? <Plans open={arg} /> : <Parties />}
+        {tab === 'plans' ? <Plans open={arg} /> : tab === 'parties' ? <Parties /> : <Flagged />}
       </div>
     </>
   );

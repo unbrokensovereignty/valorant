@@ -1,6 +1,6 @@
 // Turns the game content downloaded from valorant-api.com into what the app ships with: small
-// images in assets/ (which the build inlines), and the agents' abilities and the maps' callouts in
-// src/core/kb/content.gen.ts.
+// images in assets/ (which the build inlines), the agents' abilities and the maps' callouts in
+// src/core/kb/content.gen.ts, and where you can walk on each minimap in src/core/kb/floor.gen.ts.
 //
 //   npm run art -- <folder>
 //
@@ -10,6 +10,7 @@
 // downloads all of it (see CONTRIBUTING.md).
 // An agent or map without art just shows its name; nothing else needs to change.
 import sharp from 'sharp';
+import { floorFile } from './floor.mjs';
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -88,3 +89,7 @@ export const CALLOUTS: Record<string, [name: string, x: number, y: number][]> = 
 `;
 await writeFile(join(root, 'src/core/kb/content.gen.ts'), gen);
 console.log(`Wrote the abilities of ${agents.length} agents and the callouts of ${maps.length} maps.`);
+
+// the floor each minimap's routes walk on, read from the new minimaps
+await writeFile(join(root, 'src/core/kb/floor.gen.ts'), await floorFile());
+console.log('Wrote the floors of the minimaps.');

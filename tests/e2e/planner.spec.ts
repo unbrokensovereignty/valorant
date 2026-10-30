@@ -46,6 +46,9 @@ test('ask for a map, side and rank, and get comps with pros and cons, plays and 
   // its plays draw on the minimap, and every job goes to someone on the team
   await first.getByRole('tab', { name: 'Plays' }).click();
   await expect(first.locator('.minimap').first()).toBeVisible();
+  // the pistol-round and eco plays come apart from the rest, with what to buy
+  await first.getByRole('listbox', { name: 'Pistol and eco rounds' }).getByRole('option', { name: /^Pistol/ }).click();
+  await expect(first.getByRole('article', { name: /^Pistol round: / })).toContainText('Pistol round. The first round of each half');
   await first.getByRole('tab', { name: 'Tips' }).click();
   await expect(first.locator('.tips li').first()).toBeVisible();
   // another comp opens, and the first one closes
@@ -59,6 +62,80 @@ test('ask for a map, side and rank, and get comps with pros and cons, plays and 
   const r = await new AxeBuilder({ page }).include('.answers').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
   expect(r.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`)).toEqual([]);
   expect(await overlaps(page, '.answers-head')).toEqual([]);
+  // the Agents tab says what each agent adds to their best comp over the next best of their role
+  await page.getByRole('tab', { name: 'Agents' }).click();
+  await page.locator('.agent-row').first().click();
+  await expect(page.locator('.agent-more')).toContainText(/In that comp, (.+ is \d+ ahead of .+, the next best (duelist|initiator|controller|sentinel)|.+ would do about as well as .+)\./);
+  expect(errors).toEqual([]);
+});
+
+/** How many pages a PDF has. */
+const pages = (pdf: Buffer) => pdf.toString('latin1').match(/\/Type\s*\/Page[^s]/g)?.length ?? 0;
+
+test('a comp prints as one sheet, with the play chosen on its Plays tab, in light colors whatever the theme', async ({ page, browserName, errors }) => {
+  await page.addInitScript(() => { const w = window as unknown as { printed: number }; w.printed = 0; window.print = () => { w.printed++; }; });
+  await open(page, 'planner');
+  await chooseMap(page, 'Breeze');
+  await question(page).getByRole('group', { name: 'Side' }).getByRole('button', { name: 'Attack' }).click();
+  await question(page).getByRole('combobox', { name: 'Rank' }).selectOption({ label: 'Immortal' });
+  await settledAnswers(page, 'Immortal');
+  const first = comps(page).first();
+  const team = (await first.locator('.comp-names').textContent())!.split(', ');
+  // the second play, chosen on the Plays tab, is the one that prints
+  await first.getByRole('tab', { name: 'Plays' }).click();
+  const second = first.getByRole('listbox', { name: 'Plays on Breeze' }).getByRole('option').nth(1);
+  const play = (await second.locator('.play-name').textContent())!;
+  await second.click();
+  await first.getByRole('button', { name: 'Print' }).click();
+  await expect.poll(() => page.evaluate(() => (window as unknown as { printed: number }).printed)).toBe(1);
+  // on screen nothing changes; on paper the sheet is all there is
+  const sheet = page.locator('#print-sheet');
+  await expect(sheet).toBeHidden();
+  await page.emulateMedia({ media: 'print' });
+  await expect(sheet).toBeVisible();
+  await expect(page.locator('#app')).toBeHidden();
+  await expect(sheet.getByRole('heading', { level: 1 })).toHaveText('Breeze, attack');
+  await expect(sheet).toContainText('Immortal · five-stack');
+  for (const name of team) await expect(sheet.locator('.sheet-team')).toContainText(name);
+  await expect(sheet.locator('.sheet-plan')).toContainText('How it wins.');
+  await expect(sheet.getByRole('heading', { name: 'Pros' })).toBeVisible();
+  await expect(sheet.getByRole('heading', { name: `Play: ${play}`, exact: false })).toBeVisible();
+  await expect(sheet.locator('.minimap .route').first()).toBeAttached();
+  await expect(sheet.getByRole('heading', { name: 'Tips' })).toBeVisible();
+  // dark text on white paper, even in the dark theme
+  const ink = await sheet.locator('.sheet').evaluate((el) => getComputedStyle(el).color.match(/\d+/g)!.slice(0, 3).map(Number));
+  expect(Math.max(...ink)).toBeLessThan(90);
+  // on one page of A4 or Letter (only Chromium makes PDFs)
+  if (browserName === 'chromium') for (const format of ['A4', 'Letter']) expect(pages(await page.pdf({ format })), format).toBe(1);
+  // and once printing is done, it's put away
+  await page.emulateMedia({ media: 'screen' });
+  await page.evaluate(() => dispatchEvent(new Event('afterprint')));
+  await expect(sheet.locator('.sheet')).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
+test('two comps compare side by side: fits, how each wins, what each covers, and where the lower one falls short', async ({ page, errors }) => {
+  await open(page, 'planner');
+  await chooseMap(page, 'Lotus');
+  await question(page).getByRole('group', { name: 'Side' }).getByRole('button', { name: 'Defense' }).click();
+  await settledAnswers(page);
+  await comps(page).first().getByRole('button', { name: 'Compare' }).click();
+  const d = page.getByRole('dialog', { name: 'Compare comps' });
+  // the comp it opened from, beside the best other one
+  await expect(d.getByRole('combobox', { name: 'First comp' })).toHaveValue('0');
+  await expect(d.getByRole('combobox', { name: 'Second comp' })).toHaveValue('1');
+  for (const which of ['First comp', 'Second comp']) await expect(d.getByRole('region', { name: which })).toContainText('How it wins.');
+  await expect(d.getByRole('table')).toContainText('Smokes');
+  await d.getByRole('combobox', { name: 'Second comp' }).selectOption('4');
+  await expect(d.locator('.why-not')).toContainText(/^The second comp plays .+ instead of .+/);
+  await expect(d.locator('.why-not')).toContainText('Where it falls short');
+  const r = await new AxeBuilder({ page }).include('.dialog').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
+  expect(r.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`)).toEqual([]);
+  // the same comp on both sides says so
+  await d.getByRole('combobox', { name: 'Second comp' }).selectOption('0');
+  await expect(d).toContainText('Both sides show the same comp');
+  await page.keyboard.press('Escape');
+  await expect(d).toHaveCount(0);
   expect(errors).toEqual([]);
 });
 
@@ -103,6 +180,28 @@ test('must-play agents are in every comp, and role counts are kept', async ({ pa
   expect(errors).toEqual([]);
 });
 
+test('their team: each comp says how it stands against the agents they play, and they can still be picked', async ({ page, errors }) => {
+  await open(page, 'planner');
+  await chooseMap(page, 'Breeze');
+  await question(page).getByRole('group', { name: 'Side' }).getByRole('button', { name: 'Attack' }).click();
+  await question(page).getByRole('combobox', { name: 'Rank' }).selectOption({ label: 'Immortal' });
+  await chooseAgents(page, 'Agents the other team plays', ['Chamber', 'Jett', 'Viper']);
+  await settledAnswers(page, 'against Chamber, Jett and Viper');
+  const first = comps(page).first();
+  await expect(first.getByRole('heading', { name: 'Against their team' })).toBeVisible();
+  await expect(first.locator('.against-row').first()).toContainText('Their Chamber and Jett hold long angles with the Operator.');
+  // both teams can play the same agent: Viper is still in the comps
+  expect((await page.locator('.comps .comp-names').allTextContents()).some((n) => n.includes('Viper'))).toBe(true);
+  const r = await new AxeBuilder({ page }).include('.against').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
+  expect(r.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`)).toEqual([]);
+  // without their agents, the comps don't speak of them
+  for (const name of ['Chamber', 'Jett', 'Viper']) await question(page).getByRole('button', { name: `Remove ${name}` }).click();
+  await settledAnswers(page);
+  await expect(page.locator('.answers-head')).not.toContainText('against');
+  await expect(page.locator('.against')).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
 test('a duo finds its best map: the maps are ranked and each one opens its picks', async ({ page, errors }) => {
   test.setTimeout(90_000);
   await open(page, 'planner');
@@ -118,8 +217,8 @@ test('a duo finds its best map: the maps are ranked and each one opens its picks
   await options.nth(3).click();
   await expect(options.nth(3)).toHaveAttribute('aria-selected', 'true');
   await expect(sub).not.toHaveText(before ?? '');
-  // a duo's pick names the two of you and the likely teammates
-  await expect(comps(page).first().locator('.comp-names')).toContainText('likely');
+  // a duo's pick names the two of you and the picks for your random teammates
+  await expect(comps(page).first().locator('.comp-names')).toContainText(' with ');
   await expect(page.getByRole('tab', { name: 'Duo picks' })).toBeVisible();
   // the agents tab ranks every agent for the situation
   await page.getByRole('tab', { name: 'Agents' }).click();
@@ -132,13 +231,15 @@ test('a duo’s best pick says which role to ask random teammates for, and how o
   await question(page).getByRole('group', { name: 'Party size' }).getByRole('button', { name: 'Duo' }).click();
   await chooseMap(page, 'Ascent');
   await settledAnswers(page);
+  // the picks for your random teammates, then what to expect if they pick on their own
+  await expect(comps(page).first().locator('.party-box p').first()).toHaveText(/^Your party: .+\. If your random teammates play .+, the team fits \d+ out of 100 \(the best five-stack is 100\)\. If they pick on their own, expect a team that fits about \d+, give or take \d+\.$/);
   const ask = comps(page).first().locator('.party-box p').nth(1);
   await expect(ask).toHaveText(/^Ask your teammates for (?:a (?:duelist|controller|sentinel)|an initiator) first: they pick one on their own (?:in about \d+ of 10 games|in nearly every game|hardly ever), and with one, expect about \d+\./);
   expect(await ask.textContent()).not.toMatch(/\ba [aeiou]/i);
   expect(errors).toEqual([]);
 });
 
-test('teammates already locked in are part of every likely team and never in your party', async ({ page, errors }) => {
+test('teammates already locked in are part of every team and never in your party', async ({ page, errors }) => {
   await open(page, 'planner');
   // the first answers in place, so nothing moves under the click
   await settledAnswers(page, 'Any map');

@@ -9,6 +9,7 @@ import { Button, IconButton, Kbd } from './components/controls.tsx';
 import { DialogHost, MenuHost, ToastHost, openMenu, type MenuItem } from './components/overlays.tsx';
 import { Palette, type Command } from './components/palette.tsx';
 import { checkWhatsNew } from './components/whatsnew.tsx';
+import { openSetup, setupDue } from './setup.tsx';
 import {
   backendKind, canRedo, canUndo, data, dialogs, go, minute, overlayOpen, paletteOpen, quarantinedCount, route, routeDir,
   safely, saveError, saveState, sidebarNarrow, tabRole, takeOverTab, toggleSidebar, editsText, watch, watchClicks, type Page,
@@ -250,7 +251,10 @@ export function App() {
   const { page, arg } = route.value;
   void minute.value;
   useEffect(() => {
+    // opened for the first time ever: ask how you play (setup.tsx), before anything else
+    const first = !data().app().seenVersion;
     checkWhatsNew(true);
+    if (first && setupDue() && route.peek().page !== 'selftest') void openSetup();
     addEventListener('keydown', onKey);
     const stopKeeping = keepFocus(), stopWatching = watchClicks();
     return () => { removeEventListener('keydown', onKey); stopKeeping(); stopWatching(); };

@@ -1,11 +1,10 @@
 import { describe, spec, eq, ok } from './harness.ts';
 import { AGENTS } from '../../src/core/kb/agents.ts';
 import { abilityOn } from '../../src/core/kb/kits.ts';
-import { MAPS, mapById } from '../../src/core/kb/maps.ts';
-import { JOBS, PLAYS, playsOn } from '../../src/core/kb/plays.ts';
+import { MAPS, POOL, mapById } from '../../src/core/kb/maps.ts';
+import { BUY_GUIDE, JOBS, PLAYS, isLowBuy, playTitle, playsOn, roundOf } from '../../src/core/kb/plays.ts';
 import { AGENT_TIPS, ATTACK_TIPS, DEFENSE_TIPS, MAP_TIPS, RANK_TIPS, PARTY_TIPS, DOUBLE_TIPS } from '../../src/core/kb/tips.ts';
-import { ROLE_IDS } from '../../src/core/kb/roles.ts';
-import { JOB_SKILLS, fillPlay, jobSkill, playsFor, WEAK_JOB } from '../../src/core/engine/plays.ts';
+import { JOB_SKILLS, PLAY_FIT, fillPlay, jobSkill, playFitLabel, playsFor, WEAK_JOB } from '../../src/core/engine/plays.ts';
 import { agentTips, tipsFor } from '../../src/core/engine/tips.ts';
 import { summaryText } from '../../src/core/engine/summary.ts';
 import { explainTeam } from '../../src/core/engine/explain.ts';
@@ -43,6 +42,24 @@ describe('plays', () => {
         for (const o of p.steps) if (o !== s) for (const c of o.route) ok(!on.includes(c), `${p.map}, ${p.name}: the smoke on ${c} is on a teammate’s way`);
       }
     }
+  });
+  spec('each map in the pool has a pistol-round and an eco play for each side, kept apart from the plays for a bought round', () => {
+    const team = ['omen', 'sova', 'jett', 'killjoy', 'breach'];
+    for (const m of POOL) {
+      for (const side of ['attack', 'defense'] as const) {
+        const low = playsFor(team, m.id, side, [], true);
+        ok(low.some((f) => f.play.kind === 'pistol') && low.some((f) => f.play.kind === 'eco'), `${m.name} ${side}: a pistol and an eco play`);
+        ok(low.every((f) => isLowBuy(f.play.kind)) && playsFor(team, m.id, side).every((f) => !isLowBuy(f.play.kind)), `${m.name} ${side}: kept apart`);
+        // the round decides them, not the site asked about
+        eq(playsFor(team, m.id, side, ['A'], true).length, low.length, `${m.name} ${side}: whatever the sites`);
+      }
+    }
+    for (const p of PLAYS.filter((x) => isLowBuy(x.kind))) {
+      ok(POOL.some((m) => m.id === p.map), `${p.map}, ${p.name}: a map in the pool`);
+      eq(playTitle(p), `${roundOf(p)!.name}: ${p.name}`);
+    }
+    eq(playTitle(playsOn('haven', 'attack', ['C']).find((p) => p.kind === 'hit')!), 'C hit down Long', 'a play for a bought round goes by its name');
+    for (const r of BUY_GUIDE) ok(plain(r.text) && plain(`${r.name}.`), `${r.name}: plain sentences`);
   });
   spec('only the chosen sites’ plays come, with the whole-map ones', () => {
     const c = playsOn('haven', 'attack', ['C']);
@@ -82,7 +99,7 @@ describe('filling plays', () => {
       left.forEach((id, i) => perm(left.filter((_, j) => j !== i), k + 1, sum + jobSkill(AGENTS.find((a) => a.id === id)!, slots[k]!).value));
     };
     perm(team, 0, 0);
-    ok(Math.abs(f.fit * 5 - best) < 1e-9, 'the best total');
+    ok(Math.abs(f.average * 5 - best) < 1e-9, 'the best total');
   });
   spec('a job nobody can do well is flagged, and a team that suits the play fits it better', () => {
     const p = playsOn('ascent', 'attack', ['A']).find((x) => x.kind === 'hit')!;
@@ -91,6 +108,17 @@ describe('filling plays', () => {
     ok(duelists.weak.length > 0 && duelists.weak.every((d) => d.value < WEAK_JOB));
     eq(usual.weak.length, 0);
     ok(usual.fit > duelists.fit + 0.15);
+    // and a play with a job nobody can do never fits well: a hit that needs a flash, with no flash in the comp
+    const lotus = playsOn('lotus', 'attack', ['C']).find((x) => x.name === 'C hit through Main')!;
+    const noFlash = fillPlay(lotus, ['raze', 'fade', 'viper', 'omen', 'chamber']);
+    ok(noFlash.weak.length === 1 && noFlash.average >= PLAY_FIT.well, 'the other jobs are done well');
+    eq(playFitLabel(noFlash.fit), 'Works');
+    for (const team of [['jett', 'reyna', 'raze', 'phoenix', 'iso'], ['raze', 'fade', 'viper', 'omen', 'chamber'], ['omen', 'sova', 'jett', 'killjoy', 'kayo']]) {
+      for (const f of playsOn('ascent', 'attack').concat(playsOn('lotus', 'attack')).map((x) => fillPlay(x, team))) {
+        if (f.weak.length) ok(playFitLabel(f.fit) !== 'Fits well', `${f.play.name} with ${team.join()}: never fits well with a job nobody can do`);
+        if (f.weak.length > 1) eq(playFitLabel(f.fit), 'A stretch', `${f.play.name} with ${team.join()}`);
+      }
+    }
   });
   spec('the abilities named are the agent’s own', () => {
     const f = fillPlay(playsOn('breeze', 'attack')[0]!, ['viper', 'fade', 'raze', 'cypher', 'harbor']);
@@ -125,7 +153,7 @@ describe('tips', () => {
       for (const s of MAP_TIPS[m.id]![side]) ok(plain(s), `${m.name}: “${s}”`);
     }
     for (const [id, s] of [...Object.entries(ATTACK_TIPS), ...Object.entries(DEFENSE_TIPS)]) ok(AGENTS.some((a) => a.id === id) && plain(s), `${id}: “${s}”`);
-    for (const s of [...Object.values(RANK_TIPS).flat(), ...Object.values(PARTY_TIPS).flatMap((t) => [t.play, t.ask]), ...ROLE_IDS.flatMap((r) => Object.values(DOUBLE_TIPS[r]))]) ok(plain(s), s);
+    for (const s of [...Object.values(RANK_TIPS).flat(), ...Object.values(PARTY_TIPS).flatMap((t) => [t.play, t.ask]), ...Object.values(DOUBLE_TIPS).flatMap((t) => Object.values(t))]) ok(plain(s), s);
   });
   spec('tips name only the map’s own callouts', () => {
     for (const m of MAPS) {
@@ -149,21 +177,23 @@ describe('tips', () => {
     for (const name of ['Omen', 'Viper', 'Sova', 'Jett', 'Killjoy']) ok(t.some((x) => x.about === name), name);
     // and every agent's tip on defense is about defending
     for (const a of AGENTS) {
-      const tip = tipsFor([a.id], { map: 'haven', side: 'defense', sites: [], rank: 'any' }).find((x) => x.about === a.name)!.text;
+      const tip = tipsFor([a.id], { map: 'haven', side: 'defense', sites: [], rank: 'gold' }).find((x) => x.about === a.name)!.text;
       ok(!/after the plant|post-plant|before the hit(?! comes)|the team crosses|walk the team|enters alone|(?:stop|or) the defuse|a hit\b/.test(tip), `${a.name} on defense: “${tip}”`);
       // and on attack, about attacking
-      const attack = tipsFor([a.id], { map: 'haven', side: 'attack', sites: [], rank: 'any' }).find((x) => x.about === a.name)!.text;
+      const attack = tipsFor([a.id], { map: 'haven', side: 'attack', sites: [], rank: 'gold' }).find((x) => x.about === a.name)!.text;
       ok(!/\ba rush\b|the hit comes|for the retake|site entrance/.test(attack), `${a.name} on attack: “${attack}”`);
       // an agent's page has every tip once
       eq(new Set(agentTips(a.id)).size, agentTips(a.id).length, `${a.name}: no tip twice`);
     }
     ok(t.some((x) => x.about === 'Gold'));
-    const duo = tipsFor(team, { map: 'any', side: 'both', sites: [], rank: 'any' }, 2, ['sova', 'jett']);
+    const solo = tipsFor(team, { map: 'any', side: 'both', sites: [], rank: 'gold' }, 1, ['sova']);
+    ok(solo.some((x) => x.about === 'Solo') && solo.some((x) => x.about === 'Sova') && !solo.some((x) => x.about === 'Jett'), 'a solo player’s own agent, and the solo tips');
+    const duo = tipsFor(team, { map: 'any', side: 'both', sites: [], rank: 'gold' }, 2, ['sova', 'jett']);
     ok(!duo.some((x) => x.about === 'Omen'), 'only your party’s agents');
     ok(duo.some((x) => x.about === 'Duo'));
     ok(!duo.some((x) => x.about.startsWith('Haven')));
     // once teammates have locked in every other spot, there's no one left to ask for a role
-    const trio = (locked: number) => tipsFor(team, { map: 'any', side: 'both', sites: [], rank: 'any' }, 3, ['sova', 'jett', 'omen'], locked).filter((x) => x.about === 'Trio').map((x) => x.text);
+    const trio = (locked: number) => tipsFor(team, { map: 'any', side: 'both', sites: [], rank: 'gold' }, 3, ['sova', 'jett', 'omen'], locked).filter((x) => x.about === 'Trio').map((x) => x.text);
     ok(trio(1).includes(PARTY_TIPS[3].ask) && !trio(2).includes(PARTY_TIPS[3].ask) && trio(2).includes(PARTY_TIPS[3].play));
   });
 });
@@ -174,7 +204,7 @@ describe('copying a plan', () => {
     const s = { map: 'haven', side: 'attack', sites: [], rank: 'gold' } as const;
     const parts = { title: 'Haven, attack · Gold · duo', team, party: ['sova', 'clove'], fit: 100, tier: 'S', why: explainTeam(modelFor(s), team), tips: tipsFor(team, s, 2, ['sova', 'clove']) };
     const text = summaryText({ ...parts, ask: 'sentinel', expected: 77.4 });
-    ok(text.includes('Comp: Sova, Clove, Jett, Reyna, Chamber (your party: Sova and Clove). Fit 100 among duos, tier S.\nWith random teammates, expect a team that fits about 77 out of 100.\nAsk your random teammates for a sentinel first.'), text);
+    ok(text.includes('Comp: Sova, Clove, Jett, Reyna, Chamber (your party: Sova and Clove). Fit 100 among duos, tier S.\nPicks for your random teammates: Jett, Reyna and Chamber.\nIf they pick on their own, expect a team that fits about 77 out of 100.\nAsk your random teammates for a sentinel first.'), text);
     ok(summaryText({ ...parts, party: [] }).includes('. Fit 100, tier S.'), 'a five-stack’s fit is just its fit');
     ok(!summaryText(parts).includes('teammates for a sentinel first'), 'nothing to ask, no line');
   });

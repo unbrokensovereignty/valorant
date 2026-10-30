@@ -53,7 +53,26 @@
 }
 .tier-agent:hover { background: var(--surface-2); }
 .tier-agent-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.82rem; font-weight: 650; }
+.tier-agent.mine, .tier-agent.mine:hover { background: var(--accent-soft); }
+.tier-agent { position: relative; }
+.tier-mine { position: absolute; top: 4px; right: 8px; }
 .tier-empty { padding: 14px 6px; }
+.tier-agent-unsure { color: var(--text2); font-size: 0.7rem; font-weight: 600; line-height: 1.2; }
+
+/* tiers that moved since the version compared with (since.tsx) */
+.since { display: inline-flex; flex: none; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; color: var(--surface); box-shadow: 0 0 0 2px var(--surface); }
+.since svg { stroke-width: 2.6; }
+.since-up { background: var(--good-text); }
+.since-down { background: var(--bad-text); }
+.tier-agent .since { position: absolute; top: 4px; left: 8px; }
+.since-list { margin-top: 10px; }
+.since-rows { gap: 0; margin-top: 6px; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface); }
+.since-row { display: grid; gap: 6px; padding: 10px 14px; border-top: 1px solid var(--line); }
+.since-row:first-child { border-top: 0; }
+.since-agents { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 18px; }
+.since-agent { display: inline-flex; align-items: center; gap: 7px; }
+.since-tiers { display: inline-flex; align-items: center; gap: 4px; }
+.since-why { color: var(--text2); line-height: 1.45; max-width: 75ch; }
 
 .heat-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface); }
 .heat { border-collapse: separate; border-spacing: 3px; min-width: 100%; font-size: 0.86rem; }
@@ -71,6 +90,7 @@
 .heat-b { background: var(--tier-b-soft); color: var(--tier-b-text); }
 .heat-c { background: var(--tier-c-soft); color: var(--tier-c-text); }
 .heat-d { background: var(--tier-d-soft); color: var(--tier-d-text); }
+.heat-cell.unsure { outline: 1.5px dashed currentColor; outline-offset: -4px; }
 .heat-avg { color: var(--text2); font-weight: 700; }
 
 /* ---------------------------------------------------------------- agents */
@@ -118,6 +138,8 @@
 }
 .by-rank-cell:hover { background: var(--surface-2); }
 .by-rank-cell.current { border-color: var(--accent-line); background: var(--accent-soft); }
+.by-rank-cell { position: relative; }
+.by-rank-cell .since { position: absolute; top: 7px; right: 8px; }
 .by-rank-cell > .small { color: var(--text2); font-weight: 600; }
 .home-list h3, .agent-detail h3 { gap: 6px; font-size: 0.95rem; }
 
@@ -137,6 +159,10 @@
 .pro-comps { gap: 6px; }
 .map-side { margin: 28px 0 12px; }
 .map-tips { margin-bottom: 12px; }
+.map-agent-tips { margin: 20px 0 8px; }
+.map-agent-tips .tips { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+.map-agent-tips .tips li { align-content: start; }
+.map-users { display: block; margin-top: 4px; }
 .map-plays { margin-top: 28px; }
 .map-detail + .map-side h2 { font-size: 1.2rem; }
 .map-page-plays { margin-top: 24px; }
@@ -160,6 +186,10 @@
 .party-players li { display: flex; align-items: center; gap: 10px; min-height: 30px; }
 .party-player-name { min-width: 8em; font-weight: 600; }
 .party-actions { flex: none; }
+.flag-list { gap: 10px; }
+.flag-row { display: flex; align-items: center; gap: 16px; padding: 14px 16px; }
+.flag-about { gap: 10px; }
+.flag-actions { flex: none; }
 .party-editor .segmented { justify-self: start; width: max-content; }
 .party-player { display: grid; gap: 8px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r); }
 

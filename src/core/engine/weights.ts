@@ -4,6 +4,7 @@
  */
 import type { Dim, Role } from '../kb/roles.ts';
 import type { Side } from '../kb/maps.ts';
+import type { RankId } from '../kb/ranks.ts';
 
 /** How much each strength matters on a side before the map, site and rank change it. */
 export const BASE: Record<Side, Record<Dim, number>> = {
@@ -23,7 +24,7 @@ export const BASE: Record<Side, Record<Dim, number>> = {
  * most out of coordinated utility such as lineups and walls.
  */
 export const BY_RANK: Record<Dim, readonly [number, number]> = {
-  smoke: [0.85, 1.1], wall: [0.6, 1.15], flash: [0.8, 1.05], recon: [0.7, 1.1], entry: [1, 1], clear: [0.9, 1],
+  smoke: [0.85, 1.1], wall: [0.75, 1.15], flash: [0.8, 1.05], recon: [0.7, 1.1], entry: [1, 1], clear: [0.9, 1],
   disrupt: [0.8, 1.1], stall: [0.8, 1.05], anchor: [1.05, 0.95], flank: [1, 0.9], retake: [0.8, 1.05],
   postplant: [0.6, 1.15], sustain: [1.2, 0.8], duel: [1.5, 1], angles: [1, 1], mobility: [0.9, 1.05],
 };
@@ -64,7 +65,7 @@ export const PRO_GAMES = { full: 10, least: 0.5, dated: 0.7 };
  * at Radiant, a team gives up this much per role, times the square of how far it is from that mix.
  * Being one agent off costs the full amount, half an agent off a quarter of it.
  */
-export const ROLE_MIX = 0.15;
+export const ROLE_MIX = 0.08;
 
 /**
  * Ranked win rates are taken across all ranks, so they mostly come from games between Silver and
@@ -101,6 +102,35 @@ export const MIX_NOTE = { off: 0.7, cost: 0.03, relax: 0.3 };
  */
 export const KIT_NOTE = { hard: 0.6, upTo: 0.5 };
 
+/**
+ * How much a kit rule (kb/kitfit.ts) has to add to (or take from) a team's score on its own before
+ * a comp's pros (or cons) give its reason, and how many such reasons each list gets at most.
+ */
+export const KIT_RULE_NOTE = { gain: 0.006, most: 2 };
+
+/**
+ * How a comp wins, in a line (explain.ts): the strengths it plays through are those the situation
+ * needs at least `need` (1 = an average share) and the comp covers at least `cover`, each named by
+ * the ability of an agent who brings at least `brings` of it, at most `most` before the plant or
+ * retake and one after.
+ */
+export const PLAN_NOTE = { need: 0.8, cover: 0.6, brings: 0.45, most: 3 };
+
+/**
+ * Why one comp ranks below another (explain.ts): a part of the score counts as a reason when it
+ * moves the score at least `part`, and at most `most` of what it gives up and `gains` of what it
+ * gains are said.
+ */
+export const BELOW_NOTE = { part: 0.004, most: 3, gains: 2 };
+
+/**
+ * How a comp's answers to the other team are told (kb/counters.ts, explain.ts): threats that go at
+ * least `level` of the way are listed; a comp covering at least `answered` of what answers one has
+ * the answer, below `little` it has little of it; and it names up to `by` agents who bring at least
+ * `brings` of a strength that answers it.
+ */
+export const THREAT_NOTE = { level: 0.3, answered: 0.75, little: 0.5, by: 2, brings: 0.45 };
+
 /** Points per step of a pair's strength (−3 to 3, see kb/synergy.ts). */
 export const PAIR_STEP = 0.006;
 
@@ -115,6 +145,17 @@ export const ROLE_COST: Record<Role, Record<Side, readonly [number, number, numb
   initiator: { attack: [-0.05, 0, 0, -0.06, -0.25], defense: [-0.04, 0, 0, -0.06, -0.25] },
   sentinel: { attack: [-0.015, 0, -0.01, -0.12, -0.3], defense: [-0.07, 0, -0.01, -0.1, -0.3] },
 };
+
+/**
+ * A second controller pays off only for a team that plays its smokes together, the way pro teams
+ * layer smokes and walls for a hit. How far teams do grows with the square of the way up to `until`
+ * (a third of the way at Platinum, about half at Diamond, all of it from `until` up), so a team gives
+ * up `cost` for a second controller at Iron, less at each rank up, and nothing from `until` up. Two
+ * controllers' pair (synergy.ts) is that same teamwork, so it counts as far as teams play together,
+ * and so does the second controller in a map's pro role mix (ROLE_MIX). From `note` up, the comp's
+ * cons say so.
+ */
+export const SECOND_CONTROLLER: { cost: number; until: RankId; note: number } = { cost: 0.06, until: 'immortal', note: 0.02 };
 
 /**
  * Random teammates, for a duo or trio. They pick roughly as often as players at your rank do,
@@ -133,6 +174,15 @@ export const FIT_MID = 50;
  * four make up for a lot), so the gap below the best team counts this many times over.
  */
 export const AGENT_STRETCH = 5;
+
+/**
+ * How sure a fit is (sure.ts). An agent who came out after the year's top events could have been
+ * picked by pros anywhere from never to about a third of maps, which moves their pull by up to `pro`
+ * either way (proCurve in model.ts); each kit rule of an agent with early numbers could be off by
+ * `kit` of what it adds. A fit that could be off by `less` points or more is less sure, and the
+ * reasons named are those that make up at least `part` of that.
+ */
+export const SURE = { pro: 0.3, kit: 0.5, less: 8, part: 0.25 };
 
 /** Tiers by fit. */
 export const TIERS: readonly { id: string; min: number }[] = [

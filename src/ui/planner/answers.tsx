@@ -5,19 +5,24 @@
 import { useEffect, useState } from 'preact/hooks';
 import { agentById } from '../../core/kb/agents.ts';
 import { ROLES, type Role } from '../../core/kb/roles.ts';
-import type { AgentAnswer, SituationAnswer } from '../../core/engine/plan.ts';
-import { asksBest, nothingFixed, type Query } from '../../core/engine/query.ts';
+import { whyBelow } from '../../core/engine/explain.ts';
+import { modelFor, type Situation } from '../../core/engine/model.ts';
+import { teamFit, type AgentAnswer, type SituationAnswer } from '../../core/engine/plan.ts';
+import { asksBest, nothingFixed, partyOf, type Query } from '../../core/engine/query.ts';
+import { unsureWords } from '../../core/engine/sure.ts';
 import { tierOf } from '../../core/engine/weights.ts';
 import { listJoin } from '../../core/text.ts';
 import { AgentIcon, MapThumb, RoleIcon } from '../art.tsx';
 import { Button, Empty, Segmented, Tabs } from '../components/controls.tsx';
+import { flagAnswer } from '../flags.ts';
 import { Icon } from '../icons.tsx';
 import { go, useView } from '../state.ts';
 import { play } from '../sound.ts';
 import { tourOnComp } from '../tours/now.ts';
 import { CompRow, Fit, TeamIcons } from './comp.tsx';
+import { compareComps } from './compare.tsx';
 import { ask, bestOf, run } from './store.ts';
-import { askedLine, askedTitle, partyWord, situationWord } from './words.ts';
+import { askedLine, askedTitle, edgeWords, partyWord, situationWord } from './words.ts';
 
 type Tab = 'comps' | 'agents';
 
@@ -47,7 +52,7 @@ export function Answers() {
       <header class="answers-head" data-tour="answers-head">
         <div class="grow">
           <h2>{vary.length ? `Best ${listJoin(vary.map((v) => (v === 'map' ? 'maps' : v === 'side' ? 'sides' : 'ranks')))} for you` : askedTitle(r.query)}</h2>
-          <p class="muted small">{askedLine(r.query)} · {ans.count.toLocaleString('en-US')} {r.query.party === 5 ? 'possible comps' : `possible ${partyWord(r.query.party).toLowerCase()}s`} checked</p>
+          <p class="muted small">{askedLine(r.query)} · {ans.count.toLocaleString('en-US')} {r.query.party === 5 ? 'possible comps' : `possible ${partyOf(r.query.party).plural}`} checked</p>
         </div>
         {r.status === 'working' && <span class="row muted small"><span class="spinner" aria-hidden="true" />Updating</span>}
       </header>
@@ -62,10 +67,18 @@ export function Answers() {
         </Empty>
       ) : tab === 'comps' ? (
         <ol class="comps">
-          {ans.comps.map((c, i) => <CompRow key={c.team.join()} c={c} i={i} ans={ans} q={r.query} open={open === i || (onComp && i === 0)} onToggle={() => setOpen(open === i ? -1 : i)} />)}
+          {ans.comps.map((c, i) => (
+            <CompRow key={c.team.join()} c={c} i={i} ans={ans} q={r.query} open={open === i || (onComp && i === 0)} onToggle={() => setOpen(open === i ? -1 : i)}
+              onCompare={r.query.party === 5 && ans.comps.length > 1 ? () => void compareComps(ans, i) : undefined} />
+          ))}
         </ol>
       ) : (
-        <AgentList agents={ans.agents} plan={(id) => ask({ include: [...new Set([...r.query.include, id])].slice(0, r.query.party) }, true)} />
+        <AgentList s={ans.situation} agents={ans.agents} plan={(id) => ask({ include: [...new Set([...r.query.include, id])].slice(0, r.query.party) }, true)}
+          versus={r.query.party === 5 ? { ans, newAgents: r.query.newAgents } : undefined}
+          flag={(a, k) => {
+            const s = ans.situation;
+            void flagAnswer({ query: { ...r.query, map: s.map, side: s.side, rank: s.rank, sites: [...s.sites] }, team: [], agent: a.id, shown: `Fit ${Math.round(a.fit)}, tier ${a.tier}, number ${k} of ${ans.agents.length}` }, `${agentById(a.id)?.name ?? a.id}’s rating`);
+          }} />
       )}
     </div>
   );
@@ -110,8 +123,13 @@ function Situations({ answers, vary, pick, setPick, same }: { answers: readonly 
   );
 }
 
-/** Agents ranked for the situation, with a role filter; each opens to the best comp it fits into. */
-export function AgentList({ agents, plan }: { agents: readonly AgentAnswer[]; plan?: (id: string) => void }) {
+/**
+ * Agents ranked for situation `s`, with a role filter; each opens to the best comp it fits into,
+ * how sure its fit is when it's less sure, and, given the situation's answer (`versus`, for a
+ * five-stack), why that comp ranks below the best. With `flag`, an agent whose rating looks wrong
+ * can be flagged.
+ */
+export function AgentList({ s, agents, plan, versus, flag }: { s: Situation; agents: readonly AgentAnswer[]; plan?: (id: string) => void; versus?: { ans: SituationAnswer; newAgents: boolean }; flag?: (a: AgentAnswer, rank: number) => void }) {
   const [role, setRole] = useView<Role | 'all'>('planner.role', 'all', (v) => v === 'all' || ROLES.some((r) => r.id === v));
   const [open, setOpen] = useState('');
   const shown = agents.filter((a) => role === 'all' || agentById(a.id)?.role === role);
@@ -124,19 +142,23 @@ export function AgentList({ agents, plan }: { agents: readonly AgentAnswer[]; pl
           const on = open === a.id;
           return (
             <li key={a.id} class={on ? 'open' : ''}>
-              <button type="button" class="agent-row" aria-expanded={on} onClick={() => { play('tick'); setOpen(on ? '' : a.id); }}>
+              <button type="button" class="agent-row" aria-expanded={on} data-tip={a.unsure ? unsureWords(s, a.id, a.unsure) : undefined} onClick={() => { play('tick'); setOpen(on ? '' : a.id); }}>
                 <span class="agent-rank num">{agents.indexOf(a) + 1}</span>
                 <AgentIcon id={a.id} size={34} />
                 <span class="agent-name"><b>{ag.name}</b><span class="muted small row"><RoleIcon role={ag.role} size={14} />{ROLES.find((r) => r.id === ag.role)!.name}</span></span>
-                <Fit fit={a.fit} tier={a.tier} label={`${ag.name}’s fit`} />
+                <Fit fit={a.fit} tier={a.tier} label={`${ag.name}’s fit`} unsure={!!a.unsure} />
               </button>
               {on && (
                 <div class="agent-more">
                   <p class="muted">{ag.line}</p>
                   <div class="row wrap"><span class="muted small">Best comp with {ag.name}:</span><TeamIcons team={a.team} size={28} /></div>
+                  {a.edge && <p class="small">{edgeWords(a.id, a.edge, true)}</p>}
+                  {a.unsure && <p class="small muted">{unsureWords(s, a.id, a.unsure)}</p>}
+                  {versus && <WhyNot a={a} versus={versus} />}
                   <div class="row wrap">
                     {plan && <Button size="sm" kind="soft" icon="planner" onClick={() => plan(a.id)}>Plan with {ag.name}</Button>}
                     <Button size="sm" kind="quiet" iconRight="arrow-right" onClick={() => go('agents', a.id)}>About {ag.name}</Button>
+                    {flag && <Button size="sm" kind="quiet" icon="flag" onClick={() => flag(a, agents.indexOf(a) + 1)}>This looks wrong</Button>}
                   </div>
                 </div>
               )}
@@ -145,6 +167,23 @@ export function AgentList({ agents, plan }: { agents: readonly AgentAnswer[]; pl
         })}
       </ol>
       {!shown.length && <p class="muted">No agents of this role are in the answers.</p>}
+    </div>
+  );
+}
+
+/** Why an agent's best comp ranks below the best comp, read off the same score (explain.ts, whyBelow). */
+function WhyNot({ a, versus: { ans, newAgents } }: { a: AgentAnswer; versus: { ans: SituationAnswer; newAgents: boolean } }) {
+  const best = ans.comps[0];
+  if (!best || best.team.includes(a.id)) return null;
+  const name = agentById(a.id)!.name;
+  const why = whyBelow(modelFor(ans.situation), best.team, a.team);
+  const fit = Math.round(teamFit(ans.situation, a.team, newAgents).fit), top = Math.round(best.fit);
+  const names = (ids: readonly string[]) => listJoin(ids.map((id) => agentById(id)?.name ?? id));
+  return (
+    <div class="why-not">
+      <p><b>Why not {name} in the best comp?</b> {name}’s best comp plays {names(why.in)} instead of {names(why.out)}, and fits <span class="num">{fit}</span> against <span class="num">{top}</span>{fit >= top ? ', as good as the best' : ''}.</p>
+      {why.loses.length > 0 && <div><span class="muted small">Where it falls short</span><ul class="reasons">{why.loses.map((x) => <li key={x}>{x}</li>)}</ul></div>}
+      {why.gains.length > 0 && <div><span class="muted small">Where it’s better</span><ul class="reasons">{why.gains.map((x) => <li key={x}>{x}</li>)}</ul></div>}
     </div>
   );
 }

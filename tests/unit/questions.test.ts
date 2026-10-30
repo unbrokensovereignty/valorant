@@ -44,6 +44,7 @@ function randomQuestion(r: ReturnType<typeof random>): Query {
     pools,
     newAgents: r.next() < 0.8,
     allMaps: r.next() < 0.2,
+    enemy: r.next() < 0.3 ? r.some(ids, 1 + r.int(5)) : [],
   });
 }
 

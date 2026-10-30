@@ -1,5 +1,7 @@
 import { expect, go, open, reload, test } from './app.ts';
+import AxeBuilder from '@axe-core/playwright';
 import { AGENTS, agentById } from '../../src/core/kb/agents.ts';
+import { SINCE_FROM } from '../../src/core/engine/since.ts';
 
 const hush = agentById('hush')!;
 
@@ -12,6 +14,8 @@ test('Rankings: tier lists move with the rank, comps open, and the by-map table 
   await page.getByRole('combobox', { name: 'Rank' }).selectOption({ label: 'Radiant' });
   await expect(page.locator('.rank-where')).toContainText('Radiant');
   await expect(tierS).not.toHaveAttribute('aria-label', iron ?? '');
+  // agents with the same fit are told apart by what they add over the next best of their role
+  await expect(page.locator('.tier-agent').first()).toHaveAttribute('data-tip', /, (\d+ ahead of [A-Z/]+, the next best [a-z]+,|about as good as [A-Z/]+) in their best comp\./i);
   // every agent is in exactly one tier
   const tiers = await page.locator('.tier-agents').evaluateAll((uls) => uls.map((u) => u.querySelectorAll('.tier-agent').length));
   expect(tiers.reduce((a, b) => a + b, 0)).toBe(AGENTS.length);
@@ -31,6 +35,69 @@ test('Rankings: tier lists move with the rank, comps open, and the by-map table 
   // an agent opens its page
   await page.getByRole('button', { name: 'Sova', exact: true }).first().click();
   await expect(page.locator('main h1')).toHaveText('Sova');
+  expect(errors).toEqual([]);
+});
+
+test(`Rankings and an agent’s page mark the tiers that moved since ${SINCE_FROM}, and say why`, async ({ page, errors }) => {
+  await open(page, 'rankings');
+  await page.getByRole('combobox', { name: 'Map' }).selectOption({ label: 'Lotus' });
+  await page.getByRole('group', { name: 'Side' }).getByRole('button', { name: 'Attack' }).click();
+  await page.getByRole('combobox', { name: 'Rank' }).selectOption({ label: 'Platinum' });
+  await expect(page.locator('.rank-where')).toHaveText('Lotus, attack, Platinum');
+  // one controller now leads Lotus at Platinum: Viper drops, with why in her tooltip and her name for screen readers
+  const viper = page.locator('.tier-agent', { hasText: 'Viper' });
+  await expect(viper.locator('.since-down')).toBeVisible();
+  await expect(viper).toHaveAccessibleName(new RegExp(`^Viper \\(down from S since ${SINCE_FROM.replaceAll('.', '\\.')}\\)`));
+  await expect(viper).toHaveAttribute('data-tip', /second controller/);
+  await viper.focus();
+  await page.keyboard.press('Shift+Tab');
+  await page.keyboard.press('Tab');
+  await expect(page.getByRole('tooltip')).toContainText('second controller');
+  // every move, with why, once for those that moved together
+  const moves = page.getByRole('button', { name: /moved a tier since/ });
+  await expect(moves).toHaveAttribute('aria-expanded', 'false');
+  await moves.click();
+  await expect(moves).toHaveAttribute('aria-expanded', 'true');
+  await expect(page.locator('#since-moves')).toContainText('Telekinesis');
+  await expect(page.locator('#since-moves')).toContainText('counts for less as a second');
+  const a11y = await new AxeBuilder({ page }).include('.since-list').include('.tier-list').withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
+  expect(a11y.violations.map((v) => v.id)).toEqual([]);
+  // Viper's page marks Diamond, where a second controller costs a comp now
+  await go(page, 'agents/viper');
+  await expect(page.getByLabel('Working it out')).toHaveCount(0, { timeout: 20_000 });
+  const diamond = page.locator('.by-rank-cell', { hasText: 'Diamond' });
+  await expect(diamond.locator('.since-down')).toBeVisible();
+  await expect(diamond).toHaveAttribute('data-tip', new RegExp(`^Down from S since ${SINCE_FROM.replaceAll('.', '\\.')}: A second controller`));
+  expect(errors).toEqual([]);
+});
+
+test('a fit that rests on very little says it’s less sure, and why', async ({ page, errors }) => {
+  await open(page, 'rankings');
+  await page.getByRole('combobox', { name: 'Map' }).selectOption({ label: 'Lotus' });
+  await page.getByRole('group', { name: 'Side' }).getByRole('button', { name: 'Attack' }).click();
+  await page.getByRole('combobox', { name: 'Rank' }).selectOption({ label: 'Gold' });
+  await expect(page.locator('.rank-where')).toHaveText('Lotus, attack, Gold');
+  // Hush's ranked numbers are from her first days, and her kit on Lotus has no play to check it yet
+  const hush = page.locator('.tier-agent', { hasText: 'Hush' });
+  await expect(hush.locator('.tier-agent-unsure')).toHaveText('less sure');
+  for (const why of [/ Less sure: this fit could be off by about \d+, since /, /kit does on Lotus attack is judged from the abilities alone/, /from Hush’s first days/]) await expect(hush).toHaveAttribute('data-tip', why);
+  // an agent with settled numbers isn't
+  await expect(page.locator('.tier-agent-unsure')).toHaveCount(1);
+  // Hush's page marks the fits too
+  await go(page, 'agents/hush');
+  await expect(page.getByLabel('Working it out')).toHaveCount(0, { timeout: 20_000 });
+  await expect(page.locator('.by-rank-cell .fit.unsure').first()).toBeVisible();
+  await expect(page.locator('main')).toContainText('marked less sure');
+  // and so does the Planner's Agents tab, on the row and, opened, with why
+  await page.getByRole('button', { name: 'Plan with Hush' }).click();
+  await expect(page.locator('.answers[aria-busy=true], .working')).toHaveCount(0, { timeout: 30_000 });
+  await page.getByRole('tab', { name: 'Agents' }).click();
+  const row = page.locator('.agent-row', { hasText: 'Hush' });
+  await expect(row.locator('.unsure-tag')).toHaveText('less sure');
+  await expect(row.locator('.tier')).toHaveAttribute('aria-label', /^Tier [SABCD], less sure$/);
+  expect(await page.locator('.agent-row .unsure-tag').count()).toBe(1);
+  await row.click();
+  await expect(page.locator('.agent-rows li.open .agent-more')).toContainText(/Less sure: this fit could be off by about \d+, since /);
   expect(errors).toEqual([]);
 });
 
@@ -73,7 +140,7 @@ test('Maps: the minimap’s callouts can be hidden, and each side has its tips, 
   await expect(page.locator('.comps > li')).toHaveCount(5, { timeout: 20_000 });
   await page.locator('.map-side').getByRole('button', { name: 'Defense' }).click();
   await expect(page.getByRole('list', { name: 'Tips for defense' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Plays' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Plays', exact: true })).toBeVisible();
   // a site's Plan button asks about that site
   await page.getByRole('button', { name: 'Plan for B site' }).click();
   await expect(page.locator('.answers-head h2')).toHaveText('Ascent, B site');

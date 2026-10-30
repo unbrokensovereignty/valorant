@@ -7,10 +7,11 @@ import { ROLE_IDS } from '../../src/core/kb/roles.ts';
 import { D, N, ROLE_OF, kitShare, modelFor, proMixOf, proShare, roleIndex, type Situation } from '../../src/core/engine/model.ts';
 import { anyRoles, scoreTeam, searchTeams, TopK, walkTeams, type Rules } from '../../src/core/engine/search.ts';
 import { askFor, fillLikelihood, pickWeight, searchParties, type PartyRules } from '../../src/core/engine/party.ts';
-import { newQuery, placesTaken, sanitizeQuery, situationsOf, asksBest, nothingFixed, type Query } from '../../src/core/engine/query.ts';
+import { newQuery, placesTaken, sanitizeQuery, situationsOf, asksBest, nothingFixed, myPools, startingQuery, withMine, type Query } from '../../src/core/engine/query.ts';
 import { agentFitOf, fitOf, poolsFit, referenceFor, rulesOf, solve, teamFit } from '../../src/core/engine/plan.ts';
 import { explainTeam } from '../../src/core/engine/explain.ts';
-import { ROLE_COST, TIERS, tierOf } from '../../src/core/engine/weights.ts';
+import { UNSETTLED, unsureWords } from '../../src/core/engine/sure.ts';
+import { ROLE_COST, SURE, TIERS, tierOf } from '../../src/core/engine/weights.ts';
 
 const at = (map: string, side: Situation['side'] = 'both', rank: Situation['rank'] = 'gold', sites: Situation['sites'] = []): Situation => ({ map, side, rank, sites });
 const ix = (id: string) => agentById(id)!.index;
@@ -97,7 +98,7 @@ describe('searching teams', () => {
     ok(r.mid < r.best);
   });
   spec('the fast search scores teams exactly as the plain sum does', () => {
-    for (const s of [at('haven', 'attack', 'iron'), at('lotus', 'defense', 'radiant'), at('any', 'both', 'any')]) {
+    for (const s of [at('haven', 'attack', 'iron'), at('lotus', 'defense', 'radiant'), at('any', 'both', 'platinum')]) {
       const m = modelFor(s);
       const r = searchTeams(m, anyone, 30);
       for (const t of r.top) near(t.score, scoreTeam(m, t.agents), 1e-9, ids(t.agents).join(','));
@@ -173,6 +174,55 @@ describe('fits and tiers', () => {
     eq(answer.ref, ref);
     ok(answer.comps[0]!.fit < 100, 'a fixed pick fits less than the best team');
   });
+  spec('agents with the same fit are told apart by what they add over the next best of their role', () => {
+    const s = at('lotus', 'attack', 'gold');
+    const m = modelFor(s);
+    const answer = solve(q({ map: 'lotus', side: 'attack', rank: 'gold' }), s, 3);
+    ok(answer.agents.filter((a) => a.fit === 100).length > 1, 'several agents fit 100 here');
+    for (const a of answer.agents) {
+      const e = a.edge;
+      if (!e) { ok(false, `${a.id} has an edge`); continue; }
+      const role = agentById(a.id)!.role;
+      eq(agentById(e.over)!.role, role, `${a.id} is held against their own role`);
+      ok(!a.team.includes(e.over), `${a.id}: ${e.over} isn’t in the comp already`);
+      // the next best is the best of the rest in that place, and the edge says who does better there
+      const swap = (id: string) => scoreTeam(m, a.team.map((x) => ix(x === a.id ? id : x)));
+      for (const y of AGENTS) if (y.role === role && !a.team.includes(y.id)) ok(swap(y.id) <= swap(e.over) + 1e-12, `${a.id}: ${y.id} does better than ${e.over}`);
+      eq(e.by > 0, scoreTeam(m, a.team.map(ix)) > swap(e.over), `${a.id}: the edge’s sign`);
+    }
+    for (let i = 1; i < answer.agents.length; i++) {
+      const x = answer.agents[i - 1]!, y = answer.agents[i]!;
+      if (x.fit === y.fit) ok(x.edge!.by >= y.edge!.by, `${x.id} before ${y.id}`);
+    }
+    // a party's teammates aren't theirs to choose, so its agents have none
+    ok(solve(q({ map: 'lotus', side: 'attack', rank: 'gold', party: 2 }), s, 3).agents.every((a) => !a.edge), 'no edges for a party');
+  });
+  spec('a fit is less sure when parts of it that rest on very little could move it a tier', () => {
+    const unsure = (map: string, side: Situation['side'], rank: Situation['rank'], id: string, party: Query['party'] = 5) =>
+      solve(q({ map, side, rank, party }), at(map, side, rank), 3).agents.find((a) => a.id === id)?.unsure;
+    // Hush: ranked numbers from the first days, a kit no play has checked yet, and no pro play
+    const gold = unsure('lotus', 'attack', 'gold', 'hush');
+    ok(gold && gold.by >= SURE.less, 'Hush on Lotus attack at Gold');
+    eq(gold!.why.slice().sort(), ['early', 'kit'], 'win rates count at Gold, and pro play hardly does');
+    const radiant = unsure('lotus', 'attack', 'radiant', 'hush');
+    ok(radiant && radiant.why.includes('pro') && !radiant.why.includes('early'), 'at Radiant, pro play counts and win rates hardly do');
+    ok(gold!.by > (unsure('icebox', 'attack', 'gold', 'hush')?.by ?? 0), 'more of Hush’s kit rests on judgment on Lotus than on Icebox');
+    ok(unsure('lotus', 'attack', 'gold', 'hush', 2), 'a duo’s answers say so too');
+    // agents with settled numbers and pro play behind them are always sure
+    for (const map of ['any', 'lotus', 'bind', 'icebox']) for (const rank of ['iron', 'gold', 'radiant'] as const) {
+      const ans = solve(q({ map, rank }), at(map, 'both', rank), 3);
+      for (const a of ans.agents) if (!UNSETTLED.some((x) => x.id === a.id)) ok(!a.unsure, `${a.id} on ${map} at ${rank}`);
+    }
+    ok(UNSETTLED.some((a) => a.id === 'hush'), 'Hush is still settling');
+  });
+  spec('why a fit is less sure is a plain sentence, the biggest reason first', () => {
+    const s = at('lotus', 'attack', 'gold');
+    const u = solve(q({ map: 'lotus', side: 'attack', rank: 'gold' }), s, 3).agents.find((a) => a.id === 'hush')!.unsure!;
+    const words = unsureWords(s, 'hush', u);
+    ok(/^Less sure: this fit could be off by about \d+, since [^.]+\.$/.test(words), words);
+    const first = { early: 'the ranked numbers', kit: 'what Hush’s kit does on Lotus attack', pro: 'pros haven’t' }[u.why[0]!];
+    ok(words.includes(`, since ${first}`), words);
+  });
   spec('a saved team gets the same fit the answers gave it', () => {
     const s = at('lotus', 'attack', 'platinum', ['A']);
     const answer = solve(q({ map: 'lotus', side: 'attack', rank: 'platinum', sites: ['A'] }), s, 3);
@@ -188,6 +238,8 @@ describe('questions', () => {
   spec('a damaged question falls back to the defaults, and parts that clash are dropped', () => {
     eq(sanitizeQuery(null), newQuery());
     eq(sanitizeQuery({ map: 'nowhere', side: 'up', rank: 'gold 2', party: 4 }), newQuery());
+    // a question for all ranks, from 0.2.0, planned as Platinum does
+    eq(sanitizeQuery({ rank: 'any' }).rank, 'platinum');
     const x = sanitizeQuery({ map: 'haven', sites: ['A', 'A', 'D', 'C'], party: 3, include: ['jett', 'jett', 'sova', 'omen', 'sage'], locked: ['jett', 'viper', 'nobody'], exclude: ['viper', 'reyna'] });
     eq(x.sites, ['A', 'C']);
     eq(x.include, ['jett', 'sova', 'omen'], 'no more than the party');
@@ -267,6 +319,38 @@ describe('answers', () => {
   });
 });
 
+describe('solo', () => {
+  spec('on your own, the Planner ranks the agent for you to play, with the best picks for your four random teammates', () => {
+    const a = solve(q({ map: 'haven', side: 'attack', party: 1 }), at('haven', 'attack'), 5);
+    eq(a.comps.length, 5);
+    for (const c of a.comps) {
+      eq(c.party.length, 1);
+      eq(c.team.length, 5);
+      ok(c.team.includes(c.party[0]!));
+      ok(c.pickFit! >= c.expected!, 'the best picks are at least what to expect');
+    }
+    const picked: string[] = a.comps[0]!.team.filter((id) => id !== a.comps[0]!.party[0]).map((id) => agentById(id)!.role);
+    ok(a.askFor!.every((x) => picked.includes(x.role)), 'the role to ask for is one the picks play');
+  });
+  spec('with the agents you play, you get one of them', () => {
+    const mine = ['jett', 'omen'];
+    const a = solve(q({ map: 'lotus', side: 'defense', party: 1, pools: myPools(1, mine) }), at('lotus', 'defense'), 5);
+    eq(a.comps.map((c) => c.party[0]).sort(), [...mine].sort());
+    const five = solve(q({ map: 'lotus', side: 'defense', pools: myPools(5, mine) }), at('lotus', 'defense'), 5);
+    ok(five.comps.every((c) => c.team.some((id) => mine.includes(id))), 'a five-stack plays one of them');
+  });
+  spec('a question for you: your rank and party, and your agents for you, only when you’ve said which', () => {
+    eq(myPools(1, []), []);
+    eq(myPools(3, ['jett']), [['jett'], [], []]);
+    const q1 = startingQuery({ rank: 'diamond', party: 2, agents: ['sova', 'fade'] }, true);
+    eq([q1.rank, q1.party, q1.pools], ['diamond', 2, [['sova', 'fade'], []]]);
+    ok(withMine(q1, ['sova', 'fade']) && !withMine({ ...q1, pools: [] }, ['sova', 'fade']) && !withMine(q1, []));
+    eq(sanitizeQuery(q1), q1, 'it reads back as it was');
+    const solo = sanitizeQuery({ party: 1, include: ['jett', 'omen'], locked: ['sova', 'jett', 'fade', 'sage', 'raze', 'neon'] });
+    eq([solo.include, solo.locked], [['jett'], ['sova', 'fade', 'sage', 'raze']], 'one of you, and four teammates who can lock in');
+  });
+});
+
 describe('duos and trios', () => {
   spec('random teammates favour popular agents, and teams without a controller are rare', () => {
     const t = 0.5;
@@ -303,11 +387,16 @@ describe('duos and trios', () => {
     for (const c of a.comps) {
       eq(c.party.length, 3);
       ok(c.party.includes('viper') && c.team.includes('viper'));
-      ok(c.bestFit! >= c.expected!, 'the best fill is at least the expected one');
+      // the comp shown is the party with the best picks for the random teammates
+      ok(c.pickFit! >= c.expected!, 'the best picks are at least what to expect');
+      ok(c.others!.every((o) => o.fit <= c.pickFit! + 1e-9 && o.team.includes('viper')), 'other picks come after the best, with the party');
+      ok(c.likely!.fit <= c.pickFit! + 1e-9 && c.party.every((id) => c.likely!.team.includes(id)), 'the likeliest team keeps the party');
       ok(c.fit <= 100 && c.expected! <= c.fit + 1e-9, 'ranked against the best party, which a five-stack beats');
       eq(c.team.length, 5);
     }
-    ok(a.askFor && a.askFor.length === 4, 'all four roles');
+    // only roles the best party's picks play, so the role to ask for is one the picks have
+    const picked: string[] = a.comps[0]!.team.filter((id) => !a.comps[0]!.party.includes(id)).map((id) => agentById(id)!.role);
+    ok(a.askFor && a.askFor.length >= 1 && a.askFor.every((x) => picked.includes(x.role)), 'roles the picks play');
     for (let i = 1; i < a.askFor!.length; i++) ok(a.askFor![i - 1]!.fit >= a.askFor![i]!.fit);
   });
   spec('asking for a role compares teams where a random teammate plays it', () => {

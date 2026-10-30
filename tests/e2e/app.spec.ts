@@ -43,7 +43,7 @@ test('Search finds agents, maps and help from the keyboard', async ({ page, erro
   expect(errors).toEqual([]);
 });
 
-test('Copy puts the whole plan into words: the comp, its reasons, a play and tips', async ({ page, errors }) => {
+test('Copy puts the whole plan into words: the comp, its reasons, a play for each side and tips', async ({ page, errors }) => {
   await page.addInitScript(() => {
     const copied: string[] = [];
     (window as unknown as { copied: string[] }).copied = copied;
@@ -59,7 +59,9 @@ test('Copy puts the whole plan into words: the comp, its reasons, a play and tip
   expect(text).toMatch(/^Playbook: Split · /);
   expect(text).toContain(`Comp: ${team}. Fit `);
   expect(text).toMatch(/\nPros\n- /);
-  expect(text).toMatch(/\nPlay: .+\n/);
+  // a plan for both sides has a play for each
+  expect(text).toMatch(/\nPlay on attack: .+\n/);
+  expect(text).toMatch(/\nPlay on defense: .+\n/);
   // each step: who does what, where they go (one spot, or a route with arrows), and what to do
   expect(text).toMatch(/\n1\. .+ \(.+\): [^.]+\. .+/);
   expect(text).toMatch(/\nTips\n- /);

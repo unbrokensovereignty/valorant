@@ -17,6 +17,16 @@ export interface VersionNotes { version: string; items: readonly NewThing[] }
 /** Newest first. */
 export const WHATS_NEW: readonly VersionNotes[] = [
   {
+    version: '0.2.5',
+    items: [
+      { icon: 'map', title: 'Kits by map and side', text: 'A kit counts for more or less on each map and side, for the reasons a coach would give, like Hush working Lotus’s doors from range. Each map’s page says how it plays.', page: 'maps/lotus' },
+      { icon: 'users', title: 'How you play', text: 'Your rank, how you queue and the agents you play shape every plan. Solo works too, and a duo or trio sees the best picks for its random teammates.', page: 'settings/you' },
+      { icon: 'shield', title: 'Against their team', text: 'Add the other team’s agents, and the comps that answer them rank higher, each saying how it stands against what they bring.', page: 'planner' },
+      { icon: 'columns', title: 'Compare, print and flag', text: 'Set two comps side by side, put a plan on one sheet of paper, and flag an answer that looks wrong.', page: 'planner' },
+      { icon: 'move-up', title: 'What moved, and how sure', text: 'Arrows mark the tiers that moved since 0.2.0 and say why, and a fit that rests on very little says it’s less sure.', page: 'rankings' },
+    ],
+  },
+  {
     version: '0.2.0',
     items: [
       { icon: 'target', title: 'Answers that fit your rank', text: 'Hard kits count for less low down, ranked win rates count most in the middle ranks, and what pro teams play counts most near the top.', page: 'planner' },

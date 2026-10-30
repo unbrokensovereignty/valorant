@@ -1,23 +1,24 @@
 /**
- * The Planner's question: map and sites, side, rank, party, the agents you must or won't play, and
- * role counts. Every change asks again straight away; any field can be left open or asked for.
+ * The Planner's question: map and sites, side, rank, party, the agents you must or won't play, the
+ * other team's agents and role counts. Every change asks again straight away; any field can be left open or asked for.
  */
 import type { ComponentChildren } from 'preact';
 import { MAPS, mapById } from '../../core/kb/maps.ts';
 import { RANKS } from '../../core/kb/ranks.ts';
 import { ROLES, type Role } from '../../core/kb/roles.ts';
 import { NEW_AGENTS } from '../../core/kb/new-agents.ts';
-import { newQuery, placesTaken, type PartySize, type Query } from '../../core/engine/query.ts';
+import { myPools, PARTY_SIZES, placesTaken, withMine, type PartySize, type Query } from '../../core/engine/query.ts';
+import { agentById } from '../../core/kb/agents.ts';
 import { poolsOf } from '../../core/saved.ts';
 import { listJoin } from '../../core/text.ts';
+import { countWord } from '../../core/util.ts';
 import { MapThumb, RoleIcon } from '../art.tsx';
 import { Button, Segmented, Select, Toggle } from '../components/controls.tsx';
 import { openMenu, type MenuItem } from '../components/overlays.tsx';
 import { AgentChips, pickMap } from '../components/pickers.tsx';
 import { Icon } from '../icons.tsx';
 import { go, toast, useSettings, watch } from '../state.ts';
-import type { RankId } from '../../core/kb/ranks.ts';
-import { ask } from './store.ts';
+import { ask, freshQuestion } from './store.ts';
 import { mapWord } from './words.ts';
 
 const COUNTS = ['0', '1', '2', '3'] as const;
@@ -82,12 +83,16 @@ export function Question({ q }: { q: Query }) {
       </div>
     );
   };
-  const changed = JSON.stringify(q) !== JSON.stringify(newQuery(s.defaultRank as RankId, s.includeNew));
+  const fresh = freshQuestion();
+  const changed = JSON.stringify(q) !== JSON.stringify(fresh);
+  // planning with the agents you play (Settings → You): one of them for you
+  const mine = s.myAgents;
+  const withMe = withMine(q, mine);
   return (
     <section class="question panel" aria-label="Your situation">
       <div class="row-between q-head">
         <h2>Your situation</h2>
-        <Button kind="quiet" size="sm" icon="refresh" disabled={!changed} onClick={() => ask({ ...newQuery(s.defaultRank as RankId, s.includeNew) }, true)}>Start over</Button>
+        <Button kind="quiet" size="sm" icon="refresh" disabled={!changed} onClick={() => ask({ ...fresh }, true)}>Start over</Button>
       </div>
 
       <Part title="Map" tour="q-map">
@@ -119,16 +124,22 @@ export function Question({ q }: { q: Query }) {
 
       <Part title="Rank" tour="q-rank">
         <Select label="Rank" value={q.rank} onChange={(rank) => ask({ rank: rank as Query['rank'] }, true)}
-          options={[['any', 'All ranks'], ...RANKS.map((x) => [x.id, x.name] as const), ['best', 'Find the best rank']]} />
+          options={[...RANKS.map((x) => [x.id, x.name] as const), ['best', 'Find the best rank']]} />
       </Part>
 
-      <Part title="Party" tour="q-party" help={q.party === 5 ? 'All five of you pick together.' : `The other ${5 - q.party} are random teammates; the plan counts on what they usually pick.`}>
+      <Part title="Party" tour="q-party">
         <div class="row wrap">
-          <Segmented label="Party size" value={String(q.party)} onChange={(x) => ask({ party: Number(x) as PartySize, pools: [] }, true)}
-            options={[['5', 'Five-stack'], ['3', 'Trio'], ['2', 'Duo']]} />
+          <Segmented label="Party size" value={String(q.party)} onChange={(x) => ask({ party: Number(x) as PartySize, pools: withMe ? myPools(Number(x) as PartySize, mine) : [] }, true)}
+            options={PARTY_SIZES.map((p) => [String(p.id), p.name] as const)} />
           <Button size="sm" kind="quiet" icon="users" iconRight="chevron-down" onClick={partyMenu}>Saved party</Button>
         </div>
-        {q.pools.length > 0 && (
+        {/* what the size means, above the switch for your agents, so it reads with the size */}
+        <div class="q-help">{q.party === 5 ? 'All five of you pick together.' : `The other ${countWord(5 - q.party)} are random teammates; the plan counts on what they usually pick.`}</div>
+        {mine.length > 0 && (
+          <Toggle checked={withMe} onChange={(on) => ask({ pools: on ? myPools(q.party, mine) : [] }, true)}
+            label={<>{q.party === 1 ? 'Play' : 'You play'} one of your agents <span class="muted">({listJoin(mine.map((id) => agentById(id)?.name ?? id), 'or')})</span></>} />
+        )}
+        {q.pools.length > 0 && !withMe && (
           <div class="q-party-on">
             <Icon name="users" size={16} />
             <span class="grow">Only agents {partyOn ? <b>{partyOn.name}</b> : 'your party'} {partyOn ? 'plays' : 'play'}</span>
@@ -137,9 +148,9 @@ export function Question({ q }: { q: Query }) {
         )}
       </Part>
 
-      <Part title={q.party === 5 ? 'Must play' : 'Your party plays'} tour="q-include">
-        <AgentChips ids={q.include} empty="Choose agents" onChange={(include) => ask({ include }, true)}
-          o={{ title: q.party === 5 ? 'Agents the team must play' : 'Agents your party will play', max: q.party, taken: taken(q, 'include'), line: q.party === 5 ? 'The comps will all have these agents.' : 'Leave room and the Planner picks the rest of your party.' }} />
+      <Part title={q.party === 5 ? 'Must play' : q.party === 1 ? 'You play' : 'Your party plays'} tour="q-include">
+        <AgentChips ids={q.include} empty={q.party === 1 ? 'Choose an agent' : 'Choose agents'} onChange={(include) => ask({ include }, true)}
+          o={{ title: q.party === 5 ? 'Agents the team must play' : q.party === 1 ? 'The agent you’ll play' : 'Agents your party will play', max: q.party, taken: taken(q, 'include'), line: q.party === 5 ? 'The comps will all have these agents.' : q.party === 1 ? 'Leave it open and the Planner picks the best agent for you.' : 'Leave room and the Planner picks the rest of your party.' }} />
       </Part>
 
       {q.party < 5 && (
@@ -154,7 +165,12 @@ export function Question({ q }: { q: Query }) {
           o={{ title: 'Agents to leave out', max: 25, taken: taken(q, 'exclude') }} />
       </Part>
 
-      <Part title={q.party === 5 ? 'Roles in the team' : 'Roles in your party'} tour="q-roles" help="Set how many of a role you want, like two controllers.">
+      <Part title="Their team" tour="q-enemy" help={q.enemy.length ? 'Comps that answer them rank higher, and each comp says how it stands against them.' : 'Know who you’re playing against? Add their agents.'}>
+        <AgentChips ids={q.enemy} empty="Add their agents" onChange={(enemy) => ask({ enemy }, true)}
+          o={{ title: 'Agents the other team plays', max: 5, line: 'Both teams can play the same agent, so these don’t limit your picks.' }} />
+      </Part>
+
+      <Part title={q.party === 5 ? 'Roles in the team' : q.party === 1 ? 'Your role' : 'Roles in your party'} tour="q-roles" help={q.party === 1 ? 'Set the role you want to play.' : 'Set how many of a role you want, like two controllers.'}>
         <div class="q-roles"><div class="q-roles-grid">{ROLES.map((x) => rolePick(x.id))}</div></div>
       </Part>
 

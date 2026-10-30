@@ -20,6 +20,7 @@ import { capitalize, countWord } from '../../core/util.ts';
 import { tourById, type Side, type Tour } from './list.ts';
 import { tourState, touring, type Live } from './now.ts';
 import { placeCard, type Placed, type Rect } from './place.ts';
+import { setupDue } from '../setup.tsx';
 
 const doneKey = (id: string) => `tour:${id}`;
 const OFFER_KEY = 'tour-offer';
@@ -334,7 +335,8 @@ export function TourOffer() {
   const r = watch('meta');
   const firstSteps = capitalize(countWord(tourById('first')?.steps.length ?? 0));
   // a read-only tab doesn't offer it; one that takes over saving does, straight away
-  if (tabRole.value === 'reader' || r.app().tips.includes(OFFER_KEY) || touring.value) return null;
+  // it waits for the setup on first launch (setup.tsx), which comes first
+  if (tabRole.value === 'reader' || r.app().tips.includes(OFFER_KEY) || touring.value || setupDue()) return null;
   return (
     <aside class="tour-offer panel" aria-label="Take the tour">
       <span class="tour-offer-icon"><Icon name="compass" size={22} /></span>

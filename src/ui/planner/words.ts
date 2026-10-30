@@ -1,9 +1,9 @@
 /** A planner question in words, for menus, lists and saved plans: "Haven, attack, C site" and "Gold · trio · with Jett". */
 import { agentById } from '../../core/kb/agents.ts';
 import { mapById } from '../../core/kb/maps.ts';
-import { rankOf } from '../../core/kb/ranks.ts';
+import { rankOf, type RankId } from '../../core/kb/ranks.ts';
 import { ROLES } from '../../core/kb/roles.ts';
-import type { Query } from '../../core/engine/query.ts';
+import { partyOf, type PartySize, type Query } from '../../core/engine/query.ts';
 import type { Situation } from '../../core/engine/model.ts';
 import { TIERS } from '../../core/engine/weights.ts';
 import { listJoin } from '../../core/text.ts';
@@ -17,12 +17,26 @@ export function howOften(x: number): string {
   return n >= 10 ? 'in nearly every game' : n <= 0 ? 'hardly ever' : `in about ${n} of 10 games`;
 }
 
+/**
+ * What an agent adds to their best comp over the next best agent of their role in their place
+ * (AgentAnswer.edge): "21 ahead of Skye, the next best initiator, in their best comp", or with
+ * `lead`, a sentence: "In that comp, Fade is 21 ahead of Skye, the next best initiator."
+ */
+export function edgeWords(id: string, e: { over: string; by: number }, lead = false): string {
+  const name = agentById(id)?.name ?? id, over = agentById(e.over)?.name ?? e.over;
+  const role = ROLES.find((r) => r.id === agentById(id)?.role)?.name.toLowerCase() ?? 'agent';
+  const n = Math.round(Math.abs(e.by));
+  if (n === 0) return lead ? `In that comp, ${over} would do about as well as ${name}.` : `about as good as ${over} in their best comp`;
+  if (e.by > 0) return lead ? `In that comp, ${name} is ${n} ahead of ${over}, the next best ${role}.` : `${n} ahead of ${over}, the next best ${role}, in their best comp`;
+  return lead ? `In that comp, ${over} would do ${n} better than ${name}.` : `${over} would do ${n} better in ${name}’s best comp`;
+}
+
 const COUNT = ['no', 'one', 'two', 'three', 'four', 'five'];
 
 export const mapWord = (map: string): string => (map === 'best' ? 'Best map' : map === 'any' ? 'Any map' : mapById(map)?.name ?? 'Any map');
 export const sideWord = (side: string): string => (side === 'attack' ? 'Attack' : side === 'defense' ? 'Defense' : side === 'best' ? 'Best side' : 'Both sides');
-export const rankWord = (rank: string): string => (rank === 'any' ? 'All ranks' : rank === 'best' ? 'Best rank' : rankOf(rank as never)?.name ?? 'All ranks');
-export const partyWord = (n: number): string => (n === 2 ? 'Duo' : n === 3 ? 'Trio' : 'Five-stack');
+export const rankWord = (rank: RankId | 'best'): string => (rank === 'best' ? 'Best rank' : rankOf(rank).name);
+export const partyWord = (n: PartySize): string => partyOf(n).name;
 export const sitesWord = (sites: readonly string[]): string => (sites.length ? `${listJoin(sites)} site${sites.length > 1 ? 's' : ''}` : '');
 const names = (ids: readonly string[]) => listJoin(ids.map((id) => agentById(id)?.name ?? id));
 
@@ -34,13 +48,15 @@ export function askedTitle(q: { map: string; side: string; sites: readonly strin
   return parts.join(', ');
 }
 
-/** "Gold · trio · with Jett · two controllers". */
+/** "Gold · trio · with Jett · two controllers · against Chamber and Sova". */
 export function askedLine(q: Query): string {
   const parts = [rankWord(q.rank), partyWord(q.party).toLowerCase()];
   if (q.include.length) parts.push(`with ${names(q.include)}`);
   const roles = ROLES.filter((r) => q.roles[r.id] !== undefined).map((r) => `${COUNT[q.roles[r.id]!]} ${(q.roles[r.id] === 1 ? r.name : r.plural).toLowerCase()}`);
   if (roles.length) parts.push(listJoin(roles));
-  if (q.pools.length) parts.push('your party’s agents');
+  // only the first player's own agents (yours, or a party where only you said) read as yours
+  if (q.pools.length) parts.push(q.pools.slice(1).every((p) => !p.length) ? 'one of your agents' : 'your party’s agents');
+  if (q.enemy.length) parts.push(`against ${names(q.enemy)}`);
   return parts.join(' · ');
 }
 

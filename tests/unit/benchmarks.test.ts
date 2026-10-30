@@ -9,19 +9,20 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { solve, teamFit } from '../../src/core/engine/plan.ts';
 import { newQuery } from '../../src/core/engine/query.ts';
-import { kitShare, modelFor, type RankPick, type Situation } from '../../src/core/engine/model.ts';
+import { D, kitShare, modelFor, viaIn, type Situation } from '../../src/core/engine/model.ts';
 import { explainTeam } from '../../src/core/engine/explain.ts';
 import { KIT_NOTE, tierOf, TIERS } from '../../src/core/engine/weights.ts';
-import { AGENTS, agentById } from '../../src/core/kb/agents.ts';
+import { AGENTS, agentById, type Agent } from '../../src/core/kb/agents.ts';
+import { abilityNames } from '../../src/core/kb/kits.ts';
 import { MAPS, POOL } from '../../src/core/kb/maps.ts';
 import { PRO, RECORDED } from '../../src/core/kb/pro.ts';
-import { RANK_IDS, rankOf, ALL_RANKS_T } from '../../src/core/kb/ranks.ts';
+import { RANK_IDS, rankOf, type RankId } from '../../src/core/kb/ranks.ts';
 import { DIMS, DIM_INFO, ROLES, ROLE_IDS, type Role } from '../../src/core/kb/roles.ts';
 
 const name = (id: string) => agentById(id)!.name;
 const none = (problems: string[]) => assert.deepEqual(problems, [], `\n${problems.join('\n')}`);
 const answers = new Map<string, ReturnType<typeof solve>>();
-function answer(map: string, rank: RankPick, side: Situation['side'] = 'both', keep = 3) {
+function answer(map: string, rank: RankId, side: Situation['side'] = 'both', keep = 3) {
   const key = [map, rank, side, keep].join('|');
   let a = answers.get(key);
   if (!a) answers.set(key, (a = solve({ ...newQuery(rank, true), map, side }, { map, side, rank, sites: [] }, keep)));
@@ -74,9 +75,9 @@ test('the comps pros played most at Masters Santiago fit well on their best map 
 
 test('low-rank tiers follow ranked results: easy winners high, hard team agents low', () => {
   const problems: string[] = [];
-  const tiers = (rank: RankPick) => new Map(answer('any', rank, 'both', 1).agents.map((x) => [x.id, x]));
+  const tiers = (rank: RankId) => new Map(answer('any', rank, 'both', 1).agents.map((x) => [x.id, x]));
   const order = TIERS.map((x) => x.id);
-  const at = (rank: RankPick, ids: string[], test: (place: number) => boolean, want: string) => {
+  const at = (rank: RankId, ids: string[], test: (place: number) => boolean, want: string) => {
     const t = tiers(rank);
     for (const id of ids) {
       const x = t.get(id)!;
@@ -111,7 +112,7 @@ function untrue(s: Situation, team: readonly string[]): string[] {
   const agents = team.map((id) => agentById(id)!);
   const row = (d: string) => e.strengths.find((r) => r.dim === d)!;
   const count = (r: Role) => agents.filter((a) => a.role === r).length;
-  const t = s.rank === 'any' ? ALL_RANKS_T : rankOf(s.rank).t;
+  const t = rankOf(s.rank).t;
   const map = MAPS.find((x) => x.id === s.map);
   const bad: string[] = [];
   type Kind = 'pro' | 'con' | 'note';
@@ -131,18 +132,27 @@ function untrue(s: Situation, team: readonly string[]): string[] {
         for (const a of agents) if (who.includes(a.name) && !r.by.some((b) => b.id === a.id && b.value >= 0.45)) no(`${a.name} doesn't bring ${d}`);
       }
       for (const lead of ['No', 'Few', 'Little']) {
-        if (kind !== 'con' || !(line.startsWith(`${lead} ${info.lacks}`) && /^(?:[,:.]| other than )/.test(line.slice(lead.length + info.lacks.length + 1)))) continue;
-        if (r.cover >= (lead === 'No' ? 0.25 : 0.55) || r.need < 0.9) no(`${d} covers ${r.cover.toFixed(2)} at need ${r.need.toFixed(2)}`);
-        // what little there is comes from the agents who bring some of it
-        const besides = /^ other than (.+?)(?:, which|:)/.exec(line.slice(lead.length + info.lacks.length + 1))?.[1] ?? '';
-        for (const a of agents) if (besides.includes(`${a.name}’s`) && !r.by.some((b) => b.id === a.id)) no(`${a.name} brings no ${d}`);
-        if (lead !== 'No' && r.by.length && !besides) no(`${d}: says nothing of what ${r.by.map((b) => name(b.id)).join(', ')} bring`);
+        if (kind !== 'con' || !(line.startsWith(`${lead} ${info.lacks}`) && /^(?:[,:.]| \(only )/.test(line.slice(lead.length + info.lacks.length + 1)))) continue;
+        if (r.cover >= 0.55 || r.need < 0.9) no(`${d} covers ${r.cover.toFixed(2)} at need ${r.need.toFixed(2)}`);
+        // "No" means nobody brings any here; otherwise what little there is is named, all of it, by ability
+        const here = (a: Agent) => 1 - m.miss[a.index * D + DIMS.indexOf(d)]! > 1e-9;
+        const bring = agents.filter(here);
+        if (lead === 'No' && bring.length) no(`${bring.map((a) => a.name).join(', ')} bring some ${d}`);
+        const only = /^ \(only (.+?)\)/.exec(line.slice(lead.length + info.lacks.length + 1))?.[1] ?? '';
+        if (lead !== 'No' && !only) no(`${d}: says nothing of what ${bring.map((a) => a.name).join(', ')} bring`);
+        for (const a of agents) {
+          const said = only.includes(`${a.name}’s`);
+          if (said && !here(a)) no(`${a.name} brings no ${d}`);
+          if (said && !abilityNames(a.id, viaIn(m, a, d)).some((n) => only.includes(`${a.name}’s ${n}`)) && !only.includes(`${a.name}’s gun play`)) no(`${a.name}'s ability for ${d} isn't the one named`);
+          if (!said && here(a) && bring.length <= 3) no(`${a.name} brings some ${d} too`);
+        }
       }
       if (line.startsWith(`Its thinnest spot is ${info.lacks}:`) && (r.cover >= 0.8 || r.need < 1)) no(`${d} covers ${r.cover.toFixed(2)}`);
     }
     for (const role of ROLES) {
       if (line.startsWith(`No ${role.name.toLowerCase()}`) && count(role.id) !== 0) no(`the team has ${count(role.id)}`);
-      if (line.startsWith(`Three or more ${role.plural.toLowerCase()}`) && count(role.id) < 3) no(`the team has ${count(role.id)}`);
+      const many = new RegExp(`^(Three|Four|Five) ${role.plural.toLowerCase()} `).exec(line);
+      if (many && NUMBERS.indexOf(many[1]!.toLowerCase()) !== count(role.id)) no(`the team has ${count(role.id)}`);
       const mix = new RegExp(`^(\\w+) (?:${role.name}|${role.plural}), where pro teams on (.+?) (?:usually run (\\w+)|rarely run one)`, 'i').exec(line);
       if (mix) {
         if (NUMBERS.indexOf(mix[1]!.toLowerCase()) !== count(role.id)) no(`the team has ${count(role.id)}`);
@@ -186,7 +196,7 @@ test('what the explanations say is true, for random teams and for the best comps
   for (let n = 0; n < 400; n++) {
     const map = r.pick(['any', ...MAPS.map((m) => m.id)]);
     const m = MAPS.find((x) => x.id === map);
-    const s: Situation = { map, side: r.pick(['attack', 'defense', 'both'] as const), rank: r.pick([...RANK_IDS, 'any'] as const), sites: m && r.next() < 0.3 ? [r.pick(m.sites).id] : [] };
+    const s: Situation = { map, side: r.pick(['attack', 'defense', 'both'] as const), rank: r.pick(RANK_IDS), sites: m && r.next() < 0.3 ? [r.pick(m.sites).id] : [] };
     check(s, r.some(ids, 5));
     if (n % 8 === 0) check(s, solve({ ...newQuery(s.rank, true), map: s.map, side: s.side, sites: [...s.sites] }, s, 1).comps[0]!.team);
   }

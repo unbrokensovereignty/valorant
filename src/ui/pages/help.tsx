@@ -14,10 +14,12 @@ import { AGENTS, STATS_ON } from '../../core/kb/agents.ts';
 import { MAPS, PATCH, POOL, POOL_SINCE, mapById } from '../../core/kb/maps.ts';
 import { NEW_AGENTS } from '../../core/kb/new-agents.ts';
 import { PRO, PRO_MAPS_COUNTED, proKnown } from '../../core/kb/pro.ts';
-import { PLAYS } from '../../core/kb/plays.ts';
+import { BUY_GUIDE, PLAYS, isLowBuy } from '../../core/kb/plays.ts';
 import { RANKS, rankOf } from '../../core/kb/ranks.ts';
 import { kitShare, proLean } from '../../core/engine/model.ts';
-import { FIT_MID, PRO_GAMES, WIN_CAP, WIN_RANKS } from '../../core/engine/weights.ts';
+import { SINCE_FROM, SINCE_MOVE } from '../../core/engine/since.ts';
+import { UNSETTLED } from '../../core/engine/sure.ts';
+import { FIT_MID, PRO_GAMES, SECOND_CONTROLLER, SURE, WIN_CAP, WIN_RANKS } from '../../core/engine/weights.ts';
 import { tierWords } from '../planner/words.ts';
 import { fmtLongDay } from '../../core/dates.ts';
 import { listJoin } from '../../core/text.ts';
@@ -130,14 +132,15 @@ function Guide() {
   const dated = Object.entries(PRO).filter(([, p]) => p.dated).map(([id]) => mapById(id)?.name ?? id);
   return (
     <div class="stack guide">
-      <section class="panel">
+      <section class="panel stack">
         <h2>Getting started</h2>
         <ol>
           <li><b>Ask a question</b> on the Planner: a map, your side, your rank and who you’re queuing with. Leave any of them open, or ask for the best one.</li>
-          <li><b>Read the answers:</b> the comps that fit best, each with its pros and cons, the plays it can run on the map, and tips.</li>
+          <li><b>Read the answers:</b> the comps that fit best, each with how it wins, its pros and cons, the plays it can run on the map, and tips. Under Agents, open any agent to see why their best comp ranks below the best one.</li>
           <li><b>Look things up</b> on Rankings (tier lists of agents and comps), Agents (kits, strengths and partners) and Maps (sites, callouts and plays).</li>
-          <li><b>Save</b> a plan you like, and your usual party with the agents each of you plays, so they’re a click away next time.</li>
+          <li><b>Save</b> a plan you like (or copy or print it), and your usual party with the agents each of you plays, so they’re a click away next time.</li>
         </ol>
+        <p>Playbook starts from how you play: your rank, how you queue and the agents you play. It asks when you first open it, and you can change any of it in <a href="#/settings/you">Settings → You</a>. Every plan then gives you one of your agents, Rankings marks them with a star, and Home shows how each fits at your rank.</p>
         <p class="muted">Rather be shown? <a href="#/help/tours">Tours</a> walk you through each page on the real screens.</p>
       </section>
       <div class="guide-cols">
@@ -146,26 +149,39 @@ function Guide() {
           <p><b>Map, side, sites and rank</b> describe the game you’re about to play. Choose “Best” for the side or “Find the best rank” and the Planner compares them all for you; leave the map open to plan across the pool ({plural(POOL.length, 'map')}), or turn on all {MAPS.length}.</p>
           <p><b>Sites</b> narrow a plan to the sites you’ll play: say B and C on Haven to plan a hit or a hold there. Plays then come from those sites first.</p>
           <p><b>Must play</b> keeps agents in every comp. <b>Won’t play</b> leaves them out. <b>Roles</b> set how many of a role the team has, like two controllers or no sentinel.</p>
-          <p>Every change answers again straight away. <b>Start over</b> goes back to your usual rank with nothing else chosen, and recent questions are on Home.</p>
+          <p><b>Their team</b> takes the other team’s agents, if you know them. Comps that answer them rank higher, and each comp says how it stands against them. Both teams can play the same agent, so these don’t limit your picks.</p>
+          <p>Every change answers again straight away. <b>Start over</b> goes back to how you play (your rank, how you queue and your agents) with nothing else chosen, and recent questions are on Home.</p>
         </section>
         <section class="panel stack">
           <h2>Fit and tiers</h2>
           <p>A comp’s <b>fit</b> compares it with every possible team for the same situation: the best team is 100 and the middle one is {FIT_MID}. So a fit means the same on every map, side and rank.</p>
-          <p>Tiers follow the fit: {tierWords()}. An agent’s fit comes from the best comp they fit into, so a high one means “easy to build around here”, not “strong alone”.</p>
-          <p>Fit weighs what the situation needs (smokes, flashes, information, a strong anchor and so on) against what the team brings, how well the agents work together, and the role counts every team needs. Your rank changes the mix: low down, aim and simple utility win; near the top, coordinated utility and what pros play on the map count for more, such as a second controller on the maps where pros run two.</p>
+          <p>Tiers follow the fit: {tierWords()}. An agent’s fit comes from the best comp they fit into, so a high one means “easy to build around here”, not “strong alone”. The other four can make several agents look the same, so each is also measured by what they add to that comp over the next best agent of their role in their place (“ahead of Skye, the next best initiator”): agents with the same fit are listed by it, and an agent’s tooltip on Rankings and their row on the Planner’s Agents tab say it.</p>
+          <p>On Rankings and an agent’s page, an arrow on an agent means their tier moved since {SINCE_FROM} by {SINCE_MOVE} points of fit or more. Point at it, or Tab to it, to see why: the change in this version that did the most to move it, found by undoing each change in turn. Under a tier list, <b>moved a tier since {SINCE_FROM}</b> lists every move there with its reason.</p>
+          <p>A fit marked <b>less sure</b>, with a dashed ring on its tier, could be off by {SURE.less} points or more: about a tier. That happens when parts of it rest on very little: ranked numbers from an agent’s first days, which can still change a lot as players learn the agent; what their kit does on the map, judged from the abilities alone with no play to check it yet; or pro play, for an agent who came out after the year’s top events. Point at it, or Tab to it, to see which. {UNSETTLED.length ? `Right now that’s ${listJoin(UNSETTLED.map((a) => a.name))}.` : 'No agent is that new right now.'}</p>
+          <p>Fit weighs what the situation needs (smokes, flashes, information, a strong anchor and so on) against what the team brings, how well the agents work together, and the role counts every team needs. Your rank changes the mix: low down, aim and simple utility win; near the top, coordinated utility and what pros play on the map count for more. A second controller pays off only when the team plays its smokes together, so below {rankOf(SECOND_CONTROLLER.until).name} it costs a comp a little, less at each rank up; from {rankOf(SECOND_CONTROLLER.until).name} on, two controllers can lead again on the maps where pros run two.</p>
         </section>
         <RankHelp />
         <section class="panel stack">
-          <h2>Duos and trios</h2>
-          <p>With a duo or trio, the others are random teammates. The Planner counts on what players at your rank usually pick, and on teammates filling a role the team is missing, then ranks your party’s picks by every team you could end up with, each weighed by how likely it is. A row shows the likeliest of them.</p>
-          <p>A party’s row shows its fit among other parties. Open it to see the fit to expect with random teammates (against the best five-stack), the role worth asking your teammates for (and how often they pick it on their own), and the best team they could pick.</p>
-          <p>Already know what they locked in? Add it under <b>Teammates locked in</b>. To plan around the agents your party plays, save it on the Saved page and choose it under <b>Saved party</b>.</p>
+          <h2>Solo, duos and trios</h2>
+          <p>Solo or in a duo or trio, the others are random teammates. The Planner counts on what players at your rank usually pick, and on teammates filling a role the team is missing, then ranks your picks by every team you could end up with, each weighed by how likely it is. A row shows your agent, or your party, with the best agents for your random teammates to play around it.</p>
+          <p>A row’s fit is among other picks for the same number of players. Open it to see how the team fits if your teammates play those picks, and what to expect if they pick on their own (both against the best five-stack), the role worth asking them for (and how often they pick it on their own), other good picks for them, and the team they’d most likely pick.</p>
+          <p>Already know what they locked in? Add it under <b>Teammates locked in</b>, and the Planner fills in around them. To plan around the agents your party plays, save it on the Saved page and choose it under <b>Saved party</b>.</p>
         </section>
         <section class="panel stack">
           <h2>Plays</h2>
-          <p>Each map has plays for attack and defense ({plural(PLAYS.length, 'play')} in all): hits, splits, fakes, defaults, setups and retakes. A play has a job for each player, like smoking a choke, flashing the entry or watching the flank.</p>
-          <p>The Planner gives each job to the agent on the team who does it best, and names the abilities they’d use. A play <b>fits well</b>, <b>works</b> or is <b>a stretch</b>, from how good the players are at their jobs; a warning sign marks a job nobody on the team is good at.</p>
-          <p>The minimap draws each player’s route in their own color. Point at a step, or Tab to it, to bring its route forward. A dashed start is the walk out of spawn, and a ring is a spot to hold.</p>
+          <p>Each map has plays for attack and defense ({plural(PLAYS.filter((p) => !isLowBuy(p.kind)).length, 'play')} in all): hits, splits, fakes, defaults, setups and retakes. A play has a job for each player, like smoking a choke, flashing the entry or watching the flank. The {plural(POOL.length, 'map')} in the pool also have a play for the pistol round and one for an eco on each side ({plural(PLAYS.filter((p) => isLowBuy(p.kind)).length, 'play')}), listed under the others: with little to spend, close fights and playing together make up for what you can’t buy.</p>
+          <p>The Planner gives each job to the agent on the team who does it best, and names the abilities they’d use. A play <b>fits well</b>, <b>works</b> or is <b>a stretch</b>, from how good the players are at their jobs; a warning sign marks a job nobody on the team is good at. A play with one of those never fits well, and with two it’s a stretch, so the plays your comp can run in full come first.</p>
+          <p>The minimap draws each player’s route in their own color, along the corridors and through the doorways they’d really take. Point at a step, or Tab to it, to bring its route forward. A dashed start is the walk out of spawn, and a ring is a spot to hold.</p>
+          <h3>What to buy</h3>
+          <dl class="buy-guide">
+            {BUY_GUIDE.map((r) => <div key={r.id}><dt>{r.name}</dt><dd>{r.text}</dd></div>)}
+          </dl>
+        </section>
+        <section class="panel stack">
+          <h2>Using an answer</h2>
+          <p><b>Copy</b> on a comp puts the plan into words you can paste into a chat with your team, and <b>Print</b> puts it on one sheet of paper: each agent with their tip, how the comp wins, its pros and cons, the play you chose on its Plays tab drawn on the minimap (one for each side when the plan is for both), and the other tips. A saved plan prints with its name and note.</p>
+          <p><b>Compare</b> sets a comp beside any other the Planner found for a five-stack: their fits, how each wins, their best plays, how well each covers what the situation needs, and where the lower one falls short or does better.</p>
+          <p>When a comp or an agent’s rating looks wrong to you, the flag beside it (<b>This looks wrong</b>) keeps a short note of why, with the question and what Playbook showed. Your notes are on the Saved page under Flagged, ready to copy, and go into backups, so they can be checked and fixed.</p>
         </section>
         <section class="panel stack">
           <h2>Where the numbers come from</h2>
@@ -177,7 +193,7 @@ function Guide() {
         <section class="panel stack">
           <h2>Your data</h2>
           <p>Everything stays on this computer, in this browser. Nothing is sent anywhere. Back up from <a href="#/settings/data">Settings → Your data</a> to move to another computer or keep a copy safe.</p>
-          <p><b>Copy</b> on a comp puts the plan into words you can paste into a chat with your team. Almost anything can be undone with Ctrl Z. With Playbook open in two tabs, only one saves; the other follows it.</p>
+          <p>Almost anything can be undone with Ctrl Z. With Playbook open in two tabs, only one saves; the other follows it.</p>
         </section>
       </div>
     </div>
@@ -203,7 +219,7 @@ function About() {
           <dt>Version</dt><dd>{__APP_VERSION__}</dd>
           <dt>Game data</dt><dd>Patch {PATCH}</dd>
           <dt>Saving to</dt><dd>{storage}{tabRole.value === 'reader' ? ' (read-only in this tab)' : ''}</dd>
-          <dt>Stored</dt><dd>{plural(r.plans().length, 'saved plan')} · {plural(r.parties().length, 'party', 'parties')} · {plural(r.themes().length, 'theme')} of your own</dd>
+          <dt>Stored</dt><dd>{plural(r.plans().length, 'saved plan')} · {plural(r.parties().length, 'party', 'parties')} · {plural(r.flags().length, 'flagged answer')} · {plural(r.themes().length, 'theme')} of your own</dd>
         </dl>
         <div class="row wrap">
           <Button icon="sparkle" onClick={() => void openWhatsNew()}>What’s new</Button>

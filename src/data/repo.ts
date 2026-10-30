@@ -4,7 +4,7 @@
  */
 import { emptyBackup, mergeBackup, type BackupData } from '../core/backup.ts';
 import { sanitizeQuery, type Query } from '../core/engine/query.ts';
-import { LIMITS, sanitizeParty, sanitizePlan, type Party, type SavedPlan } from '../core/saved.ts';
+import { LIMITS, sanitizeFlag, sanitizeFlags, sanitizeParty, sanitizePlan, type Flag, type Party, type SavedPlan } from '../core/saved.ts';
 import { resolveSettings, sanitizeSetting, sanitizeSettings, SETTINGS, type SettingKey, type Settings } from '../core/settings.ts';
 import { sanitizeTheme, MAX_THEMES, type ThemePicks } from '../core/theme.ts';
 import { clean } from '../core/text.ts';
@@ -79,6 +79,7 @@ export function checkTables(raw: Tables, now: number): { tables: Tables; quarant
   const m = raw.meta;
   t.meta.set('settings', sanitizeSettings(m.get('settings')));
   t.meta.set('themes', (Array.isArray(m.get('themes')) ? (m.get('themes') as unknown[]) : []).map(sanitizeTheme).filter((x): x is ThemePicks => !!x && !!x.id).slice(0, MAX_THEMES));
+  t.meta.set('flags', sanitizeFlags(m.get('flags'), now));
   t.meta.set('app', sanitizeAppState(m.get('app'), now));
   const prevBad = m.get('quarantine');
   const quarantine = [...(Array.isArray(prevBad) ? prevBad : []), ...bad.map((b) => ({ ...b, at: now }))].slice(-500);
@@ -133,6 +134,8 @@ export class Repo {
   /** Party presets in name order. */
   parties(): Party[] { return this.db.values<Party>('parties').sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id)); }
   party(id: string): Party | undefined { return this.db.get<Party>('parties', id); }
+  /** Flags on answers that look wrong, newest first. */
+  flags(): Flag[] { return this.db.get<Flag[]>('meta', 'flags') ?? []; }
   quarantine(): unknown[] { return this.db.get<unknown[]>('meta', 'quarantine') ?? []; }
 
   // ------------------------------------------------ undo
@@ -260,6 +263,25 @@ export class Repo {
     this.db.transact(`Delete the party “${p.name}”`, (tx) => tx.del('parties', id));
   }
 
+  // ------------------------------------------------ flags
+
+  /** Keeps a note on an answer that looks wrong. Null when there are too many already. */
+  addFlag(f: Omit<Flag, 'id' | 'created'>): Flag | null {
+    const list = this.flags();
+    if (list.length >= LIMITS.flags) return null;
+    const now = this.clock();
+    const flag = sanitizeFlag({ ...f, id: uid('f'), created: now }, now);
+    if (!flag) throw new Error('That note is empty, or isn’t about a comp or an agent.');
+    this.db.transact('Flag an answer', (tx) => tx.put('meta', 'flags', [flag, ...list]));
+    return flag;
+  }
+
+  deleteFlag(id: string): void {
+    const list = this.flags();
+    if (!list.some((f) => f.id === id)) return;
+    this.db.transact('Delete a flag', (tx) => tx.put('meta', 'flags', list.filter((f) => f.id !== id)));
+  }
+
   // ------------------------------------------------ themes
 
   /** Saves a theme. A new one is put to use, with `mode` (light or dark) when the app is showing the other kind. */
@@ -301,7 +323,7 @@ export class Repo {
 
   /** Everything, in backup form. */
   snapshot(): BackupData {
-    return { settings: this.savedSettings(), themes: this.themes(), plans: this.plans(), parties: this.parties() };
+    return { settings: this.savedSettings(), themes: this.themes(), plans: this.plans(), parties: this.parties(), flags: this.flags() };
   }
 
   /** Replaces everything with a backup, or merges it in. One undoable change either way. */
@@ -310,6 +332,7 @@ export class Repo {
     const want = emptyTables();
     want.meta.set('settings', d.settings);
     want.meta.set('themes', d.themes);
+    want.meta.set('flags', d.flags);
     for (const p of d.plans) want.plans.set(p.id, p);
     for (const p of d.parties) want.parties.set(p.id, p);
     this.db.transact(label, (tx) => {

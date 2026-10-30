@@ -31,6 +31,8 @@ npm run dev         # same, readable, with inline source maps
 npx playwright test # browser tests on the built file, light and dark (build first)
 node tools/build.mjs --preview --out <file>   # a build that keeps its data apart from the real app's
 npm run fetch-art -- <folder> && npm run art -- <folder>   # refresh agents, abilities, maps and art from the game's content
+node --experimental-strip-types tools/since.mjs <commit>    # the tiers that moved since the release at <commit>, and why
+node --experimental-strip-types tools/patch.mjs [<commit>]  # after refreshing the game's content: what changed since a release, as a checklist
 ```
 
 In a cloud container, Chromium is usually preinstalled: don't run `playwright install` there. If Playwright can't find its browser, point it at the one that's there with `PW_CHROMIUM=/opt/pw-browsers/chromium npx playwright test`.
@@ -38,7 +40,7 @@ In a cloud container, Chromium is usually preinstalled: don't run `playwright in
 ## Rules that are easy to break
 
 - **Layers.** `src/core` is pure logic (no DOM, no storage, no Preact); `src/data` may use core; `src/ui` may use both. `npm run lint` enforces this.
-- **One place for each rule.** Every number the engine weighs is in `core/engine/weights.ts`; what a situation needs is `core/engine/model.ts`; scoring and the search are `core/engine/search.ts`; duos and trios are `core/engine/party.ts`; fits and tiers are `core/engine/plan.ts` (`fitOf`, `tierOf`); reasons are `core/engine/explain.ts`; the question and its sanitizer are `core/engine/query.ts`; settings are `core/settings.ts`. Facts about the game live in `core/kb/`. Never recompute these in a screen.
+- **One place for each rule.** Every number the engine weighs is in `core/engine/weights.ts`; what a situation needs is `core/engine/model.ts`; scoring and the search are `core/engine/search.ts`; duos and trios are `core/engine/party.ts`; fits and tiers are `core/engine/plan.ts` (`fitOf`, `tierOf`); whether a fit is less sure is `core/engine/sure.ts`; reasons are `core/engine/explain.ts`; the question and its sanitizer are `core/engine/query.ts`; settings are `core/settings.ts`. Facts about the game live in `core/kb/`. Never recompute these in a screen.
 - **Reasons come from the score.** Pros, cons and notes are read off the same numbers the score uses, so they always agree with the ranking. A new reason goes in `explain.ts` and must be backed by a number there, not by a guess in a screen.
 - **Numbers on screen come from constants.** If a sentence quotes a rule ("S from 95", "the middle team is 50"), build it from the constant (`TIERS`, `FIT_MID` and the rest, as `ui/pages/help.tsx` does) so the words can't drift from the code.
 - **The app only knows its own versions.** Code, docs, tests and in-app text mention only versions that have a heading in `CHANGELOG.md` (or the one in `package.json`), and never words that hint at test builds or earlier editions. The product started fresh at 0.1.0: nothing may refer to anything before it or to any predecessor project. `npm run lint` checks this. (Game patch numbers like 13.08 have two parts, so they're fine.)
@@ -47,6 +49,7 @@ In a cloud container, Chromium is usually preinstalled: don't run `playwright in
 - **Specs run in the browser too.** `tests/specs/` is bundled into the app's hidden self-test page (`#/selftest`), so specs can't import Node modules.
 - **Tours point at hooks.** The guided tours (`ui/tours/list.ts`) light up `data-tour` hooks in the screens, never styling classes. Keep a hook on its thing when you move or restyle it; `tests/unit/tours.test.ts` and `tests/e2e/tours.spec.ts` fail when a hook goes missing or a card covers what it points at.
 - **Desktop only, keyboard friendly, both themes.** Every change should work in light and dark themes, with the keyboard, at every text size, and with motion set to Reduced or Off.
+- **The arrows follow the engine.** Rankings and agent pages mark tiers that moved since the release compared with, from `core/engine/since.gen.ts`. After any change that moves a tier, `tests/unit/since.test.ts` fails until `tools/since.mjs <commit>` is run again (a minute or two). A new version's changes to scoring go in its `CHANGES`, with their words in `core/engine/since.ts`.
 - **The scenario tests are the engine's referee.** After any change to `weights.ts`, `model.ts`, agent numbers or map needs, `npm test` must still pass `tests/unit/scenarios.test.ts` (a sound mix of roles everywhere, comps close to what pros play at Immortal and Radiant, each map's signature agents, easy agents who work alone at Iron, best comps that vary by map, new agents that don't take over), `tests/unit/benchmarks.test.ts` (how close the best comps come to pro comps, low-rank tiers against ranked play, and every reason a comp gives being true) and `tests/unit/questions.test.ts` (hundreds of random questions keep their rules).
 
 ## How the owner likes to work
@@ -63,7 +66,7 @@ In a cloud container, Chromium is usually preinstalled: don't run `playwright in
 The version being worked on is in `package.json` and has a heading in `CHANGELOG.md` marked "in progress". To release it:
 
 1. Finish its `CHANGELOG.md` entry (date it, drop "in progress"), and its lines in `core/whatsnew.ts`.
-2. `npm run check && npm run test:tz && npx playwright test`, all green.
+2. `node --experimental-strip-types tools/since.mjs --check && npm run check && npm run test:tz && npx playwright test`, all green.
 3. `npm run build`, then replace the HTML file in the repository root with the new `dist/` file (`git rm` the old one, so the root holds exactly one app file), and update the file name in `README.md`.
 4. Merge the PR. To start the next version, bump `package.json` (`npm version <x.y.z> --no-git-tag-version`) and add its "in progress" heading.
 
