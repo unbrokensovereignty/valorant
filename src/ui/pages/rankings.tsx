@@ -12,6 +12,7 @@ import { play } from '../sound.ts';
 import { answerFor, answerNow } from '../solved.ts';
 import { tourHook } from '../tours/now.ts';
 import { CompRow } from '../planner/comp.tsx';
+import { SinceArrow, SinceList, sinceTip, sinceWords } from '../since.tsx';
 import { mapWord, rankWord, sideWord } from '../planner/words.ts';
 import { agentById, AGENTS_BY_NAME } from '../../core/kb/agents.ts';
 import { isMap, MAPS, POOL } from '../../core/kb/maps.ts';
@@ -21,6 +22,7 @@ import { ROLES, type Role } from '../../core/kb/roles.ts';
 import type { SidePick, Situation } from '../../core/engine/model.ts';
 import type { AgentAnswer } from '../../core/engine/plan.ts';
 import { newQuery } from '../../core/engine/query.ts';
+import { sinceOf } from '../../core/engine/since.ts';
 import { TIERS, tierOf } from '../../core/engine/weights.ts';
 import { listJoin } from '../../core/text.ts';
 import { mean } from '../../core/util.ts';
@@ -32,8 +34,8 @@ type RoleFilter = Role | 'all';
 const isSide = (v: string): v is SidePick => v === 'both' || v === 'attack' || v === 'defense';
 const nameOf = (id: string) => agentById(id)?.name ?? id;
 
-/** Agents grouped into tiers, S first, with the agents you play marked. */
-function TierList({ agents }: { agents: readonly AgentAnswer[] }) {
+/** Agents grouped into tiers, S first, with the agents you play marked and an arrow on those whose tier moved. */
+function TierList({ s, agents }: { s: Situation; agents: readonly AgentAnswer[] }) {
   const { showNumbers: numbers, myAgents: mine } = useSettings();
   return (
     <div class="tier-list">
@@ -43,16 +45,21 @@ function TierList({ agents }: { agents: readonly AgentAnswer[] }) {
           <div key={t.id} class="tier-row" data-tour={i === 0 ? 'tier-top' : undefined}>
             <span class={`tier tier-${t.id.toLowerCase()} tier-big`} aria-label={`Tier ${t.id}`}>{t.id}</span>
             <ul class="tier-agents" aria-label={`Tier ${t.id}: ${here.length ? listJoin(here.map((a) => nameOf(a.id))) : 'nobody'}`}>
-              {here.map((a) => (
-                <li key={a.id}>
-                  <button type="button" class={`tier-agent${mine.includes(a.id) ? ' mine' : ''}`} data-tip={`${nameOf(a.id)}: fit ${Math.round(a.fit)}${mine.includes(a.id) ? ' (one of your agents)' : ''}`} onClick={() => { play('page'); go('agents', a.id); }}>
-                    <AgentIcon id={a.id} size={48} />
-                    {mine.includes(a.id) && <Icon name="star" size={14} class="star-on tier-mine" />}
-                    <span class="tier-agent-name">{nameOf(a.id)}</span>
-                    {numbers && <span class="muted small num">{Math.round(a.fit)}</span>}
-                  </button>
-                </li>
-              ))}
+              {here.map((a) => {
+                const moved = sinceOf(s, a);
+                return (
+                  <li key={a.id}>
+                    <button type="button" class={`tier-agent${mine.includes(a.id) ? ' mine' : ''}`} data-tip={`${nameOf(a.id)}: fit ${Math.round(a.fit)}${mine.includes(a.id) ? ' (one of your agents)' : ''}${moved ? `. ${sinceTip(moved)}` : ''}`} onClick={() => { play('page'); go('agents', a.id); }}>
+                      <AgentIcon id={a.id} size={48} />
+                      {moved && <SinceArrow m={moved} />}
+                      {mine.includes(a.id) && <Icon name="star" size={14} class="star-on tier-mine" />}
+                      <span class="tier-agent-name">{nameOf(a.id)}</span>
+                      {moved && <span class="visually-hidden">({sinceWords(moved, false)})</span>}
+                      {numbers && <span class="muted small num">{Math.round(a.fit)}</span>}
+                    </button>
+                  </li>
+                );
+              })}
               {!here.length && <li class="faint small tier-empty">Nobody</li>}
             </ul>
           </div>
@@ -151,7 +158,7 @@ export function RankingsPage(_p: PageProps) {
       </div>
       <h2 class="rank-where">{where}</h2>
       <div class="tab-body" key={tab}>
-        {tab === 'agents' && ans && <TierList agents={agents} />}
+        {tab === 'agents' && ans && <><TierList s={situation} agents={agents} /><SinceList s={situation} agents={agents} /></>}
         {tab === 'comps' && ans && (
           <ol class="comps">
             {ans.comps.map((c, i) => <CompRow key={c.team.join()} c={c} i={i} ans={ans} q={q} open={open === i} onToggle={() => setOpen(open === i ? -1 : i)} />)}

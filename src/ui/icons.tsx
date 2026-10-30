@@ -31,6 +31,8 @@ export const ICONS = {
   'chevron-right': p('M9.5 6l6 6-6 6'),
   'chevron-down': p('M6 9.5l6 6 6-6'),
   'arrow-right': p('M5 12h14M13 6l6 6-6 6'),
+  'move-up': p('M12 19V5M6 11l6-6 6 6'),
+  'move-down': p('M12 5v14M6 13l6 6 6-6'),
   more: dot(5.5, 12, 1.5) + dot(12, 12, 1.5) + dot(18.5, 12, 1.5),
   import: p('M12 3.5v10.5M7.5 9.5 12 14l4.5-4.5M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3'),
   export: p('M12 14V3.5M7.5 8 12 3.5 16.5 8M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3'),

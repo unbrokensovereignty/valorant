@@ -113,7 +113,7 @@ const nameOf = (a: Agent) => a.name;
 const sideWord = (s: Side) => (s === 'attack' ? 'attack' : 'defense');
 
 /** An agent's main ability for a strength here, as the game names it: "Omen’s Paranoia" (or "Jett’s gun play"). */
-function abilityOf(m: Model, a: Agent, dim: Dim): string {
+export function abilityOf(m: Model, a: Agent, dim: Dim): string {
   const keys = viaIn(m, a, dim);
   return `${a.name}’s ${abilityNames(a.id, keys)[0] ?? (keys.includes('G') ? 'gun play' : DIM_INFO[dim].has)}`;
 }

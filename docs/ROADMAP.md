@@ -2,6 +2,12 @@
 
 What's planned, what the owner has approved, and what's done. Update it as work lands. Items marked **proposed** wait for the owner's OK before they're built. Small fixes don't need to be listed here.
 
+## 0.2.5: game sense (in progress)
+
+The owner asked for game sense above all: what the app says should match what a pro would recommend for the inputs, with thought behind the numbers, not just numbers, and a lot of time spent improving, testing and fixing the information and the engine's inconsistencies. The example: agent ratings should follow how a kit plays on each map and side (Hush strong on Lotus attack, working the doors from range), not only win rates. Feedback relayed during the work: a double controller shouldn't lead Lotus at Platinum, duos and trios should be shown picks for their random teammates, All ranks should go, the first launch should ask how you play, and minimaps should be accurate. The owner added "Against a known team" and the printable plan sheet to this version.
+
+- **Built:** kit rules by map, side and site with the reasons a coach would give; maps described by how open they are and their mechanics; against a known team; a second controller costing a comp below Immortal; picks for random teammates; solo planning; first-launch setup and your own agents; a rank for every answer; minimaps and routes checked against the game; words that match the kit; how each comp wins; why an agent's best comp ranks lower; a printed plan; plays that need missing utility no longer reading "Fits well"; pistol and eco plays with a buy guide; Compare; This looks wrong; and arrows for tiers that moved since 0.2.0, with why.
+
 ## 0.2.0: more reliable answers, and a guided tour (released 2026-10-29)
 
 The owner asked (29 October 2026) for the next version to make the engine and the knowledge base much more reliable and accurate, and to expand what they cover: think about what's missing, crosscheck the answers against what pro teams play and what experts say, and test that what the app says is actually good advice, not just numbers that look right. Ranked win rates are part of it. Also a guided tour of the app, checked in every round of testing. The detailed plan comes first, then rounds of testing and fixing until two rounds in a row find nothing significant. The owner asked for this to go ahead without waiting on them.
@@ -16,10 +22,9 @@ The owner asked (29 October 2026) for the next version to make the engine and th
 
 ## Ideas (proposed, for the owner to pick)
 
-1. **Your own agents.** Say how well you play each agent (or just your mains), and the Planner leans toward comps you can actually play, not only toward what fits on paper. Parties already hold each player's agents; this would weigh them too.
-2. **Against a known team.** Enter the other team's comp (from the last map of a series, or after the first round) and see which of your comps and plays answer it best.
-3. **A plan sheet to print.** One page per plan with the minimap, who does what in each play, and the tips, for a team that reviews before playing.
-4. **More plays per map.** Pistol-round and eco plays, and more fakes (there are hits, splits, defaults, setups and a retake for every site now).
+1. **How well you play each agent.** Say how well you play each of your agents (or just your mains), and the Planner leans toward comps you can actually play. The agents you play already count (0.2.5); this would weigh them by how well.
+2. **More fakes.** More fake plays for each map (there are hits, splits, defaults, setups, a retake for every site, and pistol and eco plays on the pool's maps now).
+3. **Map pick help.** For a team choosing which map to play or ban, the maps its usual comps and agents fit best and worst, with why.
 
 ## 0.1.5: Hush and a tidier layout (released 2026-10-29)
 

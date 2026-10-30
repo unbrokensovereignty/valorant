@@ -13,6 +13,7 @@ import { answerFor } from '../solved.ts';
 import { planWith } from '../planner/store.ts';
 import { Fit } from '../planner/comp.tsx';
 import { rankWord } from '../planner/words.ts';
+import { SinceArrow, sinceTip, sinceWords } from '../since.tsx';
 import { agentById, AGENTS_BY_NAME, earlyStats, STATS_ON, type Agent } from '../../core/kb/agents.ts';
 import { kitOf, abilityNames, textParts } from '../../core/kb/kits.ts';
 import { mapById, MAPS, POOL } from '../../core/kb/maps.ts';
@@ -21,6 +22,8 @@ import { PRO, PRO_MAPS_COUNTED, proKnown } from '../../core/kb/pro.ts';
 import { RANKS, type RankId } from '../../core/kb/ranks.ts';
 import { DIM_INFO, DIMS, ROLES, roleOf, type Role } from '../../core/kb/roles.ts';
 import { PAIRS, type Pair } from '../../core/kb/synergy.ts';
+import type { Situation } from '../../core/engine/model.ts';
+import { sinceOf } from '../../core/engine/since.ts';
 import { agentMapTips, agentTips } from '../../core/engine/tips.ts';
 import { tierOf } from '../../core/engine/weights.ts';
 import { fmtLongDay } from '../../core/dates.ts';
@@ -104,8 +107,9 @@ function Strengths({ a }: { a: Agent }) {
 
 function BestMaps({ a, rank, newAgents }: { a: Agent; rank: RankId; newAgents: boolean }) {
   const rows = POOL.map((m) => {
-    const ans = answerFor({ map: m.id, side: 'both', rank, sites: [] }, newAgents);
-    return { m, fit: ans?.agents.find((x) => x.id === a.id)?.fit };
+    const s: Situation = { map: m.id, side: 'both', rank, sites: [] };
+    const x = answerFor(s, newAgents)?.agents.find((y) => y.id === a.id);
+    return { m, fit: x?.fit, moved: x && sinceOf(s, x) };
   });
   const ready = rows.every((r) => r.fit !== undefined);
   const sorted = ready ? [...rows].sort((x, y) => y.fit! - x.fit!) : rows;
@@ -113,11 +117,12 @@ function BestMaps({ a, rank, newAgents }: { a: Agent; rank: RankId; newAgents: b
     <section class="panel stack" data-tour="agent-best-maps">
       <div class="row-between"><h2>Best maps</h2>{!ready && <span class="spinner" aria-label="Working it out" />}</div>
       <ul class="plain-list best-maps">
-        {sorted.map(({ m, fit }) => (
+        {sorted.map(({ m, fit, moved }) => (
           <li key={m.id}>
-            <button type="button" class="list-row" onClick={() => planWith({ map: m.id, include: [a.id], newAgents: newAgents || !!a.estimate })}>
+            <button type="button" class="list-row" data-tip={moved ? sinceTip(moved) : undefined} onClick={() => planWith({ map: m.id, include: [a.id], newAgents: newAgents || !!a.estimate })}>
               <MapThumb id={m.id} class="small" />
               <span class="list-row-text"><b>{m.name}</b>{(PRO[m.id]?.picks[a.id] ?? 0) >= 30 && <small class="muted">Pros pick {a.name} in {PRO[m.id]!.picks[a.id]}% of games here</small>}</span>
+              {moved && <><SinceArrow m={moved} /><span class="visually-hidden">{sinceWords(moved)}</span></>}
               {fit !== undefined ? <Fit fit={fit} tier={tierOf(fit)} label={`${a.name} on ${m.name}`} compact /> : <span class="faint small">…</span>}
             </button>
           </li>
@@ -129,17 +134,22 @@ function BestMaps({ a, rank, newAgents }: { a: Agent; rank: RankId; newAgents: b
 }
 
 function ByRank({ a, rank, newAgents }: { a: Agent; rank: RankId; newAgents: boolean }) {
-  const rows = RANKS.map((r) => ({ r, fit: answerFor({ map: 'any', side: 'both', rank: r.id, sites: [] }, newAgents)?.agents.find((x) => x.id === a.id)?.fit }));
+  const rows = RANKS.map((r) => {
+    const s: Situation = { map: 'any', side: 'both', rank: r.id, sites: [] };
+    const x = answerFor(s, newAgents)?.agents.find((y) => y.id === a.id);
+    return { r, fit: x?.fit, moved: x && sinceOf(s, x) };
+  });
   const ready = rows.every((x) => x.fit !== undefined);
   return (
     <section class="panel stack" data-tour="agent-by-rank">
       <div class="row-between"><h2>By rank</h2>{!ready && <span class="spinner" aria-label="Working it out" />}</div>
       <ul class="plain-list by-rank">
-        {rows.map(({ r, fit }) => (
+        {rows.map(({ r, fit, moved }) => (
           <li key={r.id}>
-            <button type="button" class={`by-rank-cell${r.id === rank ? ' current' : ''}`} aria-current={r.id === rank ? 'true' : undefined} onClick={() => planWith({ rank: r.id, include: [a.id], newAgents })}>
+            <button type="button" class={`by-rank-cell${r.id === rank ? ' current' : ''}`} aria-current={r.id === rank ? 'true' : undefined} data-tip={moved ? sinceTip(moved) : undefined} onClick={() => planWith({ rank: r.id, include: [a.id], newAgents })}>
               <span class="small">{r.name}</span>
               {fit !== undefined ? <Fit fit={fit} tier={tierOf(fit)} label={`${a.name} at ${r.name}`} compact /> : <span class="faint small">…</span>}
+              {moved && <><SinceArrow m={moved} /><span class="visually-hidden">{sinceWords(moved)}</span></>}
             </button>
           </li>
         ))}

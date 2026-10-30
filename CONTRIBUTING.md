@@ -37,7 +37,10 @@ Your data while testing: files opened from disk can share saved data with the re
 | Duos and trios, and how random teammates pick | `src/core/engine/party.ts`, `FILL_*` in `weights.ts` |
 | Fits, tiers and the answer to a question | `src/core/engine/plan.ts` |
 | What can be asked, and how a bad question is repaired | `src/core/engine/query.ts` |
-| Pros, cons and notes | `src/core/engine/explain.ts` (words for each strength in `DIM_INFO`, `src/core/kb/roles.ts`) |
+| Pros, cons and notes, how a comp wins, why one ranks below another | `src/core/engine/explain.ts` (words for each strength in `DIM_INFO`, `src/core/kb/roles.ts`) |
+| How a kit plays on a map, side or site | `src/core/kb/kitfit.ts` |
+| What the other team's agents make you play around | `src/core/kb/counters.ts`, `threatsOf` in `src/core/engine/model.ts` |
+| The arrows for tiers that moved since the version compared with | `src/core/engine/since.ts` (the words), `src/core/engine/since.gen.ts` (made by `tools/since.mjs`), `src/ui/since.tsx` |
 | Who does what in a play, and a play's fit | `src/core/engine/plays.ts` |
 | Which tips a plan gets | `src/core/engine/tips.ts`; the tips themselves in `src/core/kb/tips.ts` |
 | The text Copy makes | `src/core/engine/summary.ts` |
@@ -49,7 +52,7 @@ Your data while testing: files opened from disk can share saved data with the re
 | Abilities, agent colors, callouts, art | `src/core/kb/content.gen.ts` and `assets/`, both made by `npm run art` (below) |
 | A callout in the wrong spot on a minimap | `places` for its map in `src/core/kb/maps.ts` |
 | Where routes can go on a minimap | `src/core/kb/floor.gen.ts`, read from the minimaps by `node tools/floor.mjs` (`npm run art` runs it too) |
-| Saved plans and parties | `src/core/saved.ts` (records and sanitizers), `src/data/repo.ts` (changes), `src/ui/pages/saved.tsx` |
+| Saved plans, parties and flags | `src/core/saved.ts` (records and sanitizers), `src/data/repo.ts` (changes), `src/ui/pages/saved.tsx`, `src/ui/flags.ts` |
 | Backups | `src/core/backup.ts`, `src/ui/backup.tsx` |
 | Settings | `src/core/settings.ts` (the schema), `src/ui/pages/settings.tsx` (drawn from it) |
 | Themes | `src/core/theme.ts` (generation, built-ins, theme codes), `src/ui/theme.ts` (applying, switching), `src/ui/pages/themes.tsx` |
@@ -88,6 +91,8 @@ npm run art -- ~/playbook-content         # → assets/ and src/core/kb/content.
 **Add a map.** Add it to `DEFS` in `src/core/kb/maps.ts` with its sites, needs (as bumps over a side's usual needs), and `aka` for callouts players call something else. Refresh the game's content for its minimap, banner, callouts and floor, and move any callout the game places badly with `places`. Add its plays to `src/core/kb/plays.ts` (both sides, every site), its tips to `tips.ts` and its pro picks to `pro.ts` (the engine reads the map's pro role mix from them). The specs check each of these.
 
 **Add or change a play.** Plays are in `src/core/kb/plays.ts`, written as `jobs: route | what to do`, five steps a play (one per player), over the map's own callouts. The comment at the top of the file explains the format. A typo in a job or callout throws, so `npm test` catches it. Look at the play on the map's page in both themes: its routes are drawn on the minimap.
+
+**Add a kit rule.** When a kit does more or less on a map, side or site than its strengths in `agents.ts` say, add a rule to `KIT_RULES` in `src/core/kb/kitfit.ts`: the agent, where it applies, the change (`disrupt +.15; clear -.1`, a few hundredths to two tenths) and why in one sentence a coach would say, which shows as a pro or a con. Add a claim to `tests/unit/gamesense.test.ts` that the fits follow it.
 
 **Add a pair.** Add a `P(a, b, strength, side, reason)` line to `src/core/kb/synergy.ts`: strength from −3 (they clash) to 3 (a classic combo), and the reason as one plain sentence; it's shown as a pro or a con.
 
@@ -136,9 +141,10 @@ Write a test for every bug fixed and every rule added. Prefer a spec (fast, runs
 ## Releasing
 
 1. Everything for the version is merged or in the release PR, and its `CHANGELOG.md` entry is complete and dated (drop "in progress"). Its lines in `src/core/whatsnew.ts` say what's new in a few words.
-2. `npm run check && npm run test:tz && npx playwright test` all pass.
-3. `npm run build`. Replace the app file in the repository root with the new one from `dist/` (`git rm` the old file so the root holds exactly one), and update the file name in `README.md`.
-4. Open the root file in a browser, run the self-test from Help → About, and click through Home, the Planner (a five-stack and a duo), Rankings, an agent, a map, Saved and Settings in both themes.
-5. Merge. Then bump `package.json` for the next version (`npm version <x.y.z> --no-git-tag-version`) and add its "in progress" heading to `CHANGELOG.md`.
+2. The tiers that moved are up to date: `node --experimental-strip-types tools/since.mjs --check` (the unit tests check a sample; run `tools/since.mjs <commit>` again with the commit of the release compared with when it says so).
+3. `npm run check && npm run test:tz && npx playwright test` all pass.
+4. `npm run build`. Replace the app file in the repository root with the new one from `dist/` (`git rm` the old file so the root holds exactly one), and update the file name in `README.md`.
+5. Open the root file in a browser, run the self-test from Help → About, and click through Home, the Planner (a five-stack and a duo), Rankings, an agent, a map, Saved and Settings in both themes.
+6. Merge. Then bump `package.json` for the next version (`npm version <x.y.z> --no-git-tag-version`) and add its "in progress" heading to `CHANGELOG.md`. For the arrows to compare with the release just made, rewrite `CHANGES` in `tools/since.mjs` for the new version's changes to scoring as they land (and `REVIEWED` and the reasons in `src/core/engine/since.ts`), and run `node --experimental-strip-types tools/since.mjs <the release's merge commit>`.
 
 Versions go major.minor.patch: big changes, new features, fixes.

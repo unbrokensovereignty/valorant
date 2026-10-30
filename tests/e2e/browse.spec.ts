@@ -1,5 +1,7 @@
 import { expect, go, open, reload, test } from './app.ts';
+import AxeBuilder from '@axe-core/playwright';
 import { AGENTS, agentById } from '../../src/core/kb/agents.ts';
+import { SINCE_FROM } from '../../src/core/engine/since.ts';
 
 const hush = agentById('hush')!;
 
@@ -31,6 +33,39 @@ test('Rankings: tier lists move with the rank, comps open, and the by-map table 
   // an agent opens its page
   await page.getByRole('button', { name: 'Sova', exact: true }).first().click();
   await expect(page.locator('main h1')).toHaveText('Sova');
+  expect(errors).toEqual([]);
+});
+
+test(`Rankings and an agent’s page mark the tiers that moved since ${SINCE_FROM}, and say why`, async ({ page, errors }) => {
+  await open(page, 'rankings');
+  await page.getByRole('combobox', { name: 'Map' }).selectOption({ label: 'Lotus' });
+  await page.getByRole('group', { name: 'Side' }).getByRole('button', { name: 'Attack' }).click();
+  await page.getByRole('combobox', { name: 'Rank' }).selectOption({ label: 'Platinum' });
+  await expect(page.locator('.rank-where')).toHaveText('Lotus, attack, Platinum');
+  // one controller now leads Lotus at Platinum: Viper drops, with why in her tooltip and her name for screen readers
+  const viper = page.locator('.tier-agent', { hasText: 'Viper' });
+  await expect(viper.locator('.since-down')).toBeVisible();
+  await expect(viper).toHaveAccessibleName(new RegExp(`^Viper \\(down from S since ${SINCE_FROM.replaceAll('.', '\\.')}\\)`));
+  await expect(viper).toHaveAttribute('data-tip', /second controller/);
+  await viper.focus();
+  await page.keyboard.press('Shift+Tab');
+  await page.keyboard.press('Tab');
+  await expect(page.getByRole('tooltip')).toContainText('second controller');
+  // every move, with why, once for those that moved together
+  const moves = page.getByRole('button', { name: /moved a tier since/ });
+  await expect(moves).toHaveAttribute('aria-expanded', 'false');
+  await moves.click();
+  await expect(moves).toHaveAttribute('aria-expanded', 'true');
+  await expect(page.locator('#since-moves')).toContainText('Telekinesis');
+  await expect(page.locator('#since-moves')).toContainText('counts for less as a second');
+  const a11y = await new AxeBuilder({ page }).include('.since-list').include('.tier-list').withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
+  expect(a11y.violations.map((v) => v.id)).toEqual([]);
+  // Viper's page marks Diamond, where a second controller costs a comp now
+  await go(page, 'agents/viper');
+  await expect(page.getByLabel('Working it out')).toHaveCount(0, { timeout: 20_000 });
+  const diamond = page.locator('.by-rank-cell', { hasText: 'Diamond' });
+  await expect(diamond.locator('.since-down')).toBeVisible();
+  await expect(diamond).toHaveAttribute('data-tip', new RegExp(`^Down from S since ${SINCE_FROM.replaceAll('.', '\\.')}: A second controller`));
   expect(errors).toEqual([]);
 });
 
