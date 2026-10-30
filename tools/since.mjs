@@ -34,6 +34,7 @@ const CHANGES = [
   { id: 'r', edits: [['core/engine/weights.ts', 'export const RANK_NEAR = 0.25;', 'export const RANK_NEAR = 0;']] },
   { id: 'p', edits: [['core/engine/weights.ts', "power: 2, until: 'immortal' }", "power: 2, until: 'radiant' }"]] },
   { id: 'k', edits: [['core/kb/kitfit.ts']] },
+  { id: 'w', edits: [['core/engine/model.ts', 'winShare(rankT) * winEdge(a, map)', 'winShare(rankT) * winEdge(a)']] },
 ];
 
 /** The situations, as Rankings asks them. */

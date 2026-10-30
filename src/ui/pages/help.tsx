@@ -13,18 +13,26 @@ import { openWhatsNew } from '../components/whatsnew.tsx';
 import { AGENTS, STATS_ON } from '../../core/kb/agents.ts';
 import { MAPS, PATCH, POOL, POOL_SINCE, mapById } from '../../core/kb/maps.ts';
 import { NEW_AGENTS } from '../../core/kb/new-agents.ts';
+import { MAP_WINS } from '../../core/kb/mapwins.ts';
 import { PRO, PRO_MAPS_COUNTED, proKnown } from '../../core/kb/pro.ts';
 import { BUY_GUIDE, PLAYS, isLowBuy } from '../../core/kb/plays.ts';
 import { RANKS, rankOf } from '../../core/kb/ranks.ts';
 import { atRank, kitShare, proLean, winShare } from '../../core/engine/model.ts';
 import { SINCE_FROM, SINCE_MOVE } from '../../core/engine/since.ts';
 import { UNSETTLED } from '../../core/engine/sure.ts';
-import { FIT_MID, MAP_PICK, PRO_GAMES, SECOND_CONTROLLER, SURE, WIN_CAP, WIN_RANKS } from '../../core/engine/weights.ts';
+import { FIT_MID, MAP_PICK, MAP_WIN, PRO_GAMES, SECOND_CONTROLLER, SURE, WIN_CAP, WIN_RANKS } from '../../core/engine/weights.ts';
 import { tierWords } from '../planner/words.ts';
 import { fmtLongDay } from '../../core/dates.ts';
 import { listJoin } from '../../core/text.ts';
 import { plural } from '../../core/util.ts';
 import type { PageProps } from './index.ts';
+
+/** When the numbers for each map were taken: "taken map by map between October 4, 2026 and October 30, 2026", or the one day. */
+function mapWinDates(): string {
+  const days = Object.values(MAP_WINS).map((m) => m.on).sort();
+  const first = days[0]!, last = days[days.length - 1]!;
+  return first === last ? `as of ${fmtLongDay(first)}` : `taken map by map between ${fmtLongDay(first)} and ${fmtLongDay(last)}`;
+}
 
 type Tab = 'guide' | 'tours' | 'keys' | 'about';
 
@@ -121,7 +129,7 @@ function RankHelp() {
     <section class="panel stack">
       <h2>How your rank changes the answers</h2>
       <p><b>Kits.</b> A hard kit, or one that needs the team to play around it, is worth less until players have learned it. At {iron.name} a team gets about {about(atIron(hardest))} of {hardest.name}’s kit and {about(atIron(easiest))} of {easiest.name}’s; at {radiant.name} it gets {about(atTop(hardest)) === '100%' ? 'all of every kit' : `at least ${about(atTop(hardest))} of every kit`}. Gun play counts the same at every rank.</p>
-      <p><b>Ranked results.</b> Agents who win more ranked games fit a little better, and those who win fewer a little worse. Most of those games are played between {rankAt(WIN_RANKS.from)} and {rankAt(WIN_RANKS.to)}, so win rates count most there, {pct(atRank('iron', winShare) / atRank('gold', winShare))} as much at {iron.name} and {pct(atRank('radiant', winShare) / atRank('gold', winShare))} at {radiant.name}. Only {WIN_CAP} points either side of 50% count, since a win rate says who plays an agent as well as how strong the agent is.</p>
+      <p><b>Ranked results.</b> Agents who win more ranked games fit a little better, and those who win fewer a little worse. Most of those games are played between {rankAt(WIN_RANKS.from)} and {rankAt(WIN_RANKS.to)}, so win rates count most there, {pct(atRank('iron', winShare) / atRank('gold', winShare))} as much at {iron.name} and {pct(atRank('radiant', winShare) / atRank('gold', winShare))} at {radiant.name}. Only {WIN_CAP} points either side of 50% count, since a win rate says who plays an agent as well as how strong the agent is. An agent who wins more (or less) on one map than on the others counts that too, but only as far as it’s more than chance: most of the difference between maps is chance even over thousands of games, so it takes {MAP_WIN.games.toLocaleString('en-US')} games on a map to count half of it.</p>
       <p><b>Pro play.</b> What pro teams pick on a map, and how many of each role they run there, counts {pct(atRank('iron', proLean))} as much at {iron.name} as at {radiant.name}, {pct(atRank('gold', proLean))} at {rankOf('gold').name}, {pct(atRank('diamond', proLean))} at {rankOf('diamond').name} and {pct(atRank('immortal', proLean))} at {rankOf('immortal').name}. A map with fewer than {PRO_GAMES.full} pro games behind it counts less{PRO_GAMES.dated < 1 ? ', and so does one whose numbers are from an earlier year' : ''}.</p>
     </section>
   );
@@ -188,7 +196,7 @@ function Guide() {
         </section>
         <section class="panel stack">
           <h2>Where the numbers come from</h2>
-          <p>Playbook knows {plural(AGENTS.length, 'agent')} and {plural(MAPS.length, 'map')}, as of patch {PATCH}. Each agent’s strengths are judged from their kit and how they’re played. Pick rates in ranked come from metabot.gg, and win rates from metabot.gg and winio.ai, across all ranks as of {fmtLongDay(STATS_ON)}. Pro picks come from vlr.gg: Champions 2026 for the maps it played and Masters Santiago 2026 for the rest, {PRO_MAPS_COUNTED} maps in all{dated.length ? `; ${listJoin(dated)} weren’t played at this year’s events, so their numbers are from the year before` : ''}. The map pool is the one since {fmtLongDay(POOL_SINCE)}.</p>
+          <p>Playbook knows {plural(AGENTS.length, 'agent')} and {plural(MAPS.length, 'map')}, as of patch {PATCH}. Each agent’s strengths are judged from their kit and how they’re played. Pick rates in ranked come from metabot.gg, and win rates from metabot.gg and winio.ai, across all ranks as of {fmtLongDay(STATS_ON)}. Win rates on each map, and the rounds each side wins there, come from metabot.gg too ({mapWinDates()}). Pro picks come from vlr.gg: Champions 2026 for the maps it played and Masters Santiago 2026 for the rest, {PRO_MAPS_COUNTED} maps in all{dated.length ? `; ${listJoin(dated)} weren’t played at this year’s events, so their numbers are from the year before` : ''}. The map pool is the one since {fmtLongDay(POOL_SINCE)}.</p>
           {latest.length > 0 && <p>{listJoin(latest)} came out after those events, so pro play doesn’t count for or against {listJoin(latest)} yet, and the pick rate in ranked is from the first days of play (op.gg).</p>}
           {fresh.length > 0 && <p>{listJoin(fresh)} {fresh.length === 1 ? 'is' : 'are'} too new for real numbers, so the scores are early estimates from the kit that was shown. Leave {listJoin(fresh)} out of a question under Options, or out of every new one in <a href="#/settings/includeNew">Settings → Planner</a>.</p>}
           <p>Playbook works offline, so it doesn’t fetch match stats while you use it; a new version brings new numbers.</p>

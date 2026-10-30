@@ -470,7 +470,7 @@ describe('map picks', () => {
     ok(!asksMapPicks({ ...q, map: 'bind' }), 'not for one map');
   });
   spec('the maps to play are the best ones and the maps to ban the worst, each far enough apart, each with why', () => {
-    const q: Query = { ...newQuery('gold'), map: 'best', include: ['viper', 'cypher'] };
+    const q: Query = { ...newQuery('gold'), map: 'best', include: ['harbor', 'killjoy'] };
     const answers = answersTo(q);
     const fits = new Map(answers.map((a) => [a.situation.map, fitOfAnswer(a)]));
     const top = Math.max(...fits.values()), bottom = Math.min(...fits.values());
@@ -484,7 +484,7 @@ describe('map picks', () => {
     for (const x of [...p.play, ...p.ban]) {
       ok(x.why.length > 0 && x.why.length <= MAP_PICK.why, `${x.map} says why`);
       eq(x.tier, tierOf(x.fit));
-      ok(x.team.includes('viper') && x.team.includes('cypher'), 'the comp keeps the must-play agents');
+      ok(x.team.includes('harbor') && x.team.includes('killjoy'), 'the comp keeps the must-play agents');
       eq(x.best, bestTeamFor(modelFor({ map: x.map, side: 'both', rank: 'gold', sites: [], enemy: [] }), q.newAgents));
     }
   });

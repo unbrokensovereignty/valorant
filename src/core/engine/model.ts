@@ -12,7 +12,8 @@ import { DIMS, ROLE_IDS, type Dim, type Role } from '../kb/roles.ts';
 import { PAIRS } from '../kb/synergy.ts';
 import { rulesFor, type ParsedRule } from '../kb/kitfit.ts';
 import { THREATS, type Threat } from '../kb/counters.ts';
-import { BASE, BY_RANK, EXEC, FIT, NEW_WIN_SHARE, PAIR_STEP, PRO_GAMES, PRO_RISE, RANK_NEAR, ROLE_COST, ROLE_MIX, SECOND_CONTROLLER, WIN_CAP, WIN_RANKS } from './weights.ts';
+import { MAP_WINS } from '../kb/mapwins.ts';
+import { BASE, BY_RANK, EXEC, FIT, MAP_WIN, NEW_WIN_SHARE, PAIR_STEP, PRO_GAMES, PRO_RISE, RANK_NEAR, ROLE_COST, ROLE_MIX, SECOND_CONTROLLER, WIN_CAP, WIN_RANKS } from './weights.ts';
 
 export type MapPick = string; // a map id, or 'any'
 export type SidePick = Side | 'both';
@@ -138,8 +139,39 @@ export function winShare(rankT: number): number {
   return 1 - (1 - radiant) * ((rankT - to) / (1 - to));
 }
 
-/** How far an agent's ranked win rate is from 50%, in points, as far as it counts (WIN_CAP, NEW_WIN_SHARE). */
-export const winEdge = (a: Agent): number => Math.max(-WIN_CAP, Math.min(WIN_CAP, a.win - 50)) * (earlyStats(a) ? NEW_WIN_SHARE : 1);
+/**
+ * How much better (or worse) than usual each agent does on each map in ranked, in points of win
+ * rate, as far as it's more than chance (MAP_WIN): mapWin[map][agent id].
+ */
+const mapWin: Record<string, Record<string, number>> = (() => {
+  // each map's rates moved so its average game is won 50%, as the overall rates are
+  const moved = Object.entries(MAP_WINS).map(([map, m]) => {
+    const rows = Object.entries(m.agents);
+    const games = rows.reduce((t, [, [, n]]) => t + n, 0);
+    const mean = rows.reduce((t, [, [w, n]]) => t + w * n, 0) / games;
+    return [map, rows.map(([id, [w, n]]) => [id, w - mean + 50, n] as const)] as const;
+  });
+  // and each agent's rate across all the maps
+  const all = new Map<string, { won: number; games: number }>();
+  for (const [, rows] of moved) for (const [id, w, n] of rows) {
+    const x = all.get(id) ?? { won: 0, games: 0 };
+    all.set(id, { won: x.won + w * n, games: x.games + n });
+  }
+  return Object.fromEntries(moved.map(([map, rows]) => [map, Object.fromEntries(rows.map(([id, w, n]) => {
+    const x = all.get(id)!;
+    return [id, (w - x.won / x.games) * (n / (n + MAP_WIN.games))];
+  }))]));
+})();
+
+/** How much better (or worse) than usual an agent does on a map in ranked, in points of win rate (0 without numbers). */
+export const mapWinOf = (map: string, id: string): number => mapWin[map]?.[id] ?? 0;
+
+/**
+ * How far an agent's ranked win rate is from 50%, in points, as far as it counts (WIN_CAP,
+ * NEW_WIN_SHARE): on `map`, with how much better or worse than usual they do there.
+ */
+export const winEdge = (a: Agent, map?: string): number =>
+  Math.max(-WIN_CAP, Math.min(WIN_CAP, a.win - 50 + (map ? mapWinOf(map, a.id) : 0))) * (earlyStats(a) ? NEW_WIN_SHARE : 1);
 
 /** The agent fit parts for one map and rank. */
 function agentFit(a: Agent, map: string, rankT: number): { pro: number; rank: number; win: number } {
@@ -148,7 +180,7 @@ function agentFit(a: Agent, map: string, rankT: number): { pro: number; rank: nu
   // and an agent pros haven't had the chance to pick isn't pulled either way by pro play
   const pro = proKnown(a) ? FIT.pro * proLean(rankT) * proCurve(proPick(map, a.id)) * proShare(map) : 0;
   const rank = (1 - rankT) * (FIT.solo * (a.solo - 0.55) - FIT.skill * (a.skill - 0.5));
-  const win = FIT.win * winShare(rankT) * winEdge(a);
+  const win = FIT.win * winShare(rankT) * winEdge(a, map);
   return { pro, rank, win };
 }
 

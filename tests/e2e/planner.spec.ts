@@ -233,8 +233,8 @@ test('a team finds the maps to play and to ban, each with why, and each opens it
   await settledAnswers(page);
   // with nothing chosen every map fits fully, so there's nothing to pick between
   await expect(page.locator('[data-tour="map-picks"]')).toHaveCount(0);
-  await chooseAgents(page, 'Agents the team must play', ['Viper', 'Cypher']);
-  await settledAnswers(page, 'with Viper and Cypher');
+  await chooseAgents(page, 'Agents the team must play', ['Harbor', 'Killjoy']);
+  await settledAnswers(page, 'with Harbor and Killjoy');
   const picks = page.getByRole('region', { name: 'Maps to play and to ban' });
   await expect(picks).toBeVisible();
   const play = picks.locator('.map-picks-col').first().locator('.map-pick'), ban = picks.locator('.map-picks-col.ban .map-pick');

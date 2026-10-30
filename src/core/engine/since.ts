@@ -11,7 +11,7 @@ import { mapById, POOL, type Side } from '../kb/maps.ts';
 import { RANKS, rankOf } from '../kb/ranks.ts';
 import { listJoin } from '../text.ts';
 import { whereWords as where } from './explain.ts';
-import { modelFor, type Situation } from './model.ts';
+import { mapWinOf, modelFor, type Situation } from './model.ts';
 import type { AgentAnswer } from './plan.ts';
 import { SINCE, SINCE_FROM } from './since.gen.ts';
 import { KIT_RULE_NOTE, PRO_RISE, TIERS } from './weights.ts';
@@ -80,6 +80,7 @@ const SHORT: Record<string, string> = {
   r: 'each rank taking in the games of the ranks next to it',
   p: `pro teams’ role mix counting in full from ${rankOf(PRO_RISE.until).name}`,
   k: 'reviewed kit rules',
+  w: 'ranked win rates counting map by map',
   n: 'reviewed numbers for some agents',
 };
 
@@ -128,6 +129,19 @@ function whyOf(code: string, s: Situation, a: Agent, team: readonly string[], up
       return up
         ? `Some kit rules were reviewed, and ${whose} less ${where(s)}, which makes room for ${who}.`
         : `Some kit rules were reviewed, and ${whose} more ${where(s)}, so comps with ${listJoin(others.map((x) => x.o.name), 'or')} pull ahead of ${theirs}.`;
+    }
+    case 'w': {
+      // the agent's own win rate here against their usual, or the others' that push them out (or let them in)
+      const maps = s.map === 'any' ? POOL.map((x) => x.id) : [s.map];
+      const own = maps.reduce((t, map) => t + mapWinOf(map, a.id), 0) / maps.length;
+      const lead = 'Ranked win rates now count map by map';
+      if (own * sign > 0) {
+        const than = s.map === 'any' ? '' : ' than on most maps';
+        return `${lead}, and ${many ? 'they win' : `${a.name} wins`} a little ${up ? 'more' : 'less'} ${where(s)}${than}.`;
+      }
+      return up
+        ? `${lead}, and other agents win a little less ${where(s)}, which makes room for ${who}.`
+        : `${lead}, and other agents win a little more ${where(s)}, so their comps pull ahead of ${theirs}.`;
     }
     default: {
       const two = [...code].map((c) => SHORT[c]).filter((x): x is string => !!x);

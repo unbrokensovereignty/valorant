@@ -85,6 +85,15 @@ export const ROLE_MIX = 0.08;
  */
 export const WIN_RANKS = { iron: 0.5, from: 0.25, to: 0.625, radiant: 0.2 };
 
+/**
+ * Ranked win rates on each map (kb/mapwins.ts). An agent's rate on a map, moved so the map's average
+ * game is won 50%, counts as far as it differs from their rate across all the maps, and only for the
+ * share games / (games + `games`) of that difference: with fewer games than that, most of it is
+ * chance. (Across the maps, the differences beyond chance come to about a third of a point for the
+ * agents with thousands of games, so it takes this many to trust half of one.)
+ */
+export const MAP_WIN = { games: 15000 };
+
 /** A win rate also says who plays the agent, so only this many points either side of 50% count. */
 export const WIN_CAP = 3;
 

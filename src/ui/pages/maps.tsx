@@ -7,6 +7,7 @@ import { PageHead } from '../shell.tsx';
 import { Badge, Button, Empty, Segmented, Toggle } from '../components/controls.tsx';
 import { FeatureSwatch, featureKindsOn, Minimap, TEXT_SIZES, useMapView, type TextSize } from '../components/minimap.tsx';
 import { featuresOf } from '../../core/kb/features.ts';
+import { sideShare } from '../../core/kb/mapwins.ts';
 import { Icon } from '../icons.tsx';
 import { AgentIcon, MapThumb } from '../art.tsx';
 import { go, useSettings, useView } from '../state.ts';
@@ -111,6 +112,13 @@ function HowItPlays({ m }: { m: MapInfo }) {
   );
 }
 
+/** Which side wins more of the rounds on a map in ranked: "Defense wins about 54% of them". */
+function sideWords(m: MapInfo): string {
+  const def = Math.round(sideShare(m.id, 'defense')! * 100);
+  if (def === 50) return 'About even between the sides';
+  return def > 50 ? `Defense wins about ${def}% of them` : `Attack wins about ${100 - def}% of them`;
+}
+
 function BestComps({ m, side, rank, newAgents }: { m: MapInfo; side: Side; rank: RankId; newAgents: boolean }) {
   const [open, setOpen] = useState(-1);
   const ans = answerFor({ map: m.id, side, rank, sites: [] }, newAgents);
@@ -206,6 +214,7 @@ function MapPage({ m }: { m: MapInfo }) {
                 return [<dt key={sd + 't'}>{sd === 'attack' ? 'Attack' : 'Defense'} needs</dt>, <dd key={sd + 'd'}>{extra.length ? listJoin(extra.map((d) => DIM_INFO[d].name.toLowerCase())) : 'The usual mix'}</dd>];
               })}
               <dt>Controllers</dt><dd>{Math.round(proMixOf(m.id)?.controller ?? 1) >= 2 ? 'Pros usually run two' : 'Pros usually run one'}</dd>
+              {sideShare(m.id, 'defense') !== undefined && <><dt>Ranked rounds</dt><dd>{sideWords(m)}</dd></>}
             </dl>
           </section>
           <section class="panel stack">
