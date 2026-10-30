@@ -2,7 +2,7 @@
 
 Every version of Playbook By Sovereign and what it changed.
 
-## 0.2.5 (in progress)
+## 0.2.5 (2026-10-30)
 
 - **Kits by map.** A kit now counts for more or less depending on the map, side and site, for the reasons a coach would give, and a comp's pros and cons say why. Hush's Telekinesis works Lotus's and Ascent's doors from range, which makes her one of the best duelists on Lotus attack; Displacement only concusses enemies pulled into a wall, so she's better on tight maps than on open ones. Raze's, Breach's and Phoenix's utility needs corners, Cypher's Trapwires and Deadlock's Barrier Mesh need chokes, Sova's darts see little in walled-in sites, Brimstone's smokes don't reach across Breeze or Abyss, and a trap on one of Bind's teleporter exits catches whoever comes through.
 - **How each map plays.** Each map's page says whether it's tight, open or in between, what its doors, teleporters, ropes, ziplines and breakable walls do, and which kits make the most of them. Below the best comps, tips for the agents pros pick there, like where Viper walls on Icebox or how Hush uses Lotus's doors.
