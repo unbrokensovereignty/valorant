@@ -17,6 +17,20 @@ export function howOften(x: number): string {
   return n >= 10 ? 'in nearly every game' : n <= 0 ? 'hardly ever' : `in about ${n} of 10 games`;
 }
 
+/**
+ * What an agent adds to their best comp over the next best agent of their role in their place
+ * (AgentAnswer.edge): "21 ahead of Skye, the next best initiator, in their best comp", or with
+ * `lead`, a sentence: "In that comp, Fade is 21 ahead of Skye, the next best initiator."
+ */
+export function edgeWords(id: string, e: { over: string; by: number }, lead = false): string {
+  const name = agentById(id)?.name ?? id, over = agentById(e.over)?.name ?? e.over;
+  const role = ROLES.find((r) => r.id === agentById(id)?.role)?.name.toLowerCase() ?? 'agent';
+  const n = Math.round(Math.abs(e.by));
+  if (n === 0) return lead ? `In that comp, ${over} would do about as well as ${name}.` : `about as good as ${over} in their best comp`;
+  if (e.by > 0) return lead ? `In that comp, ${name} is ${n} ahead of ${over}, the next best ${role}.` : `${n} ahead of ${over}, the next best ${role}, in their best comp`;
+  return lead ? `In that comp, ${over} would do ${n} better than ${name}.` : `${over} would do ${n} better in ${name}’s best comp`;
+}
+
 const COUNT = ['no', 'one', 'two', 'three', 'four', 'five'];
 
 export const mapWord = (map: string): string => (map === 'best' ? 'Best map' : map === 'any' ? 'Any map' : mapById(map)?.name ?? 'Any map');

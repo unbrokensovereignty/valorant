@@ -14,6 +14,8 @@ test('Rankings: tier lists move with the rank, comps open, and the by-map table 
   await page.getByRole('combobox', { name: 'Rank' }).selectOption({ label: 'Radiant' });
   await expect(page.locator('.rank-where')).toContainText('Radiant');
   await expect(tierS).not.toHaveAttribute('aria-label', iron ?? '');
+  // agents with the same fit are told apart by what they add over the next best of their role
+  await expect(page.locator('.tier-agent').first()).toHaveAttribute('data-tip', /, (\d+ ahead of [A-Z/]+, the next best [a-z]+,|about as good as [A-Z/]+) in their best comp\./i);
   // every agent is in exactly one tier
   const tiers = await page.locator('.tier-agents').evaluateAll((uls) => uls.map((u) => u.querySelectorAll('.tier-agent').length));
   expect(tiers.reduce((a, b) => a + b, 0)).toBe(AGENTS.length);

@@ -40,7 +40,8 @@ test('the first launch asks how you play, and the Planner, Rankings and Home sta
   await q.locator('label.toggle', { hasText: 'one of your agents' }).click();
   await expect(q.getByRole('switch', { name: /one of your agents/ })).not.toBeChecked();
   await expect(page.locator('.answers[aria-busy=true], .working')).toHaveCount(0, { timeout: 30_000 });
-  expect(await page.locator('.comps .comp-names').count()).toBeGreaterThan(2);
+  // (the answers can still be the last question's for a moment, so wait for the new ones)
+  await expect.poll(() => page.locator('.comps .comp-names').count(), { timeout: 30_000 }).toBeGreaterThan(2);
 
   // Rankings starts on your rank and marks your agents
   await page.getByRole('link', { name: 'Rankings' }).click();

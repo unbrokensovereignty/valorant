@@ -71,7 +71,19 @@ export interface CompAnswer {
   likely?: { team: string[]; fit: number };
 }
 
-export interface AgentAnswer { id: string; fit: number; tier: string; team: string[] }
+export interface AgentAnswer {
+  id: string;
+  fit: number;
+  tier: string;
+  /** The best team (or party's team) the agent is in. Agent ids. */
+  team: string[];
+  /**
+   * Five-stack: what the agent adds to that team over the best other agent of their role in their
+   * place (`over`), in points of fit; below 0 when that agent would do better there. It tells apart
+   * agents whose fits the other four make look the same.
+   */
+  edge?: { over: string; by: number };
+}
 
 export interface SituationAnswer {
   situation: Situation;
@@ -136,20 +148,34 @@ export function solve(q: Query, s: Situation, keep: number): SituationAnswer {
   const m = modelFor(s);
   const ref = referenceFor(m, q.newAgents);
   const rules = rulesOf(q);
-  /** Agents ranked by the best team (or party) they're in, against `top` (the best of those). */
-  const agentAnswers = (best: readonly ({ score: number; team: number[] } | null)[], top: Reference): AgentAnswer[] =>
+  /** What agent `i` adds to `team` over the best other agent of their role the rules allow in their place. */
+  const edgeOf = (i: number, team: readonly number[], score: number, top: Reference): AgentAnswer['edge'] => {
+    let best = -Infinity, over = -1;
+    for (const y of AGENTS) {
+      if (y.role !== AGENTS[i]!.role || team.includes(y.index) || !rules.allowed(y.index)) continue;
+      const swapped = team.map((x) => (x === i ? y.index : x));
+      if (rules.fits && !rules.fits(Int32Array.from(swapped), swapped.length)) continue;
+      const s2 = scoreTeam(m, swapped);
+      if (s2 > best) { best = s2; over = y.index; }
+    }
+    // in points of an agent's fit (agentFitOf), without its 0 to 100 bounds
+    const span = top.best - top.mid;
+    return over < 0 || span <= 0 ? undefined : { over: AGENTS[over]!.id, by: (AGENT_STRETCH * (score - best) / span) * (100 - FIT_MID) };
+  };
+  /** Agents ranked by the best team (or party) they're in, against `top` (the best of those); agents with the same fit by their edge. */
+  const agentAnswers = (best: readonly ({ score: number; team: number[] } | null)[], top: Reference, edges: boolean): AgentAnswer[] =>
     best.flatMap((b, i) => {
       if (!b) return [];
       const fit = agentFitOf(b.score, top);
-      return [{ id: AGENTS[i]!.id, fit, tier: tierOf(fit), team: idsOf(b.team) }];
-    }).sort((a, b) => b.fit - a.fit || a.id.localeCompare(b.id));
+      return [{ id: AGENTS[i]!.id, fit, tier: tierOf(fit), team: idsOf(b.team), edge: edges ? edgeOf(i, b.team, b.score, top) : undefined }];
+    }).sort((a, b) => b.fit - a.fit || (b.edge?.by ?? 0) - (a.edge?.by ?? 0) || a.id.localeCompare(b.id));
   if (q.party === 5) {
     const r = searchTeams(m, rules, Math.max(keep, 1));
     const comps = r.top.slice(0, keep).map((t): CompAnswer => {
       const fit = fitOf(t.score, ref);
       return { team: idsOf(t.agents), party: [], fit, tier: tierOf(fit), score: t.score };
     });
-    return { situation: s, ref, comps, agents: agentAnswers(r.bestWith.map((t) => t && { score: t.score, team: t.agents }), ref), count: r.count };
+    return { situation: s, ref, comps, agents: agentAnswers(r.bestWith.map((t) => t && { score: t.score, team: t.agents }), ref, true), count: r.count };
   }
   const prules: PartyRules = {
     ...rules,
@@ -174,7 +200,7 @@ export function solve(q: Query, s: Situation, keep: number): SituationAnswer {
   const ask = top ? askFor(m, top.party, prules, rankT(s)).filter((x) => picked.has(x.role)).map((x) => ({ role: x.role, fit: fitOf(x.expected, ref), chance: x.chance })) : undefined;
   return {
     situation: s, ref, comps, count: r.count, askFor: ask,
-    agents: agentAnswers(r.bestWith.map((p) => p && { score: p.expected, team: p.best.agents }), partyRef),
+    agents: agentAnswers(r.bestWith.map((p) => p && { score: p.expected, team: p.best.agents }), partyRef, false),
   };
 }
 

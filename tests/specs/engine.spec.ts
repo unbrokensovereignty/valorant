@@ -173,6 +173,29 @@ describe('fits and tiers', () => {
     eq(answer.ref, ref);
     ok(answer.comps[0]!.fit < 100, 'a fixed pick fits less than the best team');
   });
+  spec('agents with the same fit are told apart by what they add over the next best of their role', () => {
+    const s = at('lotus', 'attack', 'gold');
+    const m = modelFor(s);
+    const answer = solve(q({ map: 'lotus', side: 'attack', rank: 'gold' }), s, 3);
+    ok(answer.agents.filter((a) => a.fit === 100).length > 1, 'several agents fit 100 here');
+    for (const a of answer.agents) {
+      const e = a.edge;
+      if (!e) { ok(false, `${a.id} has an edge`); continue; }
+      const role = agentById(a.id)!.role;
+      eq(agentById(e.over)!.role, role, `${a.id} is held against their own role`);
+      ok(!a.team.includes(e.over), `${a.id}: ${e.over} isn’t in the comp already`);
+      // the next best is the best of the rest in that place, and the edge says who does better there
+      const swap = (id: string) => scoreTeam(m, a.team.map((x) => ix(x === a.id ? id : x)));
+      for (const y of AGENTS) if (y.role === role && !a.team.includes(y.id)) ok(swap(y.id) <= swap(e.over) + 1e-12, `${a.id}: ${y.id} does better than ${e.over}`);
+      eq(e.by > 0, scoreTeam(m, a.team.map(ix)) > swap(e.over), `${a.id}: the edge’s sign`);
+    }
+    for (let i = 1; i < answer.agents.length; i++) {
+      const x = answer.agents[i - 1]!, y = answer.agents[i]!;
+      if (x.fit === y.fit) ok(x.edge!.by >= y.edge!.by, `${x.id} before ${y.id}`);
+    }
+    // a party's teammates aren't theirs to choose, so its agents have none
+    ok(solve(q({ map: 'lotus', side: 'attack', rank: 'gold', party: 2 }), s, 3).agents.every((a) => !a.edge), 'no edges for a party');
+  });
   spec('a saved team gets the same fit the answers gave it', () => {
     const s = at('lotus', 'attack', 'platinum', ['A']);
     const answer = solve(q({ map: 'lotus', side: 'attack', rank: 'platinum', sites: ['A'] }), s, 3);

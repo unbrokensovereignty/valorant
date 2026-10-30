@@ -13,7 +13,7 @@ import { answerFor, answerNow } from '../solved.ts';
 import { tourHook } from '../tours/now.ts';
 import { CompRow } from '../planner/comp.tsx';
 import { SinceArrow, SinceList, sinceTip, sinceWords } from '../since.tsx';
-import { mapWord, rankWord, sideWord } from '../planner/words.ts';
+import { edgeWords, mapWord, rankWord, sideWord } from '../planner/words.ts';
 import { agentById, AGENTS_BY_NAME } from '../../core/kb/agents.ts';
 import { isMap, MAPS, POOL } from '../../core/kb/maps.ts';
 import { NEW_AGENTS } from '../../core/kb/new-agents.ts';
@@ -49,7 +49,7 @@ function TierList({ s, agents }: { s: Situation; agents: readonly AgentAnswer[] 
                 const moved = sinceOf(s, a);
                 return (
                   <li key={a.id}>
-                    <button type="button" class={`tier-agent${mine.includes(a.id) ? ' mine' : ''}`} data-tip={`${nameOf(a.id)}: fit ${Math.round(a.fit)}${mine.includes(a.id) ? ' (one of your agents)' : ''}${moved ? `. ${sinceTip(moved)}` : ''}`} onClick={() => { play('page'); go('agents', a.id); }}>
+                    <button type="button" class={`tier-agent${mine.includes(a.id) ? ' mine' : ''}`} data-tip={`${nameOf(a.id)}: fit ${Math.round(a.fit)}${mine.includes(a.id) ? ' (one of your agents)' : ''}${a.edge ? `, ${edgeWords(a.id, a.edge)}` : ''}.${moved ? ` ${sinceTip(moved)}` : ''}`} onClick={() => { play('page'); go('agents', a.id); }}>
                       <AgentIcon id={a.id} size={48} />
                       {moved && <SinceArrow m={moved} />}
                       {mine.includes(a.id) && <Icon name="star" size={14} class="star-on tier-mine" />}

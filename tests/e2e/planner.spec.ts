@@ -62,6 +62,10 @@ test('ask for a map, side and rank, and get comps with pros and cons, plays and 
   const r = await new AxeBuilder({ page }).include('.answers').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
   expect(r.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`)).toEqual([]);
   expect(await overlaps(page, '.answers-head')).toEqual([]);
+  // the Agents tab says what each agent adds to their best comp over the next best of their role
+  await page.getByRole('tab', { name: 'Agents' }).click();
+  await page.locator('.agent-row').first().click();
+  await expect(page.locator('.agent-more')).toContainText(/In that comp, (.+ is \d+ ahead of .+, the next best (duelist|initiator|controller|sentinel)|.+ would do about as well as .+)\./);
   expect(errors).toEqual([]);
 });
 

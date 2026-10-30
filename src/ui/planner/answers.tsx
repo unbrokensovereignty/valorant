@@ -21,7 +21,7 @@ import { tourOnComp } from '../tours/now.ts';
 import { CompRow, Fit, TeamIcons } from './comp.tsx';
 import { compareComps } from './compare.tsx';
 import { ask, bestOf, run } from './store.ts';
-import { askedLine, askedTitle, partyWord, situationWord } from './words.ts';
+import { askedLine, askedTitle, edgeWords, partyWord, situationWord } from './words.ts';
 
 type Tab = 'comps' | 'agents';
 
@@ -150,6 +150,7 @@ export function AgentList({ agents, plan, versus, flag }: { agents: readonly Age
                 <div class="agent-more">
                   <p class="muted">{ag.line}</p>
                   <div class="row wrap"><span class="muted small">Best comp with {ag.name}:</span><TeamIcons team={a.team} size={28} /></div>
+                  {a.edge && <p class="small">{edgeWords(a.id, a.edge, true)}</p>}
                   {versus && <WhyNot a={a} versus={versus} />}
                   <div class="row wrap">
                     {plan && <Button size="sm" kind="soft" icon="planner" onClick={() => plan(a.id)}>Plan with {ag.name}</Button>}
