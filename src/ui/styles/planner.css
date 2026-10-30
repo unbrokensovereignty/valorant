@@ -234,8 +234,30 @@ html[data-motion='off'] .spinner { animation: none; border-color: var(--accent);
 .minimap .r4, .step-dot.r4 { --c: var(--route-4); }
 
 .minimap { position: relative; aspect-ratio: 1; border-radius: var(--r-lg); background: #15191E; overflow: hidden; }
+.minimap-stage { position: absolute; inset: 0; transform-origin: 0 0; transition: transform var(--dur-quick); }
 .minimap img { position: absolute; inset: 4%; width: 92%; height: 92%; opacity: 0.92; }
 .minimap svg { position: absolute; inset: 4%; width: 92%; height: 92%; overflow: visible; }
+.minimap-wrap { position: relative; }
+.minimap.zoomable { cursor: zoom-in; touch-action: none; }
+.minimap.zoomed { cursor: grab; }
+.minimap.zoomed:active { cursor: grabbing; }
+.minimap.zoomable:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.minimap-zoom { position: absolute; top: 10px; right: 10px; display: grid; gap: 4px; }
+.minimap-zoom .icon-btn { background: rgba(21, 25, 30, 0.82); color: #F4F6F8; border-color: rgba(244, 246, 248, 0.18); }
+.minimap-zoom .icon-btn:hover:not(:disabled) { background: rgba(40, 46, 54, 0.95); }
+.minimap-zoom .icon-btn:disabled { opacity: 0.45; }
+.minimap-dot { fill: #F4F6F8; stroke: rgba(10, 12, 16, 0.85); stroke-width: 0.25px; pointer-events: none; }
+.feature { --f: #F4F6F8; }
+.feature.orb { --f: #F2C14E; }
+.feature.door { --f: #6FC3FF; }
+.feature.breakable { --f: #FF8A65; }
+.feature.teleporter { --f: #C792EA; }
+.feature.rope, .feature.zipline { --f: #8BE28B; }
+.feature-mark { fill: var(--f); stroke: rgba(10, 12, 16, 0.9); }
+.feature-mark.open { fill: none; stroke: var(--f); stroke-linecap: round; stroke-linejoin: round; }
+.feature-mark.ring { fill: color-mix(in srgb, var(--f) 30%, transparent); stroke: var(--f); }
+.feature-link { stroke: var(--f); stroke-dasharray: 1 0.8; opacity: 0.85; fill: none; }
+.feature-swatch { width: 1.3em; height: 1.3em; flex: none; background: #15191E; border-radius: 4px; }
 .minimap-none { position: absolute; inset: 0; display: grid; place-items: center; color: #C9D1D9; font-weight: 700; }
 .route { transition: opacity var(--dur-base); }
 .route.dim { opacity: 0.15; }

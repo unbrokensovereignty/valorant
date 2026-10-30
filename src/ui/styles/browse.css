@@ -149,6 +149,14 @@
 .map-detail { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: start; }
 @container page (min-width: 1100px) { .map-detail { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); } }
 .map-big { width: 100%; max-width: 680px; }
+.map-view { max-width: 680px; gap: 10px; }
+.map-view-toggles { gap: 8px 20px; }
+.map-view .segmented .size-s { font-size: 0.8em; }
+.map-view .segmented .size-m { font-size: 1em; }
+.map-view .segmented .size-l { font-size: 1.2em; }
+.map-view .segmented .size-xl { font-size: 1.4em; }
+.map-legend { gap: 6px 16px; }
+.map-legend li { gap: 6px; }
 .sites { gap: 0; }
 .sites li { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); }
 .sites li:first-child { border-top: 0; padding-top: 0; }
