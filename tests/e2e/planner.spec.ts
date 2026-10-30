@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import type { Page } from '@playwright/test';
-import { expect, open, overlaps, reload, saved, tabTo, test } from './app.ts';
+import { expect, open, overlaps, reload, saved, still, tabTo, test } from './app.ts';
 
 const answers = (page: Page) => page.locator('.answers:not(.stale)');
 const comps = (page: Page) => page.locator('.comps > li');
@@ -9,6 +9,8 @@ const question = (page: Page) => page.getByRole('region', { name: 'Your situatio
 /** Picks a map in the map dialog. */
 async function chooseMap(page: Page, name: string) {
   await page.getByRole('button', { name: /^Map: .*\. Change$/ }).click();
+  // the dialog rises in: a click while it moves can miss its option
+  await still(page);
   await page.getByRole('listbox', { name: 'Maps' }).getByRole('option', { name: new RegExp(`^${name}`) }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
 }

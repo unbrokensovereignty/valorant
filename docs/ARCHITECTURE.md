@@ -25,6 +25,8 @@ Everything the app knows about the game, as data with a comment at the top of ea
 - `counters.ts`: what the other team's agents make you play around (an Operator Chamber, a Killjoy and Cypher setup, a fast Raze and Neon hit), the strengths of yours that answer each threat, and how to play around it without them.
 - `ranks.ts`: the nine ranks, each placed between Iron (0) and Radiant (1).
 - `pro.ts`: what pro teams pick on each map, and typical pro comps. `PRO_CUTOFF` is when the last of those events began: an agent released after it (Hush, for now) isn't pulled either way by pro play, since pros haven't had the chance to pick them (`proKnown`).
+- `mapwins.ts`: ranked play on each map (agents' win rates and games there, and the rounds each side wins), from metabot.gg. The model counts an agent's rate on a map only as far as it differs from their rate across the maps by more than chance (`MAP_WIN`).
+- `features.ts`: where the ultimate orbs, doors, breakable walls, teleporters, ziplines and ropes are on each minimap, for the map page's layers.
 - `synergy.ts`: pairs that work well together or clash, from −3 to 3, with the reason in words.
 - `plays.ts`: plays for every map (hits, splits, fakes, defaults, setups and retakes), and a pistol-round and an eco play for each side of the pool's maps, written as jobs and routes over the game's own callouts, so any comp can run them; `BUY_GUIDE` says what to buy in each kind of round. A typo in a job or callout throws, so a bad edit fails the tests.
 - `tips.ts`: short advice for each agent, map side, rank, party size and doubled-up role.

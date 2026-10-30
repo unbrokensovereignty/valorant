@@ -14,7 +14,7 @@ import { BELOW_NOTE, MAP_PICK, tierOf } from './weights.ts';
 
 export interface MapPick {
   map: string;
-  /** The map's fit as the list of maps shows it: the best comp's, or a party's expected fit (both sides' average when the answers cover each side). */
+  /** The map's fit as the list of maps shows it: its best comp's (both sides' average when the answers cover each side). */
   fit: number;
   tier: string;
   /** The side the reasons are about, when the answers cover each side. */
