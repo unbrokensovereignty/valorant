@@ -132,7 +132,7 @@ function Guide() {
   const dated = Object.entries(PRO).filter(([, p]) => p.dated).map(([id]) => mapById(id)?.name ?? id);
   return (
     <div class="stack guide">
-      <section class="panel">
+      <section class="panel stack">
         <h2>Getting started</h2>
         <ol>
           <li><b>Ask a question</b> on the Planner: a map, your side, your rank and who you’re queuing with. Leave any of them open, or ask for the best one.</li>
