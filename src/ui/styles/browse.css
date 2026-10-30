@@ -57,6 +57,7 @@
 .tier-agent { position: relative; }
 .tier-mine { position: absolute; top: 4px; right: 8px; }
 .tier-empty { padding: 14px 6px; }
+.tier-agent-unsure { color: var(--text2); font-size: 0.7rem; font-weight: 600; line-height: 1.2; }
 
 /* tiers that moved since the version compared with (since.tsx) */
 .since { display: inline-flex; flex: none; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; color: var(--surface); box-shadow: 0 0 0 2px var(--surface); }
@@ -89,6 +90,7 @@
 .heat-b { background: var(--tier-b-soft); color: var(--tier-b-text); }
 .heat-c { background: var(--tier-c-soft); color: var(--tier-c-text); }
 .heat-d { background: var(--tier-d-soft); color: var(--tier-d-text); }
+.heat-cell.unsure { outline: 1.5px dashed currentColor; outline-offset: -4px; }
 .heat-avg { color: var(--text2); font-weight: 700; }
 
 /* ---------------------------------------------------------------- agents */

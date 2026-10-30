@@ -27,6 +27,9 @@
 .fit-num { min-width: 3ch; font-weight: 700; text-align: right; }
 .fit.compact { gap: 6px; }
 .fit.compact .bar { width: 40px; }
+/* a fit that's less sure (core/engine/sure.ts): a dashed ring on its tier, and the words where there's room */
+.fit.unsure .tier { outline: 1.5px dashed var(--text2); outline-offset: 2px; }
+.unsure-tag { color: var(--text2); font-size: 0.75rem; font-weight: 600; white-space: nowrap; }
 .tier {
   display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 6px;
   font-weight: 800; font-size: 0.85rem; background: var(--tier-d); color: var(--on-tier-d);

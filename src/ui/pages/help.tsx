@@ -18,7 +18,8 @@ import { BUY_GUIDE, PLAYS, isLowBuy } from '../../core/kb/plays.ts';
 import { RANKS, rankOf } from '../../core/kb/ranks.ts';
 import { kitShare, proLean } from '../../core/engine/model.ts';
 import { SINCE_FROM, SINCE_MOVE } from '../../core/engine/since.ts';
-import { FIT_MID, PRO_GAMES, SECOND_CONTROLLER, WIN_CAP, WIN_RANKS } from '../../core/engine/weights.ts';
+import { UNSETTLED } from '../../core/engine/sure.ts';
+import { FIT_MID, PRO_GAMES, SECOND_CONTROLLER, SURE, WIN_CAP, WIN_RANKS } from '../../core/engine/weights.ts';
 import { tierWords } from '../planner/words.ts';
 import { fmtLongDay } from '../../core/dates.ts';
 import { listJoin } from '../../core/text.ts';
@@ -156,6 +157,7 @@ function Guide() {
           <p>A comp’s <b>fit</b> compares it with every possible team for the same situation: the best team is 100 and the middle one is {FIT_MID}. So a fit means the same on every map, side and rank.</p>
           <p>Tiers follow the fit: {tierWords()}. An agent’s fit comes from the best comp they fit into, so a high one means “easy to build around here”, not “strong alone”. The other four can make several agents look the same, so each is also measured by what they add to that comp over the next best agent of their role in their place (“ahead of Skye, the next best initiator”): agents with the same fit are listed by it, and an agent’s tooltip on Rankings and their row on the Planner’s Agents tab say it.</p>
           <p>On Rankings and an agent’s page, an arrow on an agent means their tier moved since {SINCE_FROM} by {SINCE_MOVE} points of fit or more. Point at it, or Tab to it, to see why: the change in this version that did the most to move it, found by undoing each change in turn. Under a tier list, <b>moved a tier since {SINCE_FROM}</b> lists every move there with its reason.</p>
+          <p>A fit marked <b>less sure</b>, with a dashed ring on its tier, could be off by {SURE.less} points or more: about a tier. That happens when parts of it rest on very little: ranked numbers from an agent’s first days, which can still change a lot as players learn the agent; what their kit does on the map, judged from the abilities alone with no play to check it yet; or pro play, for an agent who came out after the year’s top events. Point at it, or Tab to it, to see which. {UNSETTLED.length ? `Right now that’s ${listJoin(UNSETTLED.map((a) => a.name))}.` : 'No agent is that new right now.'}</p>
           <p>Fit weighs what the situation needs (smokes, flashes, information, a strong anchor and so on) against what the team brings, how well the agents work together, and the role counts every team needs. Your rank changes the mix: low down, aim and simple utility win; near the top, coordinated utility and what pros play on the map count for more. A second controller pays off only when the team plays its smokes together, so below {rankOf(SECOND_CONTROLLER.until).name} it costs a comp a little, less at each rank up; from {rankOf(SECOND_CONTROLLER.until).name} on, two controllers can lead again on the maps where pros run two.</p>
         </section>
         <RankHelp />

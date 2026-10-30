@@ -10,7 +10,7 @@ import { ruleApplies, ruleWhyAt, type ParsedRule } from '../kb/kitfit.ts';
 import { mapById, POOL, type Side } from '../kb/maps.ts';
 import { rankOf } from '../kb/ranks.ts';
 import { listJoin } from '../text.ts';
-import { abilityOf } from './explain.ts';
+import { abilityOf, whereWords as where } from './explain.ts';
 import { modelFor, type Situation } from './model.ts';
 import type { AgentAnswer } from './plan.ts';
 import { SINCE, SINCE_FROM } from './since.gen.ts';
@@ -93,13 +93,6 @@ const SHORT: Record<string, string> = {
 };
 
 const sidesOf = (s: Situation): Side[] => (s.side === 'both' ? ['attack', 'defense'] : [s.side]);
-
-/** "on Lotus attack", "on Lotus", "on the maps in the pool". */
-function where(s: Situation): string {
-  const map = mapById(s.map);
-  if (!map) return 'on the maps in the pool';
-  return `on ${map.name}${s.side === 'both' ? '' : ` ${s.side}`}`;
-}
 
 /** The maps a kit rule applies on in a situation, for its reason. */
 const mapsOf = (r: ParsedRule, s: Situation): string[] =>

@@ -19,6 +19,7 @@ import { SetupOffer } from '../setup.tsx';
 import { AGENTS, agentById, isNew } from '../../core/kb/agents.ts';
 import type { RankId } from '../../core/kb/ranks.ts';
 import { SETTINGS } from '../../core/settings.ts';
+import { unsureWords } from '../../core/engine/sure.ts';
 import { tierOf } from '../../core/engine/weights.ts';
 import { PATCH, POOL, POOL_SINCE } from '../../core/kb/maps.ts';
 import { poolsOf, type Party } from '../../core/saved.ts';
@@ -167,7 +168,8 @@ function YourAgents() {
     const next = await pickAgents(s.myAgents, { title: myAgents.label, max: myAgents.max, line: myAgents.help });
     if (next) safely(() => r.setSetting('myAgents', next));
   };
-  const fitOn = (id: string, map: string) => answerFor({ map, side: 'both', rank, sites: [] }, s.includeNew)?.agents.find((x) => x.id === id)?.fit;
+  const answerOn = (id: string, map: string) => answerFor({ map, side: 'both', rank, sites: [] }, s.includeNew)?.agents.find((x) => x.id === id);
+  const fitOn = (id: string, map: string) => answerOn(id, map)?.fit;
   return (
     <section class="panel stack home-list" data-tour="home-yours">
       <div class="row-between">
@@ -177,15 +179,15 @@ function YourAgents() {
       {mine.length ? (
         <ul class="plain-list">
           {mine.map((a) => {
-            const fit = fitOn(a.id, 'any');
+            const fit = fitOn(a.id, 'any'), unsure = answerOn(a.id, 'any')?.unsure;
             const maps = POOL.map((m) => ({ m, fit: fitOn(a.id, m.id) }));
             const best = maps.every((x) => x.fit !== undefined) ? [...maps].sort((x, y) => y.fit! - x.fit!).slice(0, 2).map((x) => x.m.name) : [];
             return (
               <li key={a.id}>
-                <button type="button" class="list-row" onClick={() => { play('page'); go('agents', a.id); }}>
+                <button type="button" class="list-row" data-tip={unsure && unsureWords({ map: 'any', side: 'both', rank, sites: [] }, a.id, unsure)} onClick={() => { play('page'); go('agents', a.id); }}>
                   <AgentIcon id={a.id} size={32} />
                   <span class="list-row-text"><b>{a.name}</b><small class="muted">{best.length ? `Best on ${listJoin(best)}` : 'Working out their best maps…'}</small></span>
-                  {fit !== undefined ? <Fit fit={fit} tier={tierOf(fit)} label={`${a.name} at ${rankWord(rank)}`} compact /> : <span class="faint small">…</span>}
+                  {fit !== undefined ? <Fit fit={fit} tier={tierOf(fit)} label={`${a.name} at ${rankWord(rank)}`} compact unsure={!!unsure} /> : <span class="faint small">…</span>}
                 </button>
               </li>
             );

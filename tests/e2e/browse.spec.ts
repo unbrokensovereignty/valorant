@@ -71,6 +71,36 @@ test(`Rankings and an agent’s page mark the tiers that moved since ${SINCE_FRO
   expect(errors).toEqual([]);
 });
 
+test('a fit that rests on very little says it’s less sure, and why', async ({ page, errors }) => {
+  await open(page, 'rankings');
+  await page.getByRole('combobox', { name: 'Map' }).selectOption({ label: 'Lotus' });
+  await page.getByRole('group', { name: 'Side' }).getByRole('button', { name: 'Attack' }).click();
+  await page.getByRole('combobox', { name: 'Rank' }).selectOption({ label: 'Gold' });
+  await expect(page.locator('.rank-where')).toHaveText('Lotus, attack, Gold');
+  // Hush's ranked numbers are from her first days, and her kit on Lotus has no play to check it yet
+  const hush = page.locator('.tier-agent', { hasText: 'Hush' });
+  await expect(hush.locator('.tier-agent-unsure')).toHaveText('less sure');
+  for (const why of [/ Less sure: this fit could be off by about \d+, since /, /kit does on Lotus attack is judged from the abilities alone/, /from Hush’s first days/]) await expect(hush).toHaveAttribute('data-tip', why);
+  // an agent with settled numbers isn't
+  await expect(page.locator('.tier-agent-unsure')).toHaveCount(1);
+  // Hush's page marks the fits too
+  await go(page, 'agents/hush');
+  await expect(page.getByLabel('Working it out')).toHaveCount(0, { timeout: 20_000 });
+  await expect(page.locator('.by-rank-cell .fit.unsure').first()).toBeVisible();
+  await expect(page.locator('main')).toContainText('marked less sure');
+  // and so does the Planner's Agents tab, on the row and, opened, with why
+  await page.getByRole('button', { name: 'Plan with Hush' }).click();
+  await expect(page.locator('.answers[aria-busy=true], .working')).toHaveCount(0, { timeout: 30_000 });
+  await page.getByRole('tab', { name: 'Agents' }).click();
+  const row = page.locator('.agent-row', { hasText: 'Hush' });
+  await expect(row.locator('.unsure-tag')).toHaveText('less sure');
+  await expect(row.locator('.tier')).toHaveAttribute('aria-label', /^Tier [SABCD], less sure$/);
+  expect(await page.locator('.agent-row .unsure-tag').count()).toBe(1);
+  await row.click();
+  await expect(page.locator('.agent-rows li.open .agent-more')).toContainText(/Less sure: this fit could be off by about \d+, since /);
+  expect(errors).toEqual([]);
+});
+
 test('Agents: each agent’s page has the kit, strengths, best maps and partners, and plans with them', async ({ page, errors }) => {
   await open(page, 'agents');
   for (const role of ['Duelists', 'Initiators', 'Controllers', 'Sentinels']) await expect(page.getByRole('heading', { name: new RegExp(`^${role}`) })).toBeVisible();

@@ -11,6 +11,7 @@ import { modelFor, situationKey, type Model, type Situation } from './model.ts';
 import { askFor, searchParties, type PartyRules } from './party.ts';
 import type { Query } from './query.ts';
 import { anyRoles, scoreTeam, searchTeams, type Rules } from './search.ts';
+import { agentUnsure, type Unsure } from './sure.ts';
 import { AGENT_STRETCH, FIT_MID, tierOf } from './weights.ts';
 
 export interface Reference { best: number; mid: number }
@@ -83,6 +84,8 @@ export interface AgentAnswer {
    * agents whose fits the other four make look the same.
    */
   edge?: { over: string; by: number };
+  /** Set when parts of the fit rest on very little and could move it by about a tier (sure.ts). */
+  unsure?: Unsure;
 }
 
 export interface SituationAnswer {
@@ -167,7 +170,7 @@ export function solve(q: Query, s: Situation, keep: number): SituationAnswer {
     best.flatMap((b, i) => {
       if (!b) return [];
       const fit = agentFitOf(b.score, top);
-      return [{ id: AGENTS[i]!.id, fit, tier: tierOf(fit), team: idsOf(b.team), edge: edges ? edgeOf(i, b.team, b.score, top) : undefined }];
+      return [{ id: AGENTS[i]!.id, fit, tier: tierOf(fit), team: idsOf(b.team), edge: edges ? edgeOf(i, b.team, b.score, top) : undefined, unsure: agentUnsure(m, AGENTS[i]!.id, top) }];
     }).sort((a, b) => b.fit - a.fit || (b.edge?.by ?? 0) - (a.edge?.by ?? 0) || a.id.localeCompare(b.id));
   if (q.party === 5) {
     const r = searchTeams(m, rules, Math.max(keep, 1));

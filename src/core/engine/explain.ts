@@ -11,7 +11,7 @@ import { rankOf } from '../kb/ranks.ts';
 import { DIMS, DIM_INFO, ROLE_IDS, roleOf, type Dim, type Role } from '../kb/roles.ts';
 import { pairOf } from '../kb/synergy.ts';
 import { listJoin } from '../text.ts';
-import { D, N, kitShare, needsFor, viaIn, type Model } from './model.ts';
+import { D, N, kitShare, needsFor, viaIn, type Model, type Situation } from './model.ts';
 import { BELOW_NOTE, KIT_NOTE, KIT_RULE_NOTE, MIX_NOTE, PLAN_NOTE, SECOND_CONTROLLER, THREAT_NOTE, WIN_NOTE } from './weights.ts';
 import { ruleWhy } from '../kb/kitfit.ts';
 import { threatLine } from '../kb/counters.ts';
@@ -111,6 +111,12 @@ const ROLE_GAP: Record<Role, { none: string; so?: string; dims: readonly Dim[]; 
 
 const nameOf = (a: Agent) => a.name;
 const sideWord = (s: Side) => (s === 'attack' ? 'attack' : 'defense');
+
+/** Where a situation is, after other words: "on Lotus attack", "on Lotus", "on the maps in the pool". */
+export function whereWords(s: Situation): string {
+  const map = mapById(s.map);
+  return map ? `on ${map.name}${s.side === 'both' ? '' : ` ${s.side}`}` : 'on the maps in the pool';
+}
 
 /** An agent's main ability for a strength here, as the game names it: "Omen’s Paranoia" (or "Jett’s gun play"). */
 export function abilityOf(m: Model, a: Agent, dim: Dim): string {

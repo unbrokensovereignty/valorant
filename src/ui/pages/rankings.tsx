@@ -23,6 +23,7 @@ import type { SidePick, Situation } from '../../core/engine/model.ts';
 import type { AgentAnswer } from '../../core/engine/plan.ts';
 import { newQuery } from '../../core/engine/query.ts';
 import { sinceOf } from '../../core/engine/since.ts';
+import { unsureWords } from '../../core/engine/sure.ts';
 import { TIERS, tierOf } from '../../core/engine/weights.ts';
 import { listJoin } from '../../core/text.ts';
 import { mean } from '../../core/util.ts';
@@ -34,7 +35,7 @@ type RoleFilter = Role | 'all';
 const isSide = (v: string): v is SidePick => v === 'both' || v === 'attack' || v === 'defense';
 const nameOf = (id: string) => agentById(id)?.name ?? id;
 
-/** Agents grouped into tiers, S first, with the agents you play marked and an arrow on those whose tier moved. */
+/** Agents grouped into tiers, S first, with the agents you play marked, an arrow on those whose tier moved, and those less sure saying so. */
 function TierList({ s, agents }: { s: Situation; agents: readonly AgentAnswer[] }) {
   const { showNumbers: numbers, myAgents: mine } = useSettings();
   return (
@@ -49,13 +50,14 @@ function TierList({ s, agents }: { s: Situation; agents: readonly AgentAnswer[] 
                 const moved = sinceOf(s, a);
                 return (
                   <li key={a.id}>
-                    <button type="button" class={`tier-agent${mine.includes(a.id) ? ' mine' : ''}`} data-tip={`${nameOf(a.id)}: fit ${Math.round(a.fit)}${mine.includes(a.id) ? ' (one of your agents)' : ''}${a.edge ? `, ${edgeWords(a.id, a.edge)}` : ''}.${moved ? ` ${sinceTip(moved)}` : ''}`} onClick={() => { play('page'); go('agents', a.id); }}>
+                    <button type="button" class={`tier-agent${mine.includes(a.id) ? ' mine' : ''}`} data-tip={`${nameOf(a.id)}: fit ${Math.round(a.fit)}${mine.includes(a.id) ? ' (one of your agents)' : ''}${a.edge ? `, ${edgeWords(a.id, a.edge)}` : ''}.${moved ? ` ${sinceTip(moved)}` : ''}${a.unsure ? ` ${unsureWords(s, a.id, a.unsure)}` : ''}`} onClick={() => { play('page'); go('agents', a.id); }}>
                       <AgentIcon id={a.id} size={48} />
                       {moved && <SinceArrow m={moved} />}
                       {mine.includes(a.id) && <Icon name="star" size={14} class="star-on tier-mine" />}
                       <span class="tier-agent-name">{nameOf(a.id)}</span>
                       {moved && <span class="visually-hidden">({sinceWords(moved, false)})</span>}
                       {numbers && <span class="muted small num">{Math.round(a.fit)}</span>}
+                      {a.unsure && <span class="tier-agent-unsure">less sure</span>}
                     </button>
                   </li>
                 );
@@ -76,6 +78,10 @@ function ByMap({ side, rank, newAgents, all, role }: { side: SidePick; rank: Ran
   const answers = maps.map((m) => answerFor({ map: m.id, side, rank, sites: [] }, newAgents));
   const ready = answers.filter((a) => !!a).length;
   const fitOn = (k: number, id: string) => answers[k]?.agents.find((a) => a.id === id)?.fit;
+  const unsureOn = (k: number, id: string) => {
+    const u = answers[k]?.agents.find((a) => a.id === id)?.unsure;
+    return u && unsureWords(answers[k]!.situation, id, u);
+  };
   const rows = AGENTS_BY_NAME
     .filter((a) => (newAgents || !a.estimate) && (role === 'all' || a.role === role))
     .map((a) => {
@@ -102,12 +108,15 @@ function ByMap({ side, rank, newAgents, all, role }: { side: SidePick; rank: Ran
                 <th scope="row" class="heat-agent">
                   <button type="button" class="heat-name" onClick={() => go('agents', a.id)}><AgentIcon id={a.id} size={26} /><span>{a.name}</span><RoleIcon role={a.role} size={14} /></button>
                 </th>
-                {fits.map((f, k) => (
-                  <td key={maps[k]!.id} class={f === undefined ? 'heat-cell wait' : `heat-cell heat-${tierOf(f).toLowerCase()}`}
-                    aria-label={f === undefined ? 'Working it out' : `${a.name} on ${maps[k]!.name}: tier ${tierOf(f)}, fit ${Math.round(f)}`}>
-                    {f === undefined ? '' : numbers ? Math.round(f) : tierOf(f)}
-                  </td>
-                ))}
+                {fits.map((f, k) => {
+                  const unsure = f === undefined ? undefined : unsureOn(k, a.id);
+                  return (
+                    <td key={maps[k]!.id} class={f === undefined ? 'heat-cell wait' : `heat-cell heat-${tierOf(f).toLowerCase()}${unsure ? ' unsure' : ''}`} data-tip={unsure}
+                      aria-label={f === undefined ? 'Working it out' : `${a.name} on ${maps[k]!.name}: tier ${tierOf(f)}, fit ${Math.round(f)}${unsure ? ', less sure' : ''}`}>
+                      {f === undefined ? '' : numbers ? Math.round(f) : tierOf(f)}
+                    </td>
+                  );
+                })}
                 <td class="heat-avg num">{avg < 0 ? '' : numbers ? Math.round(avg) : tierOf(avg)}</td>
               </tr>
             ))}

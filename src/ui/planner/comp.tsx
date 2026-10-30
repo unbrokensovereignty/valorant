@@ -31,12 +31,18 @@ import { askedLine, askedTitle, howOften } from './words.ts';
 
 const nameOf = (id: string) => agentById(id)?.name ?? id;
 
-/** A fit as a number and a bar (or only the bar, when numbers are off in Settings). */
-export function Fit({ fit, tier, label, compact }: { fit: number; tier: string; label: string; compact?: boolean }) {
+/**
+ * A fit as a number and a bar (or only the bar, when numbers are off in Settings). A fit that's
+ * less sure (core/engine/sure.ts) has a dashed ring on its tier and, unless compact, says so; what
+ * it's on gives the reason.
+ */
+export function Fit({ fit, tier, label, compact, unsure }: { fit: number; tier: string; label: string; compact?: boolean; unsure?: boolean }) {
   const numbers = useSettings().showNumbers;
+  const tierName = `Tier ${tier}${unsure ? ', less sure' : ''}`;
   return (
-    <span class={`fit${compact ? ' compact' : ''}`}>
-      <span class={`tier tier-${tier.toLowerCase()}`} data-tip={`Tier ${tier}`} aria-label={`Tier ${tier}`}>{tier}</span>
+    <span class={`fit${compact ? ' compact' : ''}${unsure ? ' unsure' : ''}`}>
+      {unsure && !compact && <span class="unsure-tag" aria-hidden="true">less sure</span>}
+      <span class={`tier tier-${tier.toLowerCase()}`} data-tip={tierName} aria-label={tierName}>{tier}</span>
       {!(compact && numbers) && <Bar value={fit / 100} size="thin" label={`${label}: ${Math.round(fit)} out of 100`} />}
       {numbers && <span class="fit-num num" aria-label={compact ? `${label}: ${Math.round(fit)} out of 100` : undefined} aria-hidden={compact ? undefined : 'true'}>{Math.round(fit)}</span>}
     </span>

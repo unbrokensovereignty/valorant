@@ -175,6 +175,15 @@ export const FIT_MID = 50;
  */
 export const AGENT_STRETCH = 5;
 
+/**
+ * How sure a fit is (sure.ts). An agent who came out after the year's top events could have been
+ * picked by pros anywhere from never to about a third of maps, which moves their pull by up to `pro`
+ * either way (proCurve in model.ts); each kit rule of an agent with early numbers could be off by
+ * `kit` of what it adds. A fit that could be off by `less` points or more is less sure, and the
+ * reasons named are those that make up at least `part` of that.
+ */
+export const SURE = { pro: 0.3, kit: 0.5, less: 8, part: 0.25 };
+
 /** Tiers by fit. */
 export const TIERS: readonly { id: string; min: number }[] = [
   { id: 'S', min: 95 }, { id: 'A', min: 88 }, { id: 'B', min: 78 }, { id: 'C', min: 65 }, { id: 'D', min: 0 },

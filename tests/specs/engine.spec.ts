@@ -10,7 +10,8 @@ import { askFor, fillLikelihood, pickWeight, searchParties, type PartyRules } fr
 import { newQuery, placesTaken, sanitizeQuery, situationsOf, asksBest, nothingFixed, myPools, startingQuery, withMine, type Query } from '../../src/core/engine/query.ts';
 import { agentFitOf, fitOf, poolsFit, referenceFor, rulesOf, solve, teamFit } from '../../src/core/engine/plan.ts';
 import { explainTeam } from '../../src/core/engine/explain.ts';
-import { ROLE_COST, TIERS, tierOf } from '../../src/core/engine/weights.ts';
+import { UNSETTLED, unsureWords } from '../../src/core/engine/sure.ts';
+import { ROLE_COST, SURE, TIERS, tierOf } from '../../src/core/engine/weights.ts';
 
 const at = (map: string, side: Situation['side'] = 'both', rank: Situation['rank'] = 'gold', sites: Situation['sites'] = []): Situation => ({ map, side, rank, sites });
 const ix = (id: string) => agentById(id)!.index;
@@ -195,6 +196,32 @@ describe('fits and tiers', () => {
     }
     // a party's teammates aren't theirs to choose, so its agents have none
     ok(solve(q({ map: 'lotus', side: 'attack', rank: 'gold', party: 2 }), s, 3).agents.every((a) => !a.edge), 'no edges for a party');
+  });
+  spec('a fit is less sure when parts of it that rest on very little could move it a tier', () => {
+    const unsure = (map: string, side: Situation['side'], rank: Situation['rank'], id: string, party: Query['party'] = 5) =>
+      solve(q({ map, side, rank, party }), at(map, side, rank), 3).agents.find((a) => a.id === id)?.unsure;
+    // Hush: ranked numbers from the first days, a kit no play has checked yet, and no pro play
+    const gold = unsure('lotus', 'attack', 'gold', 'hush');
+    ok(gold && gold.by >= SURE.less, 'Hush on Lotus attack at Gold');
+    eq(gold!.why.slice().sort(), ['early', 'kit'], 'win rates count at Gold, and pro play hardly does');
+    const radiant = unsure('lotus', 'attack', 'radiant', 'hush');
+    ok(radiant && radiant.why.includes('pro') && !radiant.why.includes('early'), 'at Radiant, pro play counts and win rates hardly do');
+    ok(gold!.by > (unsure('icebox', 'attack', 'gold', 'hush')?.by ?? 0), 'more of Hush’s kit rests on judgment on Lotus than on Icebox');
+    ok(unsure('lotus', 'attack', 'gold', 'hush', 2), 'a duo’s answers say so too');
+    // agents with settled numbers and pro play behind them are always sure
+    for (const map of ['any', 'lotus', 'bind', 'icebox']) for (const rank of ['iron', 'gold', 'radiant'] as const) {
+      const ans = solve(q({ map, rank }), at(map, 'both', rank), 3);
+      for (const a of ans.agents) if (!UNSETTLED.some((x) => x.id === a.id)) ok(!a.unsure, `${a.id} on ${map} at ${rank}`);
+    }
+    ok(UNSETTLED.some((a) => a.id === 'hush'), 'Hush is still settling');
+  });
+  spec('why a fit is less sure is a plain sentence, the biggest reason first', () => {
+    const s = at('lotus', 'attack', 'gold');
+    const u = solve(q({ map: 'lotus', side: 'attack', rank: 'gold' }), s, 3).agents.find((a) => a.id === 'hush')!.unsure!;
+    const words = unsureWords(s, 'hush', u);
+    ok(/^Less sure: this fit could be off by about \d+, since [^.]+\.$/.test(words), words);
+    const first = { early: 'the ranked numbers', kit: 'what Hush’s kit does on Lotus attack', pro: 'pros haven’t' }[u.why[0]!];
+    ok(words.includes(`, since ${first}`), words);
   });
   spec('a saved team gets the same fit the answers gave it', () => {
     const s = at('lotus', 'attack', 'platinum', ['A']);
