@@ -41,6 +41,13 @@ export const JOB_NAMES: Record<Job, string> = {
 export const WEAK_JOB = 0.3;
 
 /**
+ * A play's fit in words: it fits well from `well` and works from `works`. A play with a job that's a
+ * stretch for whoever gets it never fits well, however good the others are at theirs (a hit that
+ * needs a flash, with no one to throw one, isn't the hit to run), and with two such jobs it's a stretch.
+ */
+export const PLAY_FIT = { well: 0.62, works: 0.45 };
+
+/**
  * How good an agent is at a job (0 to 1), the strengths they'd use, and whether that's a stand-in
  * (any way but a job's first: a smoke for a missing wall, a stun for a missing flash).
  */
@@ -80,8 +87,13 @@ export function jobWords(d: Doer): string {
 export interface FilledStep { jobs: Job[]; route: string[]; text: string; who: Doer[] }
 export interface FilledPlay {
   play: Play;
-  /** How well the team can run it, 0 to 1: the average of how good each player is at their job. */
+  /**
+   * How well the team can run it, 0 to 1: the average of how good each player is at their job, held
+   * below fitting well with one job that's a stretch, and below working with two (see PLAY_FIT).
+   */
   fit: number;
+  /** That average before it's held, which still orders plays held to the same fit. */
+  average: number;
   steps: FilledStep[];
   /** Jobs nobody on the team is good at. */
   weak: Doer[];
@@ -118,7 +130,9 @@ export function fillPlay(play: Play, team: readonly string[]): FilledPlay {
     steps[slots[k]!.step]!.who.push(doer);
     if (sk.value < WEAK_JOB) weak.push(doer);
   });
-  return { play, fit: slots.length ? Math.max(0, bestSum) / slots.length : 0, steps, weak };
+  const average = slots.length ? Math.max(0, bestSum) / slots.length : 0;
+  const most = weak.length > 1 ? PLAY_FIT.works : weak.length ? PLAY_FIT.well : Infinity;
+  return { play, fit: Math.min(average, most - 0.01), average, steps, weak };
 }
 
 /**
@@ -130,10 +144,10 @@ export function playsFor(team: readonly string[], map: string, side: Side, sites
   const wide = (f: FilledPlay) => Number(!f.play.site);
   return playsOn(map, side, sites)
     .map((p) => fillPlay(p, team))
-    .sort((a, b) => (sites.length ? wide(a) - wide(b) : 0) || b.fit - a.fit || wide(a) - wide(b) || a.play.name.localeCompare(b.play.name));
+    .sort((a, b) => (sites.length ? wide(a) - wide(b) : 0) || b.fit - a.fit || b.average - a.average || wide(a) - wide(b) || a.play.name.localeCompare(b.play.name));
 }
 
 /** A fit in words, for a play. */
 export function playFitLabel(fit: number): 'Fits well' | 'Works' | 'A stretch' {
-  return fit >= 0.62 ? 'Fits well' : fit >= 0.45 ? 'Works' : 'A stretch';
+  return fit >= PLAY_FIT.well ? 'Fits well' : fit >= PLAY_FIT.works ? 'Works' : 'A stretch';
 }

@@ -4,7 +4,7 @@ import { abilityOn } from '../../src/core/kb/kits.ts';
 import { MAPS, mapById } from '../../src/core/kb/maps.ts';
 import { JOBS, PLAYS, playsOn } from '../../src/core/kb/plays.ts';
 import { AGENT_TIPS, ATTACK_TIPS, DEFENSE_TIPS, MAP_TIPS, RANK_TIPS, PARTY_TIPS, DOUBLE_TIPS } from '../../src/core/kb/tips.ts';
-import { JOB_SKILLS, fillPlay, jobSkill, playsFor, WEAK_JOB } from '../../src/core/engine/plays.ts';
+import { JOB_SKILLS, PLAY_FIT, fillPlay, jobSkill, playFitLabel, playsFor, WEAK_JOB } from '../../src/core/engine/plays.ts';
 import { agentTips, tipsFor } from '../../src/core/engine/tips.ts';
 import { summaryText } from '../../src/core/engine/summary.ts';
 import { explainTeam } from '../../src/core/engine/explain.ts';
@@ -81,7 +81,7 @@ describe('filling plays', () => {
       left.forEach((id, i) => perm(left.filter((_, j) => j !== i), k + 1, sum + jobSkill(AGENTS.find((a) => a.id === id)!, slots[k]!).value));
     };
     perm(team, 0, 0);
-    ok(Math.abs(f.fit * 5 - best) < 1e-9, 'the best total');
+    ok(Math.abs(f.average * 5 - best) < 1e-9, 'the best total');
   });
   spec('a job nobody can do well is flagged, and a team that suits the play fits it better', () => {
     const p = playsOn('ascent', 'attack', ['A']).find((x) => x.kind === 'hit')!;
@@ -90,6 +90,17 @@ describe('filling plays', () => {
     ok(duelists.weak.length > 0 && duelists.weak.every((d) => d.value < WEAK_JOB));
     eq(usual.weak.length, 0);
     ok(usual.fit > duelists.fit + 0.15);
+    // and a play with a job nobody can do never fits well: a hit that needs a flash, with no flash in the comp
+    const lotus = playsOn('lotus', 'attack', ['C']).find((x) => x.name === 'C hit through Main')!;
+    const noFlash = fillPlay(lotus, ['raze', 'fade', 'viper', 'omen', 'chamber']);
+    ok(noFlash.weak.length === 1 && noFlash.average >= PLAY_FIT.well, 'the other jobs are done well');
+    eq(playFitLabel(noFlash.fit), 'Works');
+    for (const team of [['jett', 'reyna', 'raze', 'phoenix', 'iso'], ['raze', 'fade', 'viper', 'omen', 'chamber'], ['omen', 'sova', 'jett', 'killjoy', 'kayo']]) {
+      for (const f of playsOn('ascent', 'attack').concat(playsOn('lotus', 'attack')).map((x) => fillPlay(x, team))) {
+        if (f.weak.length) ok(playFitLabel(f.fit) !== 'Fits well', `${f.play.name} with ${team.join()}: never fits well with a job nobody can do`);
+        if (f.weak.length > 1) eq(playFitLabel(f.fit), 'A stretch', `${f.play.name} with ${team.join()}`);
+      }
+    }
   });
   spec('the abilities named are the agent’s own', () => {
     const f = fillPlay(playsOn('breeze', 'attack')[0]!, ['viper', 'fade', 'raze', 'cypher', 'harbor']);
