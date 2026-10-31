@@ -15,11 +15,13 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { featuresOf, FEATURE_KINDS, type FeatureKind, type MapFeature } from '../../core/kb/features.ts';
 import { walk, type Spot } from '../../core/kb/floor.ts';
 import { mapById, spotName, type MapInfo } from '../../core/kb/maps.ts';
-import { minimapOf } from '../art.tsx';
+import { agentArtOf, minimapOf } from '../art.tsx';
+import { agentById } from '../../core/kb/agents.ts';
 import { useView } from '../state.ts';
 import { IconButton } from './controls.tsx';
 
-export interface Route { route: readonly string[]; label?: string }
+/** A route on the minimap, and who takes it (agent ids), drawn where it ends. */
+export interface Route { route: readonly string[]; label?: string; who?: readonly string[] }
 
 let seq = 0;
 const isSpawn = (name: string) => / Side Spawn$/.test(name);
@@ -122,6 +124,7 @@ export function Minimap({ map: id, routes = [], focus = -1, labels = 'routes', l
   const spots = named.map((n) => at(n)).filter((c) => !!c);
   // names, dots and marks are drawn in the map's own units, so they grow with it as it zooms
   const k = scale, dot = dots ? DOT * k : 0;
+  const faces = facesOf(routes, map);
   const shown = layers.length ? featuresOf(map.id).filter((f) => layers.includes(FEATURE_KINDS.find((x) => x.kind === f.kind)!.layer)) : [];
 
   const onKey = (e: KeyboardEvent) => {
@@ -154,6 +157,7 @@ export function Minimap({ map: id, routes = [], focus = -1, labels = 'routes', l
       {art ? <img src={art} alt="" draggable={false} /> : <span class="minimap-none">{map.name}</span>}
       <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
         <defs>
+          <clipPath id={`${uid}-face`} clipPathUnits="objectBoundingBox"><circle cx="0.5" cy="0.5" r="0.5" /></clipPath>
           {Array.from({ length: ROUTE_COLORS }, (_, i) => (
             <marker key={i} id={`${uid}-a${i}`} viewBox="0 0 10 10" refX="7" refY="5" markerWidth="4.2" markerHeight="4.2" orient="auto-start-reverse">
               <path d="M0 0 10 5 0 10z" class={`route-fill r${i}`} />
@@ -162,8 +166,9 @@ export function Minimap({ map: id, routes = [], focus = -1, labels = 'routes', l
         </defs>
         {shown.map((f, i) => <Feature key={i} f={f} />)}
         {routes.map((r, i) => <RoutePath key={i} r={r} i={i} uid={uid} map={map} dim={focus >= 0 && focus !== i} onFocus={onFocus} />)}
+        {faces.map((f) => <FaceMark key={`${f.i}-${f.id}`} f={f} uid={uid} dim={focus >= 0 && focus !== f.i} />)}
         {dots && spots.map((c) => <circle key={c.name} cx={c.x * 100} cy={c.y * 100} r={dot} class="minimap-dot" style={{ strokeWidth: `${0.3 * dot}px` }} />)}
-        {placeLabels(spots.map((c) => ({ text: shortName(c.name), x: c.x * 100, y: c.y * 100 })), k, dots ? dot : -1, shown.flatMap((f) => [f.at, ...(f.to ? [f.to] : [])]).map(([x, y]) => [x * 100, y * 100] as const), 1.6).map((l) => (
+        {placeLabels(spots.map((c) => ({ text: shortName(c.name), x: c.x * 100, y: c.y * 100, clear: clearOf(faces, c.name, c.x * 100) })), k, dots ? dot : -1, [...shown.flatMap((f) => [f.at, ...(f.to ? [f.to] : [])]).map(([x, y]) => [x * 100, y * 100, 1.2] as const), ...faces.map((f) => [f.x, f.y, FACE + 0.3] as const)]).map((l) => (
           <text key={l.text} x={l.x} y={l.y} class="minimap-label" text-anchor={l.anchor} style={{ fontSize: `${3 * k}px`, strokeWidth: `${0.7 * k}px` }}>{l.text}</text>
         ))}
       </svg>
@@ -215,16 +220,21 @@ function FeatureMark({ kind, x, y, size = 1, angle }: { kind: FeatureKind; x: nu
   return angle ? <g transform={`rotate(${angle} ${x} ${y})`}>{shape}</g> : shape;
 }
 
+/**
+ * Each kind's shape: symbols about two units across (a fiftieth of the map), whatever the size of
+ * the thing in the game, so none stands out over the others. Doors, breakable and droppable walls
+ * are bars, told apart by color and thickness.
+ */
 function markShape(kind: FeatureKind, x: number, y: number, size: number) {
-  const s = 1.5 * size;
+  const u = size, line = { strokeWidth: `${0.25 * u}px` };
+  const bar = (h: number) => <rect x={x - 1.1 * u} y={y - (h / 2) * u} width={2.2 * u} height={h * u} rx={Math.min(0.25, h / 2) * u} class="feature-mark" style={line} />;
   switch (kind) {
-    case 'orb': return <path d={`M${x} ${y - s}L${x + s} ${y}L${x} ${y + s}L${x - s} ${y}Z`} class="feature-mark" style={{ strokeWidth: `${0.35 * size}px` }} />;
-    case 'door': return <rect x={x - s} y={y - s * 0.45} width={2 * s} height={s * 0.9} rx={0.2 * size} class="feature-mark" style={{ strokeWidth: `${0.35 * size}px` }} />;
-    case 'breakable': return <path d={`M${x - s} ${y - s * 0.4}l${s * 0.6} ${s * 0.8}l${s * 0.5} ${-s * 0.8}l${s * 0.5} ${s * 0.8}l${s * 0.4} ${-s * 0.8}`} class="feature-mark open" style={{ strokeWidth: `${0.5 * size}px` }} />;
-    case 'wall': return <rect x={x - s * 1.1} y={y - s * 0.28} width={2.2 * s} height={s * 0.56} class="feature-mark" style={{ strokeWidth: `${0.35 * size}px` }} />;
-    case 'teleporter': return <circle cx={x} cy={y} r={s * 0.85} class="feature-mark ring" style={{ strokeWidth: `${0.5 * size}px` }} />;
-    case 'drop': return <path d={`M${x - s * 0.9} ${y - s * 0.6}L${x + s * 0.9} ${y - s * 0.6}L${x} ${y + s * 0.8}Z`} class="feature-mark" style={{ strokeWidth: `${0.35 * size}px` }} />;
-    default: return <circle cx={x} cy={y} r={s * 0.5} class="feature-mark" style={{ strokeWidth: `${0.35 * size}px` }} />;
+    case 'orb': return <path d={`M${x} ${y - 0.95 * u}L${x + 0.95 * u} ${y}L${x} ${y + 0.95 * u}L${x - 0.95 * u} ${y}Z`} class="feature-mark" style={line} />;
+    case 'door': return bar(0.85);
+    case 'breakable': case 'wall': return bar(0.5);
+    case 'teleporter': return <circle cx={x} cy={y} r={0.85 * u} class="feature-mark ring" style={{ strokeWidth: `${0.35 * u}px` }} />;
+    case 'drop': return <rect x={x - 0.75 * u} y={y - 0.75 * u} width={1.5 * u} height={1.5 * u} rx={0.15 * u} class="feature-mark" style={line} />;
+    default: return <circle cx={x} cy={y} r={0.6 * u} class="feature-mark" style={line} />;
   }
 }
 
@@ -233,7 +243,7 @@ export function FeatureSwatch({ kind }: { kind: FeatureKind }) {
   return (
     <svg class={`feature-swatch feature ${kind}`} viewBox="-3 -3 6 6" aria-hidden="true">
       {(kind === 'rope' || kind === 'zipline') && <line x1="-2.6" y1="0" x2="2.6" y2="0" class="feature-link" style={{ strokeWidth: '0.45px' }} />}
-      <FeatureMark kind={kind} x={0} y={0} size={1.4} />
+      <FeatureMark kind={kind} x={0} y={0} size={2} />
     </svg>
   );
 }
@@ -247,21 +257,23 @@ const LABEL_GAP = 0.9;
 
 /**
  * Puts each name above its spot, or below, right or left when that would cover a name already
- * placed or a mark (`marks`, each reaching `mark` out from its middle), a little way from the spot's
+ * placed or a mark (`marks`, each as its middle and how far it reaches), a little way from the spot's
  * dot (`dot` is its radius). Without dots (`dot` below 0) a name sits right on its spot. Sizes are
  * in the map's 0 to 100 units, for 3-unit text times `k`.
  */
-function placeLabels(spots: readonly { text: string; x: number; y: number }[], k = 1, dot = 0, marks: readonly (readonly [number, number])[] = [], mark = 0): Label[] {
-  const boxes = marks.map(([x, y]) => ({ l: x - mark, r: x + mark, t: y - mark, b: y + mark }));
+function placeLabels(spots: readonly { text: string; x: number; y: number; clear?: readonly [number, number] }[], k = 1, dot = 0, marks: readonly (readonly [number, number, number])[] = []): Label[] {
+  const boxes = marks.map(([x, y, r]) => ({ l: x - r, r: x + r, t: y - r, b: y + r }));
   const out: Label[] = [];
   const gap = LABEL_GAP * k + Math.max(0, dot);
   for (const s of spots) {
     const w = (s.text.length * 1.6 + 1) * k, h = 3.4 * k;
-    const tries: Label[] = dot < 0 ? [{ text: s.text, x: s.x, y: s.y + 1.1 * k, anchor: 'middle' }] : [
-      { text: s.text, x: s.x, y: s.y - gap, anchor: 'middle' },
-      { text: s.text, x: s.x, y: s.y + 2.2 * k + gap, anchor: 'middle' },
-      { text: s.text, x: s.x + gap, y: s.y + 1.1 * k, anchor: 'start' },
-      { text: s.text, x: s.x - gap, y: s.y + 1.1 * k, anchor: 'end' },
+    // faces at the spot push the name out past them
+    const [up, side] = s.clear ? [Math.max(gap, s.clear[0]), Math.max(gap, s.clear[1])] : [gap, gap];
+    const tries: Label[] = dot < 0 && !s.clear ? [{ text: s.text, x: s.x, y: s.y + 1.1 * k, anchor: 'middle' }] : [
+      { text: s.text, x: s.x, y: s.y - up, anchor: 'middle' },
+      { text: s.text, x: s.x, y: s.y + 2.2 * k + up, anchor: 'middle' },
+      { text: s.text, x: s.x + side, y: s.y + 1.1 * k, anchor: 'start' },
+      { text: s.text, x: s.x - side, y: s.y + 1.1 * k, anchor: 'end' },
     ];
     const boxOf = (t: Label) => {
       const l = t.anchor === 'middle' ? t.x - w / 2 : t.anchor === 'start' ? t.x : t.x - w;
@@ -281,6 +293,45 @@ const shortName = (name: string): string => spotName(name).replace(/^(Attacker|D
 
 /** The line through a route's spots, along the floor from each one to the next. */
 const along = (map: string, spots: readonly Spot[]): Spot[] => spots.flatMap((s, i) => (i === 0 ? [s] : walk(map, spots[i - 1]!, s).slice(1)));
+
+/** A face's radius on the minimap, in the map's units. */
+const FACE = 2.3;
+/** A player's face on the minimap: who, on which route (`i`), at the end of it (`spot`), and where it's drawn. */
+interface Face { id: string; i: number; spot: string; x: number; y: number }
+
+/** Where each player's face goes: where their route ends, side by side with anyone else who ends there. */
+function facesOf(routes: readonly Route[], map: MapInfo): Face[] {
+  const at = new Map<string, { id: string; i: number }[]>();
+  routes.forEach((r, i) => {
+    const end = r.route[r.route.length - 1];
+    if (end && r.who?.length) at.set(end, [...(at.get(end) ?? []), ...r.who.map((id) => ({ id, i }))]);
+  });
+  return [...at].flatMap(([name, who]) => {
+    const c = map.callouts.find((x) => x.name === name);
+    return c ? who.map((w, j) => ({ ...w, spot: name, x: c.x * 100 + (j - (who.length - 1) / 2) * FACE * 2.15, y: c.y * 100 })) : [];
+  });
+}
+
+/** How far a name keeps from its spot, up or down and to the side, to clear the faces there (none: no faces). */
+function clearOf(faces: readonly Face[], spot: string, x: number): [number, number] | undefined {
+  const here = faces.filter((f) => f.spot === spot);
+  if (!here.length) return undefined;
+  return [FACE + 0.6, Math.max(...here.map((f) => Math.abs(f.x - x))) + FACE + 0.6];
+}
+
+/** A player's face where their route ends, ringed in the route's color. */
+function FaceMark({ f, uid, dim }: { f: Face; uid: string; dim: boolean }) {
+  const art = agentArtOf(f.id), name = agentById(f.id)?.name ?? f.id;
+  return (
+    <g class={`route-face r${f.i % ROUTE_COLORS}${dim ? ' dim' : ''}`}>
+      <title>{name}</title>
+      <circle cx={f.x} cy={f.y} r={FACE + 0.3} class="route-face-ring" />
+      {art
+        ? <image href={art} x={f.x - FACE} y={f.y - FACE} width={FACE * 2} height={FACE * 2} clip-path={`url(#${uid}-face)`} preserveAspectRatio="xMidYMid slice" />
+        : <text x={f.x} y={f.y + 0.9} class="route-face-initial" text-anchor="middle">{[...name][0]}</text>}
+    </g>
+  );
+}
 
 function RoutePath({ r, i, uid, map, dim, onFocus }: { r: Route; i: number; uid: string; map: MapInfo; dim: boolean; onFocus?: (i: number) => void }) {
   const pts = r.route.map((n) => map.callouts.find((c) => c.name === n)).filter((c) => !!c).map((c): Spot => [c.x, c.y]);

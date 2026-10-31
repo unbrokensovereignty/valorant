@@ -9,7 +9,7 @@ import { KIND_NAMES, playTitle, roundOf } from '../../core/kb/plays.ts';
 import { JOB_NAMES, jobWords, playFitLabel, playsFor, WEAK_JOB, type FilledPlay } from '../../core/engine/plays.ts';
 import { listJoin } from '../../core/text.ts';
 import { AgentIcon } from '../art.tsx';
-import { Badge, Segmented, Select } from '../components/controls.tsx';
+import { Badge, Button, IconButton, Segmented, Select } from '../components/controls.tsx';
 import { Minimap, ROUTE_COLORS } from '../components/minimap.tsx';
 import { Icon } from '../icons.tsx';
 import { play } from '../sound.ts';
@@ -58,22 +58,35 @@ export function PlaysPanel({ team, map: mapId, side: sidePick, sites, onPick }: 
   );
 }
 
-/** One play: what it is, its steps with who does what, and the routes on the minimap. */
+/**
+ * One play: what it is, its steps with who does what, and the routes on the minimap, each ending in
+ * its players' faces. Pointing at a step brings its route forward for a moment; stepping through
+ * the play keeps one step forward until you move on.
+ */
 export function PlayCard({ f }: { f: FilledPlay }) {
-  const [focus, setFocus] = useState(-1);
+  const [hover, setFocus] = useState(-1);
+  const [step, setStep] = useState(-1);
+  const focus = hover >= 0 ? hover : step;
+  const last = f.steps.length - 1;
   const map = mapById(f.play.map)!;
   const round = roundOf(f.play);
   return (
     <article class="play-card" aria-label={playTitle(f.play)}>
       <div class="play-map">
-        <Minimap map={map.id} zoomable routes={f.steps.map((s) => ({ route: s.route }))} focus={focus} onFocus={setFocus} label={`${f.play.name} on the ${map.name} minimap`} />
+        <Minimap map={map.id} zoomable routes={f.steps.map((s) => ({ route: s.route, who: s.who.map((d) => d.id) }))} focus={focus} onFocus={setFocus} label={`${f.play.name} on the ${map.name} minimap`} />
       </div>
       <div class="play-body">
         <h3>{playTitle(f.play)}</h3>
         <p class="muted">{f.play.about}</p>
+        <div class="row play-walk" role="group" aria-label="Step through the play">
+          <IconButton icon="chevron-left" label="Previous step" size="sm" disabled={step === 0} onClick={() => setStep(step <= 0 ? last : step - 1)} />
+          <span class="play-walk-at" aria-live="polite">{step < 0 ? 'All steps' : `Step ${step + 1} of ${f.steps.length}`}</span>
+          <IconButton icon="chevron-right" label="Next step" size="sm" disabled={step === last} onClick={() => setStep(step + 1)} />
+          {step >= 0 && <Button kind="quiet" size="sm" onClick={() => setStep(-1)}>Show all</Button>}
+        </div>
         <ol class="play-steps">
           {f.steps.map((s, i) => (
-            <li key={i} class={focus === i ? 'focus' : ''} tabIndex={0} onMouseEnter={() => setFocus(i)} onMouseLeave={() => setFocus(-1)} onFocus={() => setFocus(i)} onBlur={() => setFocus(-1)}>
+            <li key={i} class={focus === i ? 'focus' : ''} onClick={() => setStep(step === i ? -1 : i)} tabIndex={0} onMouseEnter={() => setFocus(i)} onMouseLeave={() => setFocus(-1)} onFocus={() => setFocus(i)} onBlur={() => setFocus(-1)}>
               <span class={`step-dot r${i % ROUTE_COLORS}`} aria-hidden="true">{i + 1}</span>
               <div class="step-text">
                 <div class="step-who">

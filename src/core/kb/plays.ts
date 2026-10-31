@@ -105,6 +105,12 @@ play('abyss', 'attack', 'B', 'split', 'B split through Main and mid', 'Mid playe
   'smoke: Attacker Side Spawn > B Lobby | Smoke B Tower and the back of the site.',
   'entry flash: B Lobby > B Main > B Site | Hit B Main as mid arrives and flash for each other.',
 ]);
+play('abyss', 'attack', 'B', 'fake', 'Show A, hit B', 'Utility in A Main pulls defenders toward A, then the team hits B Main.', [
+  'lurk: A Lobby > A Main | Make noise in A Main with utility to pull defenders toward A, then hold the flank.',
+  'smoke: Attacker Side Spawn > B Lobby | Smoke B Tower and B Link once A has drawn attention.',
+  'entry flash: B Lobby > B Main > B Site | Hit B Main together as the rotation commits to A; check B Danger on the way.',
+  'postplant: B Lobby > B Main | Hold the plant from B Main with lineups.',
+]);
 play('abyss', 'attack', null, 'default', 'Default and take mid', 'Spreads out for information first, then hits whichever site mid shows is weak.', [
   'recon: Mid Bend > Mid Catwalk | Gather information on mid early and call where the defenders are thin.',
   'lurk: Mid Bottom > Mid Library | Hold Mid Library for picks and watch for a push from Mid Top.',
@@ -314,6 +320,12 @@ play('corrode', 'attack', 'B', 'hit', 'B hit through Main', 'Smokes on B Tower a
   'wall: B Lobby > B Main | Wall the site from B Main to hide the plant.',
   'flash: B Lobby > B Main | Flash B Elbow and the site corners for the entry.',
   'entry: B Main > B Site | Take the site first and clear B Elbow.',
+  'postplant: B Lobby > B Main | Hold the plant from B Main with lineups.',
+]);
+play('corrode', 'attack', 'B', 'fake', 'Show A, hit B', 'Utility in A Main pulls defenders toward A, then the team hits B Main.', [
+  'lurk: A Lobby > A Main | Make noise in A Main with utility to pull defenders toward A, then hold the flank.',
+  'smoke: Attacker Side Spawn > B Lobby | Smoke B Tower and B Arch once A has drawn attention.',
+  'entry flash: B Lobby > B Main > B Site | Hit B Main together as the rotation commits to A; clear B Elbow first.',
   'postplant: B Lobby > B Main | Hold the plant from B Main with lineups.',
 ]);
 play('corrode', 'attack', 'B', 'split', 'B split through Link', 'Mid players come through B Link as the rest hit B Main.', [
@@ -555,6 +567,12 @@ play('lotus', 'attack', 'C', 'hit', 'C hit through Main', 'Smokes on C Hall and 
   'recon: C Mound > C Main | Clear C Main and the site with information.',
   'entry flash: C Mound > C Main > C Site | Take the site with flashes; check C Bend.',
 ]);
+play('lotus', 'attack', 'C', 'fake', 'Show A, hit C', 'Utility at A Root and A Rubble pulls defenders toward A, then the team hits C Main.', [
+  'lurk: A Lobby > A Root | Make noise at A Root with utility to pull defenders toward A, then hold the flank.',
+  'smoke: Attacker Side Spawn > C Lobby | Smoke C Hall and C Waterfall once A has drawn rotations.',
+  'entry flash: C Lobby > C Main > C Site | Hit C Main together as the defenders commit to A.',
+  'postplant: C Lobby > C Main | Hold the plant from C Main with lineups.',
+]);
 play('lotus', 'attack', 'C', 'split', 'C split through the door', 'Pinches C from C Waterfall through C Door while the rest hit C Main.', [
   'smoke: Attacker Side Spawn > C Lobby | Smoke C Hall and C Link, and leave C Waterfall open for the pinch.',
   'entry flash: C Lobby > C Mound > C Main > C Site | Hit C Main with flashes.',
@@ -711,6 +729,12 @@ play('summit', 'attack', 'A', 'hit', 'A hit through Main', 'Smokes on A Hall and
   'entry flash: A Main > A Garden > A Site | Take A Garden with flashes and push onto the site.',
   'postplant: A Lobby > A Main | Hold the plant from A Main.',
 ]);
+play('summit', 'attack', 'A', 'fake', 'Show B, hit A', 'Utility in B Main pulls defenders toward B, then the team hits A Main.', [
+  'lurk: B Lobby > B Main | Make noise in B Main with utility to pull defenders toward B, then hold the flank.',
+  'smoke: Attacker Side Spawn > A Lobby | Smoke A Hall and A Cave once B has drawn attention.',
+  'entry flash: A Lobby > A Main > A Garden > A Site | Hit A Main together as the rotation commits to B, and take A Garden on the way.',
+  'postplant: A Lobby > A Main | Hold the plant from A Main.',
+]);
 play('summit', 'attack', 'A', 'split', 'A split through Link', 'Mid players come through A Link as the rest hit A Main.', [
   'recon lurk: Mid Top > Mid Fountain > Mid Bend > A Link | Take mid and push A Link as the hit starts.',
   'smoke: Attacker Side Spawn > A Lobby | Smoke A Cave and A Art.',
@@ -761,6 +785,12 @@ play('sunset', 'attack', 'A', 'hit', 'A hit through Main', 'Smokes on A Link and
   'smoke: Attacker Side Spawn > A Lobby | Smoke A Link and A Alley from A Lobby.',
   'recon: A Lobby > A Main | Clear A Main and A Elbow with information.',
   'entry flash: A Lobby > A Main > A Site | Take A Elbow and the site with flashes.',
+  'postplant: A Lobby > A Main | Hold the plant from A Main.',
+]);
+play('sunset', 'attack', 'A', 'fake', 'Show B, hit A', 'Utility in B Main pulls defenders toward B, then the team hits A Main.', [
+  'lurk: B Lobby > B Main | Make noise in B Main with utility to pull defenders toward B, then hold the flank.',
+  'smoke: Attacker Side Spawn > A Lobby | Smoke A Link and A Alley once B has drawn attention.',
+  'entry flash: A Lobby > A Main > A Site | Hit A Main together as the rotation commits to B, and take A Elbow on the way.',
   'postplant: A Lobby > A Main | Hold the plant from A Main.',
 ]);
 play('sunset', 'attack', 'A', 'split', 'A split through Link', 'Mid players pinch through A Link as the rest hit A Main.', [

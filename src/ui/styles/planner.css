@@ -247,7 +247,7 @@ html[data-motion='off'] .spinner { animation: none; border-color: var(--accent);
 .minimap .r4, .step-dot.r4 { --c: var(--route-4); }
 
 .minimap { position: relative; aspect-ratio: 1; border-radius: var(--r-lg); background: #15191E; overflow: hidden; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
-.minimap-stage { position: absolute; inset: 0; transform-origin: 0 0; transition: transform var(--dur-quick); }
+.minimap-stage { position: absolute; inset: 0; transform-origin: 0 0; }
 .minimap img { position: absolute; inset: 4%; width: 92%; height: 92%; opacity: 0.92; }
 .minimap svg { position: absolute; inset: 4%; width: 92%; height: 92%; overflow: visible; }
 .minimap-wrap { position: relative; }
@@ -266,7 +266,7 @@ html[data-motion='off'] .spinner { animation: none; border-color: var(--accent);
 .feature { --f: #F4F6F8; }
 .feature.orb { --f: #F2C14E; }
 .feature.door { --f: #6FC3FF; }
-.feature.breakable { --f: #FF8A65; }
+.feature.breakable { --f: #FF9F43; }
 .feature.wall { --f: #F48FB1; }
 .feature.drop { --f: #80DEEA; }
 .feature.teleporter { --f: #C792EA; }
@@ -279,6 +279,10 @@ html[data-motion='off'] .spinner { animation: none; border-color: var(--accent);
 .minimap-none { position: absolute; inset: 0; display: grid; place-items: center; color: #C9D1D9; font-weight: 700; }
 .route { transition: opacity var(--dur-base); }
 .route.dim { opacity: 0.15; }
+.route-face { transition: opacity var(--dur-base); pointer-events: none; }
+.route-face.dim { opacity: 0.15; }
+.route-face-ring { fill: #15191E; stroke: var(--c); stroke-width: 0.6; }
+.route-face-initial { font: 700 2.4px var(--font-ui); fill: #F4F6F8; }
 .route-line { fill: none; stroke: var(--c); stroke-width: 0.9; stroke-linecap: round; stroke-linejoin: round; }
 .route-line.spawn { stroke-width: 0.6; stroke-dasharray: 1.2 1.4; opacity: 0.85; }
 .route-fill { fill: var(--c); }
@@ -288,7 +292,9 @@ html[data-motion='off'] .spinner { animation: none; border-color: var(--accent);
 .plays { display: grid; gap: 14px; }
 .plays-tools { gap: 10px; }
 .plays-tools .select { width: auto; }
-.play-list { display: grid; gap: 4px; }
+.play-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 4px 8px; }
+.play-walk { gap: 6px; }
+.play-walk-at { min-width: 7.5em; text-align: center; color: var(--text2); font-size: 0.88rem; font-variant-numeric: tabular-nums; }
 .play-group { margin: 2px 0 -8px; color: var(--text2); font-size: 0.82rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
 .play-row {
   display: flex; align-items: center; gap: 10px; padding: 7px 10px; border: 1.5px solid transparent; border-radius: var(--r);
@@ -299,11 +305,11 @@ html[data-motion='off'] .spinner { animation: none; border-color: var(--accent);
 .play-kind { flex: none; min-width: 5.5em; color: var(--text2); font-size: 0.82rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
 .play-name { flex: 1; min-width: 0; font-weight: 650; }
 .play-card { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; animation: fade-in var(--dur-base) var(--ease) both; }
-@container page (min-width: 1100px) { .play-card { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; } }
-.play-map { max-width: 520px; width: 100%; justify-self: center; }
+@container page (min-width: 1100px) { .play-card { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); align-items: start; } }
+.play-map { max-width: min(820px, calc(100vh - 120px)); width: 100%; justify-self: center; }
 .play-body { display: grid; gap: 10px; min-width: 0; }
 .play-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
-.play-steps li { display: flex; gap: 10px; padding: 8px 10px; border-radius: var(--r); transition: background-color var(--dur-quick); }
+.play-steps li { display: flex; gap: 10px; padding: 8px 10px; border-radius: var(--r); transition: background-color var(--dur-quick); cursor: pointer; }
 .play-steps li.focus { background: var(--surface-2); }
 .step-dot { display: grid; place-items: center; flex: none; width: 24px; height: 24px; border-radius: 50%; background: var(--c); color: #111; font-weight: 800; font-size: 0.82rem; }
 .step-text { display: grid; gap: 3px; min-width: 0; }

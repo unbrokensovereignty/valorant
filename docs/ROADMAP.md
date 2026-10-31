@@ -2,6 +2,12 @@
 
 What's planned, what the owner has approved, and what's done. Update it as work lands. Items marked **proposed** wait for the owner's OK before they're built. Small fixes don't need to be listed here.
 
+## 0.3.2: maps placed by hand, clearer plays, more room (released 2026-10-31)
+
+The owner placed every map's callouts and marks by hand in the map editor (31 October 2026) and asked for: breakable walls as an orange line, smaller ultimate orbs, silent drops as a square, every mark about the same size; small fixes to their placements where needed; a focus on the plays; layouts that use more of a wide screen with larger minimaps everywhere; and no smoothing when moving the map.
+
+- **Built:** the owner's edits for every map (two Abyss rope descriptions and Ascent's mid panels, which older kept work in the editor had dropped, stay as they were); the new marks; one placement tweak (Haven's C Long callout off its orb); a map that stays locked to the cursor; wider pages and larger minimaps; players' faces where their routes end, stepping through a play, plays listed in columns, and a fake on Abyss, Corrode, Lotus, Summit and Sunset; and an editor that matches kept or older edits to the right marks.
+
 ## 0.3.1: map accuracy (released 2026-10-30)
 
 The owner asked (30 October 2026) for a version about the maps only: everything on each minimap where it really is, nothing missing, and callout names that zoom with the map and sit close to their dots. The owner placed Abyss's and Ascent's callouts and marks by hand in the map editor, as the model for the rest.
@@ -37,7 +43,15 @@ The owner asked (29 October 2026) for the next version to make the engine and th
 ## Ideas (proposed, for the owner to pick)
 
 1. **How well you play each agent.** Say how well you play each of your agents (or just your mains), and the Planner leans toward comps you can actually play. The agents you play already count (0.2.5); this would weigh them by how well.
-2. **More fakes.** More fake plays for each map (there are hits, splits, defaults, setups, a retake for every site, and pistol and eco plays on the pool's maps now).
+2. **More fakes.** Every pool map has a fake now (0.3.2); the six maps out of the pool don't yet.
+
+### Ideas for the next bigger version (proposed)
+
+3. **Plays in time.** Each step of a play gets a moment (before the hit, on the hit, after the plant), and the minimap plays them in order, like a replay, with the smokes, walls and flashes drawn where they land.
+4. **Your own plays.** Draw a play on the minimap (routes, jobs and a line each), save it with your plans, and have the Planner fill it with the agents of any comp, like the built-in ones.
+5. **A map's plays on its page.** Browse every play for a map from its page, filled with the pros' usual comp, without asking the Planner first.
+6. **Ropes and doors in the kit rules.** Count the ropes on Abyss, Breeze, Fracture, Icebox, Lotus and Summit and Sunset's switch door in the kit rules (the follow-up left from 0.3.1). It moves ratings, so it belongs in a version that may.
+7. **Defense setups by site.** A stack, a retake setup and an aggressive early fight for each site, so defense has as many choices as attack.
 
 ## 0.1.5: Hush and a tidier layout (released 2026-10-29)
 

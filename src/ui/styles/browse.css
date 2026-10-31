@@ -147,9 +147,9 @@
 
 .map-cards .map-tile-text small { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.35; }
 .map-detail { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: start; }
-@container page (min-width: 1100px) { .map-detail { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); } }
-.map-big { width: 100%; max-width: 680px; }
-.map-view { max-width: 680px; gap: 10px; }
+@container page (min-width: 1100px) { .map-detail { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); } }
+.map-big { width: 100%; max-width: min(980px, calc(100vh - 140px)); }
+.map-view { max-width: 980px; gap: 10px; }
 .map-view-toggles { gap: 8px 20px; }
 .map-view .segmented .size-s { font-size: 0.8em; }
 .map-view .segmented .size-m { font-size: 1em; }
@@ -207,4 +207,4 @@
 
 /* ---------------------------------------------------------------- gallery */
 
-.gallery-minimap { max-width: 420px; }
+.gallery-minimap { max-width: 640px; }

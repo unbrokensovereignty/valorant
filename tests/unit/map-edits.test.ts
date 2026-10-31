@@ -26,7 +26,7 @@ function editsOf(id: string) {
     name: m.name,
     callouts: m.callouts.map((c) => ({ name: c.name, x: c.x, y: c.y })) as { name: string; x: number; y: number; from?: string; new?: boolean }[],
     removedCallouts: [] as string[],
-    features: (FEATURES[id] ?? []).map((f, ref) => ({ ...f, at: [...f.at], ref })) as { kind: string; at: number[]; to?: readonly number[]; about: string }[],
+    features: (FEATURES[id] ?? []).map((f, ref) => ({ ...f, at: [...f.at], ref })) as { kind: string; at: number[]; to?: readonly number[]; about: string; angle?: number }[],
   };
 }
 const file = (maps: Record<string, unknown>) => ({ format: 'playbook-map-edits', madeFrom: 'x', savedAt: '', maps });
@@ -63,18 +63,19 @@ test('moves go into places, a move back to the game’s spot leaves places, and 
 });
 
 test('a turned mark keeps its turn, as whole degrees, and a mark turned back loses it', () => {
-  const e = editsOf('ascent') as ReturnType<typeof editsOf> & { features: { angle?: number }[] };
-  e.features[2]!.angle = 44.6;
-  e.features[3]!.angle = -90;
+  const e = editsOf('ascent');
+  const doors = e.features.filter((f) => f.kind === 'door');
+  const was = doors.map((f) => f.angle);
+  doors[0]!.angle = 44.6;
+  doors[1]!.angle = -90;
   const out = applyEdits(file({ ascent: e }), { mapsTs, featuresTs, maps });
-  const rows = out.featuresTs.split('\n').filter((l) => l.includes(', angle: '));
+  const rows = out.featuresTs.split('\n').filter((l) => / \{ kind: 'door', .*, angle: (45|270) \},$/.test(l));
   assert.equal(rows.length, 2);
-  assert.match(rows[0]!, /^ {4}\{ kind: 'door', .*, angle: 45 \},$/);
+  assert.match(rows[0]!, /, angle: 45 \},$/);
   assert.match(rows[1]!, /, angle: 270 \},$/);
-  e.features[2]!.angle = 360;
-  e.features[3]!.angle = 0;
+  doors.forEach((f, i) => { f.angle = was[i] ?? 360; });
   assert.equal(applyEdits(file({ ascent: e }), { mapsTs, featuresTs, maps }).featuresTs, featuresTs);
-  e.features[2]!.angle = Number.NaN;
+  doors[0]!.angle = Number.NaN;
   assert.throws(() => applyEdits(file({ ascent: e }), { mapsTs, featuresTs, maps }), /a mark can't be read/);
 });
 
