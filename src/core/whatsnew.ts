@@ -17,6 +17,13 @@ export interface VersionNotes { version: string; items: readonly NewThing[] }
 /** Newest first. */
 export const WHATS_NEW: readonly VersionNotes[] = [
   {
+    version: '0.3.2',
+    items: [
+      { icon: 'map', title: 'Every map placed by hand', text: 'Callouts and marks on every map were placed by hand, doors and walls lie the way they do in the game, and every mark is about the same small size. Map pages give the minimap more room.', page: 'maps/lotus' },
+      { icon: 'play', title: 'Plays you can follow', text: 'Each player’s face shows where they end up, and you can step through a play one route at a time. Five more maps have a fake.', page: 'planner' },
+    ],
+  },
+  {
     version: '0.3.1',
     items: [
       { icon: 'map', title: 'Maps that match the game', text: 'Every map’s ultimate orbs, ropes, doors, walls, ziplines and teleporters sit where they really are, with Summit’s droppable walls and the silent drops on Lotus and Summit added. Names, dots and marks now zoom with the map, names are smaller, and the map can fill the screen.', page: 'maps/summit' },

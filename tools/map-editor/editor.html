@@ -192,7 +192,7 @@ dialog::backdrop { background: rgba(8, 10, 14, 0.5); }
 /* the marks on the map, as in the app */
 .f-orb { --f: #F2C14E; }
 .f-door { --f: #6FC3FF; }
-.f-breakable { --f: #FF8A65; }
+.f-breakable { --f: #FF9F43; }
 .f-wall { --f: #F48FB1; }
 .f-drop { --f: #80DEEA; }
 .f-teleporter { --f: #C792EA; }
@@ -390,6 +390,8 @@ function floorImage(id) {
 
 // ---------- the data: as the app has it, and as edited ----------
 const ORIG = {}, S = {};
+/** Which marks this editor started from, so edits made from other marks are matched with care. */
+const MARKS_ID = (() => { let h = 0; for (const ch of JSON.stringify(MAPS.map((m) => m.features))) h = (h * 31 + ch.charCodeAt(0)) | 0; return (h >>> 0).toString(36); })();
 for (const m of MAPS) {
   ORIG[m.id] = {
     callouts: m.callouts.map((c) => ({ uid: uid('c'), name: c.name, at: [c.x, c.y] })),
@@ -471,7 +473,7 @@ const editedMaps = () => MAPS.filter((m) => changesOf(m.id).length);
 function editsFile() {
   const maps = {};
   for (const m of editedMaps()) maps[m.id] = editsOf(m.id);
-  return { format: 'playbook-map-edits', madeFrom: DATA.version, savedAt: new Date().toISOString(), maps };
+  return { format: 'playbook-map-edits', madeFrom: DATA.version, marksFrom: MARKS_ID, savedAt: new Date().toISOString(), maps };
 }
 
 const spot = (v) => (Array.isArray(v) && v.length === 2 && v.every((n) => Number.isFinite(Number(n))) ? [r3(v[0]), r3(v[1])] : null);
@@ -479,6 +481,7 @@ const spot = (v) => (Array.isArray(v) && v.length === 2 && v.every((n) => Number
 function takeEdits(file) {
   if (!file || file.format !== 'playbook-map-edits' || typeof file.maps !== 'object' || !file.maps) throw new Error('This isn’t a map edits file from this editor.');
   let n = 0;
+  const same = file.marksFrom === MARKS_ID;
   for (const [id, e] of Object.entries(file.maps)) {
     const o = ORIG[id];
     if (!o || !e || !Array.isArray(e.callouts) || !Array.isArray(e.features)) continue;
@@ -492,16 +495,26 @@ function takeEdits(file) {
       used.add(id2);
       callouts.push({ uid: id2, name: c.name.slice(0, 60), at });
     }
-    const features = [];
+    // edits made from these very marks keep to their place in the list; edits made from other marks
+    // (an older editor, or work kept from one) are matched by their words, then by their place in the
+    // list where the mark hasn't moved, then by where they are, so they still land on the right marks
+    const features = [], free = (x, f) => x && x.kind === f.kind && !used.has(x.uid);
     for (const f of e.features) {
       const at = spot(f && f.at);
       if (!at || !kindOf(f.kind)) continue;
-      const base = Number.isInteger(f.ref) && !f.new ? o.features[f.ref] : null;
-      const id2 = base && !used.has(base.uid) ? base.uid : uid('n');
+      const r = Number.isInteger(f.ref) && !f.new ? o.features[f.ref] : null, ref = r && !used.has(r.uid) && (same || r.kind === f.kind) ? r : null;
+      const base = same ? ref
+        : o.features.find((x) => free(x, f) && x.about === f.about)
+        || (ref && !far(ref.at, at) ? ref : null)
+        || o.features.find((x) => free(x, f) && Math.hypot(x.at[0] - at[0], x.at[1] - at[1]) < 0.01);
+      const id2 = base ? base.uid : uid('n');
       used.add(id2);
       const to = spot(f.to);
       features.push({ uid: id2, kind: f.kind, at, to: kindOf(f.kind).ends === 1 ? null : to, about: typeof f.about === 'string' ? f.about.slice(0, 300) : '', angle: turn(f.angle) });
     }
+    // marks the app has gained since the edits were made, and that they don't say were removed, stay
+    const gone = new Set(Array.isArray(e.removedFeatures) ? e.removedFeatures : []);
+    if (!same) for (const x of o.features) if (!used.has(x.uid) && !gone.has(x.about)) features.push(clone(x));
     S[id] = { callouts, features };
     n++;
   }
@@ -575,16 +588,16 @@ function markSvg(kind, x, y, mk, angle) {
   const shape = markShape(kind, x, y, mk);
   return angle ? `<g transform="rotate(${angle} ${x} ${y})">${shape}</g>` : shape;
 }
-function markShape(kind, x, y, mk) {
-  const s = 1.5 * mk, w = (v) => `stroke-width:${v * mk}px`;
+function markShape(kind, x, y, u) {
+  const w = (v) => `stroke-width:${v * u}px`;
+  const bar = (h) => `<rect x="${x - 1.1 * u}" y="${y - (h / 2) * u}" width="${2.2 * u}" height="${h * u}" rx="${Math.min(0.25, h / 2) * u}" class="mark" style="${w(0.25)}"/>`;
   switch (kind) {
-    case 'orb': return `<path d="M${x} ${y - s}L${x + s} ${y}L${x} ${y + s}L${x - s} ${y}Z" class="mark" style="${w(0.35)}"/>`;
-    case 'door': return `<rect x="${x - s}" y="${y - s * 0.45}" width="${2 * s}" height="${s * 0.9}" rx="${0.2 * mk}" class="mark" style="${w(0.35)}"/>`;
-    case 'breakable': return `<path d="M${x - s} ${y - s * 0.4}l${s * 0.6} ${s * 0.8}l${s * 0.5} ${-s * 0.8}l${s * 0.5} ${s * 0.8}l${s * 0.4} ${-s * 0.8}" class="mark open" style="${w(0.5)}"/>`;
-    case 'wall': return `<rect x="${x - s * 1.1}" y="${y - s * 0.28}" width="${2.2 * s}" height="${s * 0.56}" class="mark" style="${w(0.35)}"/>`;
-    case 'teleporter': return `<circle cx="${x}" cy="${y}" r="${s * 0.85}" class="mark ring" style="${w(0.5)}"/>`;
-    case 'drop': return `<path d="M${x - s * 0.9} ${y - s * 0.6}L${x + s * 0.9} ${y - s * 0.6}L${x} ${y + s * 0.8}Z" class="mark" style="${w(0.35)}"/>`;
-    default: return `<circle cx="${x}" cy="${y}" r="${s * 0.5}" class="mark" style="${w(0.35)}"/>`;
+    case 'orb': return `<path d="M${x} ${y - 0.95 * u}L${x + 0.95 * u} ${y}L${x} ${y + 0.95 * u}L${x - 0.95 * u} ${y}Z" class="mark" style="${w(0.25)}"/>`;
+    case 'door': return bar(0.85);
+    case 'breakable': case 'wall': return bar(0.5);
+    case 'teleporter': return `<circle cx="${x}" cy="${y}" r="${0.85 * u}" class="mark ring" style="${w(0.35)}"/>`;
+    case 'drop': return `<rect x="${x - 0.75 * u}" y="${y - 0.75 * u}" width="${1.5 * u}" height="${1.5 * u}" rx="${0.15 * u}" class="mark" style="${w(0.25)}"/>`;
+    default: return `<circle cx="${x}" cy="${y}" r="${0.6 * u}" class="mark" style="${w(0.25)}"/>`;
   }
 }
 const P = (s) => [s[0] * 100, s[1] * 100];
@@ -638,7 +651,7 @@ function renderMarks() {
     hits += `<circle cx="${x}" cy="${y}" r="${Math.max(1.8 * mk, dot + 0.4)}" fill="transparent" class="hit" data-uid="${c.uid}" data-end="at"><title>${esc(c.name)}</title></circle>`;
   }
   if (view.names) {
-    const labels = placeLabels(s.callouts.map((c) => ({ uid: c.uid, text: shortName(c.name.trim() || 'Unnamed'), x: c.at[0] * 100, y: c.at[1] * 100 })), k, view.dots ? dot : -1, view.marks ? s.features.flatMap((f) => [f.at, ...(f.to ? [f.to] : [])]).map(P) : [], 1.6);
+    const labels = placeLabels(s.callouts.map((c) => ({ uid: c.uid, text: shortName(c.name.trim() || 'Unnamed'), x: c.at[0] * 100, y: c.at[1] * 100 })), k, view.dots ? dot : -1, view.marks ? s.features.flatMap((f) => [f.at, ...(f.to ? [f.to] : [])]).map(P) : [], 1.2);
     for (const l of labels) {
       h += `<text x="${l.x}" y="${l.y}" text-anchor="${l.anchor}" class="lbl${sel === l.uid ? ' sel' : ''}" data-uid="${l.uid}" data-end="at" style="font-size:${3 * k}px;stroke-width:${0.7 * k}px">${esc(l.text)}</text>`;
     }
@@ -666,7 +679,7 @@ function renderMaps() {
 function swatch(kind) {
   if (kind === 'callout') return '<span class="dotmark" aria-hidden="true"></span>';
   const link = kind === 'rope' || kind === 'zipline' ? `<line x1="-2.6" y1="0" x2="2.6" y2="0" class="link" style="stroke-width:0.45px"/>` : '';
-  return `<svg class="swatch f-${kind}" viewBox="-3 -3 6 6" aria-hidden="true">${link}${markSvg(kind, 0, 0, 1.4)}</svg>`;
+  return `<svg class="swatch f-${kind}" viewBox="-3 -3 6 6" aria-hidden="true">${link}${markSvg(kind, 0, 0, 2)}</svg>`;
 }
 function renderTools() {
   const tools = [['move', 'Move', 'v'], ['callout', 'Callout', 'c'], ...KINDS.map((k) => [k.kind, k.name, KEYS[k.kind]])];
@@ -1143,24 +1156,25 @@ $('#png').addEventListener('click', async () => {
     ctx.globalAlpha = 1;
   }
   const X = (v) => pad + v * inner;
-  const colors = { orb: '#F2C14E', door: '#6FC3FF', breakable: '#FF8A65', wall: '#F48FB1', teleporter: '#C792EA', rope: '#8BE28B', zipline: '#8BE28B', drop: '#80DEEA' };
+  const colors = { orb: '#F2C14E', door: '#6FC3FF', breakable: '#FF9F43', wall: '#F48FB1', teleporter: '#C792EA', rope: '#8BE28B', zipline: '#8BE28B', drop: '#80DEEA' };
   const drawMark = (kind, x, y, angle) => {
     ctx.save();
     if (angle) { ctx.translate(x, y); ctx.rotate((angle * Math.PI) / 180); ctx.translate(-x, -y); }
-    const sz = 1.5 * u * 1.2;
-    ctx.fillStyle = colors[kind]; ctx.strokeStyle = 'rgba(10,12,16,0.9)'; ctx.lineWidth = 0.35 * u * 1.2;
+    // the same shapes as markShape, in pixels
+    const bar = (h) => { ctx.roundRect(x - 1.1 * u, y - (h / 2) * u, 2.2 * u, h * u, Math.min(0.25, h / 2) * u); };
+    ctx.fillStyle = colors[kind]; ctx.strokeStyle = 'rgba(10,12,16,0.9)'; ctx.lineWidth = 0.25 * u;
     ctx.beginPath();
-    if (kind === 'orb') { ctx.moveTo(x, y - sz); ctx.lineTo(x + sz, y); ctx.lineTo(x, y + sz); ctx.lineTo(x - sz, y); ctx.closePath(); ctx.fill(); ctx.stroke(); }
-    else if (kind === 'door') { ctx.rect(x - sz, y - sz * 0.45, 2 * sz, sz * 0.9); ctx.fill(); ctx.stroke(); }
-    else if (kind === 'breakable') { ctx.moveTo(x - sz, y - sz * 0.4); ctx.lineTo(x - sz * 0.4, y + sz * 0.4); ctx.lineTo(x + sz * 0.1, y - sz * 0.4); ctx.lineTo(x + sz * 0.6, y + sz * 0.4); ctx.lineTo(x + sz, y - sz * 0.4); ctx.strokeStyle = colors[kind]; ctx.lineWidth = 0.5 * u * 1.2; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.stroke(); }
-    else if (kind === 'wall') { ctx.rect(x - sz * 1.1, y - sz * 0.28, 2.2 * sz, sz * 0.56); ctx.fill(); ctx.stroke(); }
-    else if (kind === 'drop') { ctx.moveTo(x - sz * 0.9, y - sz * 0.6); ctx.lineTo(x + sz * 0.9, y - sz * 0.6); ctx.lineTo(x, y + sz * 0.8); ctx.closePath(); ctx.fill(); ctx.stroke(); }
-    else if (kind === 'teleporter') { ctx.arc(x, y, sz * 0.85, 0, 7); ctx.fillStyle = colors[kind] + '4D'; ctx.fill(); ctx.strokeStyle = colors[kind]; ctx.lineWidth = 0.5 * u * 1.2; ctx.stroke(); }
-    else { ctx.arc(x, y, sz * 0.5, 0, 7); ctx.fill(); ctx.stroke(); }
+    if (kind === 'orb') { ctx.moveTo(x, y - 0.95 * u); ctx.lineTo(x + 0.95 * u, y); ctx.lineTo(x, y + 0.95 * u); ctx.lineTo(x - 0.95 * u, y); ctx.closePath(); }
+    else if (kind === 'door') bar(0.85);
+    else if (kind === 'breakable' || kind === 'wall') bar(0.5);
+    else if (kind === 'drop') ctx.roundRect(x - 0.75 * u, y - 0.75 * u, 1.5 * u, 1.5 * u, 0.15 * u);
+    else if (kind === 'teleporter') { ctx.arc(x, y, 0.85 * u, 0, 7); ctx.fillStyle = colors[kind] + '4D'; ctx.strokeStyle = colors[kind]; ctx.lineWidth = 0.35 * u; }
+    else ctx.arc(x, y, 0.6 * u, 0, 7);
+    ctx.fill(); ctx.stroke();
     ctx.restore();
   };
   if (view.marks) for (const f of s.features) {
-    if (f.to && f.kind !== 'teleporter') { ctx.save(); ctx.strokeStyle = colors[f.kind]; ctx.globalAlpha = 0.85; ctx.lineWidth = 0.45 * u * 1.2; ctx.setLineDash([u, 0.8 * u]); ctx.beginPath(); ctx.moveTo(X(f.at[0]), X(f.at[1])); ctx.lineTo(X(f.to[0]), X(f.to[1])); ctx.stroke(); ctx.restore(); }
+    if (f.to && f.kind !== 'teleporter') { ctx.save(); ctx.strokeStyle = colors[f.kind]; ctx.globalAlpha = 0.85; ctx.lineWidth = 0.45 * u; ctx.setLineDash([u, 0.8 * u]); ctx.beginPath(); ctx.moveTo(X(f.at[0]), X(f.at[1])); ctx.lineTo(X(f.to[0]), X(f.to[1])); ctx.stroke(); ctx.restore(); }
     drawMark(f.kind, X(f.at[0]), X(f.at[1]), f.angle);
     if (f.to) drawMark(f.kind, X(f.to[0]), X(f.to[1]), f.angle);
   }
@@ -1173,7 +1187,7 @@ $('#png').addEventListener('click', async () => {
   if (view.names) {
     ctx.font = `600 ${3 * k * u}px 'Atkinson Hyperlegible Next', system-ui, sans-serif`;
     ctx.lineJoin = 'round';
-    for (const l of placeLabels(s.callouts.map((cl) => ({ text: shortName(cl.name.trim() || 'Unnamed'), x: cl.at[0] * 100, y: cl.at[1] * 100 })), k, view.dots ? DOT * k : -1, view.marks ? s.features.flatMap((f) => [f.at, ...(f.to ? [f.to] : [])]).map(P) : [], 1.9)) {
+    for (const l of placeLabels(s.callouts.map((cl) => ({ text: shortName(cl.name.trim() || 'Unnamed'), x: cl.at[0] * 100, y: cl.at[1] * 100 })), k, view.dots ? DOT * k : -1, view.marks ? s.features.flatMap((f) => [f.at, ...(f.to ? [f.to] : [])]).map(P) : [], 1.2)) {
       ctx.textAlign = l.anchor === 'middle' ? 'center' : l.anchor === 'start' ? 'left' : 'right';
       ctx.lineWidth = 0.7 * k * u; ctx.strokeStyle = 'rgba(10,12,16,0.85)'; ctx.strokeText(l.text, X(l.x / 100), X(l.y / 100));
       ctx.fillStyle = '#F4F6F8'; ctx.fillText(l.text, X(l.x / 100), X(l.y / 100));

@@ -36,7 +36,7 @@
   --shadow-3: 0 10px 30px var(--shadow), 0 2px 6px var(--shadow);
 
   --sidebar: 248px;
-  --content: 1060px;
+  --content: 1240px;
 }
 
 html { font-size: 16px; -webkit-text-size-adjust: 100%; }

@@ -73,7 +73,7 @@
 html:not([data-motion='full']) .main { scroll-behavior: auto; }
 .page { max-width: var(--content); margin: 0 auto; padding: 32px 44px 72px; animation: page-in var(--dur-page) var(--ease) both; }
 .page.back { animation-name: page-in-back; }
-.page.wide { max-width: 1280px; }
+.page.wide { max-width: 1760px; }
 .page-head { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px; margin-bottom: 24px; }
 /* the actions drop below the title when there isn't room beside it */
 .page-head .titles { flex: 1 1 260px; min-width: 0; display: grid; gap: 4px; }

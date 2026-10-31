@@ -2,6 +2,15 @@
 
 Every version of Playbook By Sovereign and what it changed.
 
+## 0.3.2 (2026-10-31)
+
+- **Every map placed by hand.** Callouts, orbs, ropes, doors and walls on every map now sit where they were placed by hand in the map editor, and doors and walls that lie at a slant are turned to match. Haven's C Long callout moved off its ultimate orb.
+- **Clearer marks.** Every mark is about the same small size, so none stands out over the others: breakable walls are an orange bar like the other walls, ultimate orbs are smaller, and silent drops are a square.
+- **A minimap that follows the cursor.** Dragging and zooming the map no longer glide, so it stays locked to the cursor.
+- **More room.** Pages use more of a wide screen, Home included, and every minimap is larger: on a map's page it fills its side of the page up to the height of the window, and on a play it takes more of the card.
+- **Plays you can follow.** Each player's face sits where their route ends on the minimap, side by side when several end at one spot. Step through a play with the arrows, or click a step, to keep its route forward. The list of plays sits in columns. Abyss, Corrode, Lotus, Summit and Sunset each have a fake now.
+- **A safer map editor.** Work kept from an older editor, or an edits file made from other marks, is matched to the right marks by what they say and where they are, so marks the app has gained since aren't dropped and none are reworded by mistake.
+
 ## 0.3.1 (2026-10-30)
 
 - **Everything on the minimap where it really is.** Every map's ultimate orbs, ropes, doors, walls, ziplines and teleporters were placed again from both VALORANT wikis' interactive maps, which line up with the game's own minimaps, and checked by eye on each map. Corrode, Sunset and Summit now show their ultimate orbs, and many others moved onto their real spots, such as Haven's A Long orb and Icebox's B orb by B Green.

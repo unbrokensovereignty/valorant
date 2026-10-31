@@ -26,7 +26,7 @@ function editsOf(id: string) {
     name: m.name,
     callouts: m.callouts.map((c) => ({ name: c.name, x: c.x, y: c.y })) as { name: string; x: number; y: number; from?: string; new?: boolean }[],
     removedCallouts: [] as string[],
-    features: (FEATURES[id] ?? []).map((f, ref) => ({ ...f, at: [...f.at], ref })) as { kind: string; at: number[]; to?: readonly number[]; about: string }[],
+    features: (FEATURES[id] ?? []).map((f, ref) => ({ ...f, at: [...f.at], ref })) as { kind: string; at: number[]; to?: readonly number[]; about: string; angle?: number }[],
   };
 }
 const file = (maps: Record<string, unknown>) => ({ format: 'playbook-map-edits', madeFrom: 'x', savedAt: '', maps });
@@ -63,7 +63,7 @@ test('moves go into places, a move back to the game’s spot leaves places, and 
 });
 
 test('a turned mark keeps its turn, as whole degrees, and a mark turned back loses it', () => {
-  const e = editsOf('ascent') as ReturnType<typeof editsOf> & { features: { angle?: number }[] };
+  const e = editsOf('ascent');
   const doors = e.features.filter((f) => f.kind === 'door');
   const was = doors.map((f) => f.angle);
   doors[0]!.angle = 44.6;

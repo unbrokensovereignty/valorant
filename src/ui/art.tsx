@@ -53,3 +53,5 @@ export function MapThumb({ id, class: cls }: { id: string; class?: string }) {
 /** A map's minimap image, or null when there's none. */
 export const minimapOf = (id: string): string | null => minimapArt[id] ?? null;
 export const hasAgentArt = (id: string): boolean => !!agentArt[id];
+/** An agent's portrait, for drawing in an SVG (null when there's none). */
+export const agentArtOf = (id: string): string | null => agentArt[id] ?? null;

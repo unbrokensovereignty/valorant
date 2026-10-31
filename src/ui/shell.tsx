@@ -244,7 +244,7 @@ function onKey(e: KeyboardEvent) {
 // ---------------------------------------------------------------- the app
 
 /** Pages with side-by-side panels get more room on a wide screen. */
-const WIDE: readonly Page[] = ['planner', 'rankings', 'maps', 'agents', 'saved'];
+const WIDE: readonly Page[] = ['home', 'planner', 'rankings', 'maps', 'agents', 'saved'];
 
 export function App() {
   const main = useRef<HTMLElement>(null);
