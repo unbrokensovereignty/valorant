@@ -51,13 +51,31 @@ test('moves go into places, a move back to the game’s spot leaves places, and 
   const places = out.mapsTs.match(/\n {4}places: \{.*\},\n/g)!.find((l) => l.includes("'Mid Market'"))!;
   assert.match(places, /'A Main': \[0\.5, 0\.201\]/);
   assert.doesNotMatch(places, /'B Site'/);
-  assert.match(places, /'A Site': \[0\.311, 0\.148\]/, 'the places that didn’t move stay');
+  const aSite = MAPS.find((m) => m.id === 'ascent')!.callouts.find((c) => c.name === 'A Site')!;
+  assert.ok(places.includes(`'A Site': [${aSite.x}, ${aSite.y}]`), 'the places that didn’t move stay');
   assert.match(out.featuresTs, /\{ kind: 'orb', at: \[0\.5, 0\.25\], about: 'Ultimate orb in A Main' \},/);
   assert.match(out.featuresTs, /\{ kind: 'door', at: \[0\.4, 0\.4\], about: 'A test door, it’s by mid' \},/, 'without the full stop');
   assert.doesNotMatch(out.featuresTs, /Glass pane in A Window/);
-  assert.ok(out.featuresTs.includes("  bind: [\n    { kind: 'orb', at: [0.85, 0.46]"), 'the other maps are left as they were');
+  const bindOrb = FEATURES['bind']![0]!.at;
+  assert.ok(out.featuresTs.includes(`  bind: [\n    { kind: 'orb', at: [${bindOrb[0]}, ${bindOrb[1]}]`), 'the other maps are left as they were');
   assert.equal(out.done.length, 2);
   assert.deepEqual(out.todo, []);
+});
+
+test('a turned mark keeps its turn, as whole degrees, and a mark turned back loses it', () => {
+  const e = editsOf('ascent') as ReturnType<typeof editsOf> & { features: { angle?: number }[] };
+  e.features[2]!.angle = 44.6;
+  e.features[3]!.angle = -90;
+  const out = applyEdits(file({ ascent: e }), { mapsTs, featuresTs, maps });
+  const rows = out.featuresTs.split('\n').filter((l) => l.includes(', angle: '));
+  assert.equal(rows.length, 2);
+  assert.match(rows[0]!, /^ {4}\{ kind: 'door', .*, angle: 45 \},$/);
+  assert.match(rows[1]!, /, angle: 270 \},$/);
+  e.features[2]!.angle = 360;
+  e.features[3]!.angle = 0;
+  assert.equal(applyEdits(file({ ascent: e }), { mapsTs, featuresTs, maps }).featuresTs, featuresTs);
+  e.features[2]!.angle = Number.NaN;
+  assert.throws(() => applyEdits(file({ ascent: e }), { mapsTs, featuresTs, maps }), /a mark can't be read/);
 });
 
 test('new, renamed and removed callouts are left to a hand, saying when plays use them', () => {

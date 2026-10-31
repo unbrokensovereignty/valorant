@@ -37,7 +37,7 @@ const data = {
     floor: FLOORS[m.id] ?? null,
     aka: m.aka ?? {},
     callouts: m.callouts.map((c) => ({ name: c.name, x: c.x, y: c.y })),
-    features: (FEATURES[m.id] ?? []).map((f) => ({ kind: f.kind, at: [...f.at], ...(f.to ? { to: [...f.to] } : {}), about: f.about })),
+    features: (FEATURES[m.id] ?? []).map((f) => ({ kind: f.kind, at: [...f.at], ...(f.to ? { to: [...f.to] } : {}), about: f.about, angle: f.angle ?? 0 })),
     inPlays: [...new Set(PLAYS.filter((p) => p.map === m.id).flatMap((p) => p.steps.flatMap((s) => s.route)))].sort(),
   })),
 };

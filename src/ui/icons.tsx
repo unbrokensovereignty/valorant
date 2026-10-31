@@ -27,6 +27,9 @@ export const ICONS = {
   minus: p('M5 12h14'),
   // four corners: show all of it
   expand: p('M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5'),
+  // arrows out to the corners: fill the screen, and in again: leave it
+  fullscreen: p('M14 4h6v6M20 4l-6 6M10 20H4v-6M4 20l6-6'),
+  'fullscreen-exit': p('M19 10h-5V5M14 10l6-6M5 14h5v5M10 14l-6 6'),
   x: p('M6.5 6.5l11 11M17.5 6.5l-11 11'),
   check: p('M5 12.5l4.5 4.5L19 7.5'),
   'chevron-left': p('M14.5 6l-6 6 6 6'),

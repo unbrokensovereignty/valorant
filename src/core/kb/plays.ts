@@ -97,7 +97,7 @@ play('abyss', 'attack', 'B', 'hit', 'B hit through Main', 'A straight B take wit
   'smoke: Attacker Side Spawn > B Lobby | Smoke B Tower and B Link from B Lobby.',
   'wall: B Lobby > B Main | Wall the site from B Main so the plant is hidden from B Tower.',
   'flash: B Lobby > B Main | Flash B Danger and the site corners for the entry.',
-  'entry: B Lobby > B Main > B Danger > B Site | Clear B Danger and take the site first.',
+  'entry: B Lobby > B Main > B Site | Clear B Danger on the way and take the site first.',
   'postplant: B Lobby > B Main > B Nest | Hold the plant from B Nest and B Main with lineups.',
 ]);
 play('abyss', 'attack', 'B', 'split', 'B split through Main and mid', 'Mid players pinch B through B Link while the rest hit B Main.', [
@@ -120,10 +120,10 @@ play('abyss', 'defense', null, 'setup', 'Two on A, one mid, two on B', 'The stan
   'duel: B Site | Hold B Main from the site with an Operator or a close angle.',
 ]);
 midControl('abyss', 'Mid Catwalk', 'Mid Top');
-play('abyss', 'defense', 'A', 'retake', 'Retake A', 'Retake together from A Link and A Secret, with A Tower swinging at the same time.', [
+play('abyss', 'defense', 'A', 'retake', 'Retake A', 'Retake together from A Link and A Security, with A Tower swinging at the same time.', [
   'smoke: Defender Side Spawn > A Link | Smoke A Main and A Lobby so the attackers on site are cut off.',
   'recon flash: A Link > A Site | Clear the site with information and flash the defuse spot.',
-  'retake: Defender Side Spawn > A Secret > A Site | Retake from A Secret together with the team.',
+  'retake: Defender Side Spawn > A Security > A Site | Retake from A Security together with the team, checking A Secret as you go.',
   'duel: A Tower | Swing from A Tower at the same time to split their attention.',
 ]);
 play('abyss', 'defense', 'B', 'retake', 'Retake B', 'Retake through B Link with B Tower swinging at the same time.', [
@@ -819,7 +819,7 @@ const ECO_DEFENSE = 'Low on credits, three hide in close corners on one site, wh
 play('abyss', 'attack', 'B', 'pistol', 'Five through B Main', `${PISTOL_ATTACK}. B Main is short, so the hit lands before a rotation does.`, [
   'smoke: Attacker Side Spawn > B Lobby | Smoke B Tower from B Lobby, so the hit only faces the site.',
   'flash: B Lobby > B Main | Flash B Danger and the site corners as the entry goes.',
-  'entry: B Lobby > B Main > B Danger > B Site | Go in first and clear B Danger; the team trades right behind you.',
+  'entry: B Lobby > B Main > B Site | Go in first and clear B Danger; the team trades right behind you.',
   'clear: B Lobby > B Main > B Site | Clear the rest of the site and plant behind cover.',
   'postplant: B Lobby > B Main > B Nest | Hold the plant from B Nest, close enough to trade.',
 ]);
